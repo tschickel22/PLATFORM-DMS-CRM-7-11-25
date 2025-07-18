@@ -96,7 +96,12 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
                   <Button onClick={simulateScan} variant="secondary">
                     Simulate Scan
                   </Button>
-              <Camera className="h-12 w-12 text-white/50" />
+                  <Camera className="h-12 w-12 text-white/50" />
+                </>
+              ) : (
+                <>
+                  <Camera className="h-12 w-12 text-white/50" />
+                </>
             )}
           </div>
           
