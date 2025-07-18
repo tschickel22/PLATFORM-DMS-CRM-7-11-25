@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Settings, Save, CreditCard, FileText, AlertTriangle, Shield, DollarSign } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { mockFinance } from '@/mocks/financeMock'
 
 export function LoanSettings() {
   const { toast } = useToast()

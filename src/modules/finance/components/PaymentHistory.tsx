@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter, CreditCard, Calendar, Download, Printer, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { mockFinance } from '@/mocks/financeMock'
 import { cn } from '@/lib/utils'
 
 // Mock payment history data
@@ -93,36 +94,28 @@ export function PaymentHistory() {
       case 'cash':
         return 'Cash'
       case 'check':
-        return 'Check'
-      default:
-        return method
-    }
-  }
-
-  // Filter payments based on search term and filters
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = 
-      payment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.id.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter
-    
-    let matchesDate = true
-    const now = new Date()
-    const paymentDate = payment.scheduledDate
-    
-    if (dateFilter === 'today') {
-      matchesDate = paymentDate.toDateString() === now.toDateString()
-    } else if (dateFilter === 'this_week') {
-      const startOfWeek = new Date(now)
-      startOfWeek.setDate(now.getDate() - now.getDay())
+  // Use mock payment data as fallback
+  const payments = mockFinance.samplePayments.map(payment => ({
+    id: payment.id,
+    date: payment.date,
+    amount: payment.amount,
+    principal: payment.amount * 0.85, // Approximate principal portion
+    interest: payment.amount * 0.15, // Approximate interest portion
+    status: payment.status,
+    method: 'Auto Pay',
+    confirmationNumber: payment.status === 'Completed' ? `CNF-${payment.id.split('-')[1]}` : null
+  }))
       const endOfWeek = new Date(startOfWeek)
       endOfWeek.setDate(startOfWeek.getDate() + 6)
       matchesDate = paymentDate >= startOfWeek && paymentDate <= endOfWeek
     } else if (dateFilter === 'this_month') {
       matchesDate = 
         paymentDate.getMonth() === now.getMonth() && 
-        paymentDate.getFullYear() === now.getFullYear()
+      'Cancelled': 'bg-gray-100 text-gray-800',
+      'Current': 'bg-blue-100 text-blue-800',
+      'Late': 'bg-orange-100 text-orange-800',
+      'Default': 'bg-red-100 text-red-800',
+      'Paid Off': 'bg-green-100 text-green-800'
     }
     
     return matchesSearch && matchesStatus && matchesDate
@@ -200,10 +193,15 @@ export function PaymentHistory() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                {mockFinance.statusOptions.map(status => (
+                  <SelectItem key={status.toLowerCase()} value={status.toLowerCase()}>
+                    {status}
+                  </SelectItem>
+                ))}
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="late">Late</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
             <Select value={dateFilter} onValueChange={setDateFilter}>
