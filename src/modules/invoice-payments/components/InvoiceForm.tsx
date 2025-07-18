@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast'
 import { mockInvoice } from '@/mocks/invoiceMock'
 import { formatCurrency } from '@/lib/utils'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
-import { mockInvoice } from '@/mocks/invoiceMock'
 
 interface InvoiceFormProps {
   invoice?: Invoice
@@ -22,19 +21,20 @@ interface InvoiceFormProps {
 export function InvoiceForm({ invoice, onSave, onCancel }: InvoiceFormProps) {
   const { toast } = useToast()
   const { leads } = useLeadManagement()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     customerId: invoice?.customerId || mockInvoice.formDefaults.customerId,
+    number: invoice?.number || '',
     dueDate: invoice?.dueDate || mockInvoice.formDefaults.dueDate,
+    status: invoice?.status || InvoiceStatus.DRAFT,
     recurrence: invoice?.recurrence || mockInvoice.formDefaults.recurrence,
     notes: invoice?.notes || mockInvoice.formDefaults.notes,
     paymentMethod: invoice?.paymentMethod || mockInvoice.formDefaults.paymentMethod,
-    lineItems: invoice?.lineItems || mockInvoice.formDefaults.lineItems
-  })
-    dueDate: mockInvoice.formDefaults.dueDate,
-    recurrence: mockInvoice.formDefaults.recurrence,
-    notes: mockInvoice.formDefaults.notes,
-    paymentMethod: mockInvoice.formDefaults.paymentMethod,
-    lineItems: [...mockInvoice.formDefaults.lineItems]
+    lineItems: invoice?.lineItems || mockInvoice.formDefaults.lineItems,
+    items: invoice?.items || [...mockInvoice.formDefaults.lineItems],
+    subtotal: invoice?.subtotal || 0,
+    tax: invoice?.tax || 0,
+    total: invoice?.total || 0
   })
 
   const [newItem, setNewItem] = useState<Partial<InvoiceItem>>({
@@ -186,12 +186,10 @@ export function InvoiceForm({ invoice, onSave, onCancel }: InvoiceFormProps) {
             <div>
               <CardTitle>{invoice ? 'Edit Invoice' : 'Create Invoice'}</CardTitle>
               <CardDescription>
-                {['One-Time', 'Monthly', 'Quarterly', 'Annually'].map(option => (
-                {mockInvoice.paymentMethods.map(method => (
-                  <SelectItem key={method} value={method}>
-                    {method}
-                  </SelectItem>
-                ))}
+                {invoice ? 'Update invoice details' : 'Create a new invoice for your customer'}
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
               <X className="h-4 w-4" />
             </Button>
           </div>
