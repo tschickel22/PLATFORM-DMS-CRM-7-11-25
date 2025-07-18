@@ -3,299 +3,319 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, Send, Eye, Calendar, User, Car, FileCheck, Clock, MapPin, FileSignature as Signature } from 'lucide-react'
-import { Agreement, Document } from '@/types'
-import { useToast } from '@/hooks/use-toast'
+import { X, Edit, Download, Send, FileText, User, Calendar, DollarSign } from 'lucide-react'
+import { Agreement } from '@/types'
+import { formatDate, formatCurrency } from '@/lib/utils'
 import { mockAgreements } from '@/mocks/agreementsMock'
-import { mockAgreements } from '@/mocks/agreementsMock'
-import { formatDate, formatDateTime } from '@/lib/utils'
 
 interface AgreementViewerProps {
   agreement: Agreement
-  onSendSignatureRequest?: (agreementId: string) => Promise<void>
-  onDownload?: (document: Document) => void
-  onEdit?: (agreement: Agreement) => void
-  readonly?: boolean
+  onClose: () => void
+  onEdit: () => void
 }
 
-export function AgreementViewer({ 
-  agreement, 
-  onSendSignatureRequest, 
-  onDownload, 
-  onEdit,
-  readonly = false 
-}: AgreementViewerProps) {
-  const { toast } = useToast()
-  const [loading, setLoading] = useState(false)
-  // Use tenant data if available, otherwise fallback to mock data
-  const agreementStatuses = tenant?.agreementStatuses || mockAgreements.agreementStatuses
+export function AgreementViewer({ agreement, onClose, onEdit }: AgreementViewerProps) {
+  const [activeTab, setActiveTab] = useState('details')
 
+  const typeConfig = mockAgreements.agreementTypes.find(t => t.value === agreement.type)
+  const statusConfig = mockAgreements.agreementStatuses.find(s => s.value === agreement.status)
 
-  // Use mock data for status colors
   const getStatusColor = (status: string) => {
-    const statusConfig = agreementStatuses.find(s => s.value === status)
-    return statusConfig?.color || 'bg-gray-100 text-gray-800'
+    const config = mockAgreements.agreementStatuses.find(s => s.value === status)
+    return config?.color || 'bg-gray-100 text-gray-800'
   }
 
-  const getStatusLabel = (status: string) => {
-    const statusConfig = agreementStatuses.find(s => s.value === status)
-    return statusConfig?.label || status
-  }
-
-  const getTypeLabel = (type: string) => {
-    const typeConfig = mockAgreements.agreementTypes.find(t => t.value === type)
-    return typeConfig?.label || type
-  }
-
-  const handleSendSignatureRequest = async () => {
-    if (!onSendSignatureRequest) return
-    
-    setLoading(true)
-    try {
-      await onSendSignatureRequest(agreement.id)
-      toast({
-        title: 'Signature Request Sent',
-        description: 'The signature request has been sent to the customer.',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send signature request.',
-        variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDownloadDocument = (document: Document) => {
-    if (onDownload) {
-      onDownload(document)
-    } else {
-      // Default download behavior
-      const link = document.createElement('a')
-      link.href = document.url
-      link.download = document.name
-      link.click()
-    }
-  }
-
-  const canSendSignatureRequest = agreement.status === 'DRAFT' || agreement.status === 'PENDING'
-  const isSigned = agreement.status === 'SIGNED' || agreement.status === 'ACTIVE'
+  const tabs = [
+    { id: 'details', name: 'Details', icon: FileText },
+    { id: 'documents', name: 'Documents', icon: FileText },
+    { id: 'history', name: 'History', icon: Calendar }
+  ]
 
   return (
-    <div className="space-y-6">
-      {/* Agreement Header */}
-      <Card>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <Card className="w-full max-w-4xl my-8">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <FileText className="h-6 w-6 text-primary" />
+            <div className="flex items-center space-x-4">
               <div>
-                <CardTitle>{getTypeLabel(agreement.type)} Agreement</CardTitle>
-                <CardDescription>Agreement ID: {agreement.id}</CardDescription>
+                <CardTitle className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  {typeConfig?.label || agreement.type} Agreement
+                </CardTitle>
+                <CardDescription>
+                  {agreement.customerName} • Created {formatDate(new Date(agreement.createdAt))}
+                </CardDescription>
               </div>
+              <Badge className={getStatusColor(agreement.status)}>
+                {statusConfig?.label || agreement.status}
+              </Badge>
             </div>
             <div className="flex items-center space-x-2">
-              <Badge className={getStatusColor(agreement.status)}>
-                {getStatusLabel(agreement.status)}
-              </Badge>
-              {!readonly && (
-                <div className="flex space-x-2">
-                  {canSendSignatureRequest && onSendSignatureRequest && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleSendSignatureRequest}
-                      disabled={loading}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Send for Signature
-                    </Button>
-                  )}
-                  {onEdit && (
-                    <Button variant="outline" size="sm" onClick={() => onEdit(agreement)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              {(agreement.status === 'DRAFT' || agreement.status === 'PENDING') && (
+                <Button variant="outline" size="sm">
+                  <Send className="h-4 w-4 mr-2" />
+                  Send for Signature
+                </Button>
               )}
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
+        
         <CardContent className="space-y-6">
-          {/* Agreement Details */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Customer</p>
-                  <p className="text-sm text-muted-foreground">
-                    {agreement.customerName || 'N/A'}
-                  </p>
-                  {agreement.customerEmail && (
-                    <p className="text-xs text-muted-foreground">
-                      {agreement.customerEmail}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {agreement.vehicleInfo && (
-                <div className="flex items-center space-x-2">
-                  <Car className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Vehicle</p>
-                    <p className="text-sm text-muted-foreground">
-                      {agreement.vehicleInfo}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {agreement.quoteId && (
-                <div className="flex items-center space-x-2">
-                  <FileCheck className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Related Quote</p>
-                    <p className="text-sm text-muted-foreground">
-                      Quote #{agreement.quoteId}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Effective Date</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDate(agreement.effectiveDate)}
-                  </p>
-                </div>
-              </div>
-
-              {agreement.expirationDate && (
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Expiration Date</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(agreement.expirationDate)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Created</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDateTime(agreement.createdAt)}
-                  </p>
-                  {agreement.createdBy && (
-                    <p className="text-xs text-muted-foreground">
-                      by {agreement.createdBy}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+          {/* Tabs */}
+          <div className="border-b">
+            <nav className="-mb-px flex space-x-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  <span>{tab.name}</span>
+                </button>
+              ))}
+            </nav>
           </div>
 
-          <Separator />
-
-          {/* Terms and Conditions */}
-          <div>
-            <h3 className="font-semibold mb-3">Terms and Conditions</h3>
-            <div className="bg-muted/30 p-4 rounded-lg">
-              <p className="text-sm whitespace-pre-wrap">{agreement.terms}</p>
-            </div>
-          </div>
-
-          {/* Signature Information */}
-          {isSigned && agreement.signedBy && (
-            <>
-              <Separator />
+          {/* Tab Content */}
+          {activeTab === 'details' && (
+            <div className="space-y-6">
+              {/* Customer Information */}
               <div>
-                <h3 className="font-semibold mb-3 flex items-center">
-                  <Signature className="h-4 w-4 mr-2" />
-                  Signature Information
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Customer Information
                 </h3>
-                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <p className="font-medium">Signed By</p>
-                      <p className="text-sm text-muted-foreground">{agreement.signedBy}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Signed At</p>
-                      <p className="text-sm text-muted-foreground">
-                        {agreement.signedAt ? formatDateTime(agreement.signedAt) : 'N/A'}
-                      </p>
-                    </div>
-                    {agreement.ipAddress && (
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">IP Address</p>
-                          <p className="text-xs text-muted-foreground">{agreement.ipAddress}</p>
-                        </div>
-                      </div>
-                    )}
-                    {agreement.signatureData && (
-                      <div>
-                        <p className="font-medium text-sm mb-2">Digital Signature</p>
-                        <div className="border rounded p-2 bg-white">
-                          <img 
-                            src={agreement.signatureData} 
-                            alt="Digital Signature" 
-                            className="h-16 max-w-full"
-                          />
-                        </div>
-                      </div>
-                    )}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Name</label>
+                    <p className="text-sm">{agreement.customerName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <p className="text-sm">{agreement.customerEmail}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                    <p className="text-sm">{agreement.customerPhone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Vehicle/Property</label>
+                    <p className="text-sm">{agreement.vehicleInfo || 'Not specified'}</p>
                   </div>
                 </div>
               </div>
-            </>
+
+              <Separator />
+
+              {/* Agreement Details */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Agreement Details
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="text-sm">{typeConfig?.label || agreement.type}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <p className="text-sm">{statusConfig?.label || agreement.status}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Effective Date</label>
+                    <p className="text-sm">{formatDate(new Date(agreement.effectiveDate))}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Expiration Date</label>
+                    <p className="text-sm">
+                      {agreement.expirationDate ? formatDate(new Date(agreement.expirationDate)) : 'No expiration'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Information */}
+              {(agreement.totalAmount || agreement.monthlyPayment || agreement.annualFee) && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <DollarSign className="h-5 w-5 mr-2" />
+                      Financial Information
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {agreement.totalAmount && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
+                          <p className="text-sm font-semibold">{formatCurrency(agreement.totalAmount)}</p>
+                        </div>
+                      )}
+                      {agreement.downPayment && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Down Payment</label>
+                          <p className="text-sm">{formatCurrency(agreement.downPayment)}</p>
+                        </div>
+                      )}
+                      {agreement.financingAmount && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Financing Amount</label>
+                          <p className="text-sm">{formatCurrency(agreement.financingAmount)}</p>
+                        </div>
+                      )}
+                      {agreement.monthlyPayment && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Monthly Payment</label>
+                          <p className="text-sm">{formatCurrency(agreement.monthlyPayment)}</p>
+                        </div>
+                      )}
+                      {agreement.securityDeposit && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Security Deposit</label>
+                          <p className="text-sm">{formatCurrency(agreement.securityDeposit)}</p>
+                        </div>
+                      )}
+                      {agreement.annualFee && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Annual Fee</label>
+                          <p className="text-sm">{formatCurrency(agreement.annualFee)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Terms and Conditions */}
+              {agreement.terms && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Terms and Conditions</h3>
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <p className="text-sm whitespace-pre-wrap">{agreement.terms}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Signature Information */}
+              {agreement.signedBy && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Signature Information</h3>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Signed By</label>
+                        <p className="text-sm">{agreement.signedBy}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Signed Date</label>
+                        <p className="text-sm">
+                          {agreement.signedAt ? formatDate(new Date(agreement.signedAt)) : 'Not signed'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">IP Address</label>
+                        <p className="text-sm">{agreement.ipAddress || 'Not recorded'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
-          {/* Documents */}
-          {agreement.documents && agreement.documents.length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-semibold mb-3">Documents</h3>
-                <div className="space-y-2">
-                  {agreement.documents.map(document => (
-                    <div key={document.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+          {activeTab === 'documents' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Attached Documents</h3>
+              
+              {agreement.documents && agreement.documents.length > 0 ? (
+                <div className="space-y-3">
+                  {agreement.documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <FileText className="h-5 w-5 text-muted-foreground" />
                         <div>
-                          <p className="font-medium">{document.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(document.size / 1024).toFixed(1)} KB • Uploaded {formatDate(document.uploadedAt)}
+                          <p className="font-medium">{doc.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {doc.type} • {(doc.size / 1024).toFixed(1)} KB • 
+                            Uploaded {formatDate(new Date(doc.uploadedAt))}
                           </p>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownloadDocument(document)}
-                      >
-                        <Download className="h-4 w-4" />
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
                       </Button>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No documents attached</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'history' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Agreement History</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="font-medium">Agreement Created</p>
+                    <p className="text-sm text-muted-foreground">
+                      Created by {agreement.createdBy} on {formatDate(new Date(agreement.createdAt))}
+                    </p>
+                  </div>
+                </div>
+                
+                {agreement.signedAt && (
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <p className="font-medium">Agreement Signed</p>
+                      <p className="text-sm text-muted-foreground">
+                        Signed by {agreement.signedBy} on {formatDate(new Date(agreement.signedAt))}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="font-medium">Last Updated</p>
+                    <p className="text-sm text-muted-foreground">
+                      Updated on {formatDate(new Date(agreement.updatedAt))}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>

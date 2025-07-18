@@ -1,34 +1,102 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, FileText, Eye, Download, Send } from 'lucide-react'
+import { Search, Plus, FileText, Eye, Edit, Trash2, Download, Send, Filter } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { NewAgreementForm } from './components/NewAgreementForm'
+import { AgreementViewer } from './components/AgreementViewer'
+import { useAgreementManagement } from './hooks/useAgreementManagement'
 
 function AgreementVaultPage() {
   const { toast } = useToast()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [agreements] = useState<Agreement[]>(mockAgreements.sampleAgreements)
-  const [selectedType, setSelectedType] = useState<string>('all')
-  const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const {
+    agreements,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    typeFilter,
+    setTypeFilter,
+    createAgreement,
+    updateAgreement,
+    deleteAgreement,
+    sendSignatureRequest,
+    filteredAgreements
+  } = useAgreementManagement()
+  
+  const [showNewAgreementForm, setShowNewAgreementForm] = useState(false)
+  const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null)
+  const [showAgreementViewer, setShowAgreementViewer] = useState(false)
 
-  const filteredAgreements = agreements.filter(agreement => {
-    const matchesSearch = 
-      agreement.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.vehicleInfo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.id.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesType = selectedType === 'all' || agreement.type === selectedType
-    const matchesStatus = selectedStatus === 'all' || agreement.status === selectedStatus
-    
-    return matchesSearch && matchesType && matchesStatus
-  })
+  const handleCreateAgreement = async (agreementData: Partial<Agreement>) => {
+    try {
+      await createAgreement(agreementData)
+      setShowNewAgreementForm(false)
+      toast({
+        title: 'Agreement Created',
+        description: 'New agreement has been created successfully.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create agreement.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleViewAgreement = (agreement: Agreement) => {
+    setSelectedAgreement(agreement)
+    setShowAgreementViewer(true)
+  }
+
+  const handleEditAgreement = (agreement: Agreement) => {
+    setSelectedAgreement(agreement)
+    setShowNewAgreementForm(true)
+  }
+
+  const handleDeleteAgreement = async (agreementId: string) => {
+    if (window.confirm('Are you sure you want to delete this agreement?')) {
+      try {
+        await deleteAgreement(agreementId)
+        toast({
+          title: 'Agreement Deleted',
+          description: 'Agreement has been deleted successfully.',
+        })
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete agreement.',
+          variant: 'destructive'
+        })
+      }
+    }
+  }
+
+  const handleSendSignatureRequest = async (agreementId: string) => {
+    try {
+      await sendSignatureRequest(agreementId)
+      toast({
+        title: 'Signature Request Sent',
+        description: 'Signature request has been sent to the customer.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send signature request.',
+        variant: 'destructive'
+      })
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const statusConfig = mockAgreements.agreementStatuses.find(s => s.value === status)
@@ -46,20 +114,6 @@ function AgreementVaultPage() {
     return typeConfig ? typeConfig.label : type
   }
 
-  const handleViewAgreement = (agreementId: string) => {
-    toast({
-      title: 'Opening Agreement',
-      description: `Opening agreement ${agreementId} for review`,
-    })
-  }
-
-  const handleSendForSignature = (agreementId: string) => {
-    toast({
-      title: 'Signature Request Sent',
-      description: `Signature request sent for agreement ${agreementId}`,
-    })
-  }
-
   const handleDownload = (agreementId: string) => {
     toast({
       title: 'Download Started',
@@ -69,6 +123,18 @@ function AgreementVaultPage() {
 
   return (
     <div className="space-y-6">
+      {/* New Agreement Form Modal */}
+      {showNewAgreementForm && (
+        <NewAgreementForm
+          agreement={selectedAgreement}
+          onSave={handleCreateAgreement}
+          onCancel={() => {
+            setShowNewAgreementForm(false)
+            setSelectedAgreement(null)
+          }}
+        />
+      )}
+
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
@@ -78,7 +144,7 @@ function AgreementVaultPage() {
               Manage contracts, agreements, and digital signatures
             </p>
           </div>
-          <Button className="shadow-sm">
+          <Button className="shadow-sm" onClick={() => setShowNewAgreementForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Agreement
           </Button>
@@ -100,31 +166,33 @@ function AgreementVaultPage() {
             </div>
             
             <div className="flex gap-2">
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="px-3 py-2 border rounded-md shadow-sm"
-              >
-                <option value="all">All Types</option>
-                {mockAgreements.agreementTypes.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[150px] shadow-sm">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {mockAgreements.agreementTypes.map(type => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 border rounded-md shadow-sm"
-              >
-                <option value="all">All Statuses</option>
-                {mockAgreements.agreementStatuses.map(status => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px] shadow-sm">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  {mockAgreements.agreementStatuses.map(status => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
@@ -190,7 +258,7 @@ function AgreementVaultPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleViewAgreement(agreement.id)}
+                        onClick={() => handleViewAgreement(agreement)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -205,7 +273,7 @@ function AgreementVaultPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleSendForSignature(agreement.id)}
+                          onClick={() => handleSendSignatureRequest(agreement.id)}
                         >
                           <Send className="h-4 w-4" />
                         </Button>
@@ -226,6 +294,15 @@ function AgreementVaultPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Agreement Viewer Modal */}
+      {showAgreementViewer && selectedAgreement && (
+        <AgreementViewer
+          agreement={selectedAgreement}
+          onClose={() => setShowAgreementViewer(false)}
+          onEdit={() => handleEditAgreement(selectedAgreement)}
+        />
+      )}
     </div>
   )
 }
