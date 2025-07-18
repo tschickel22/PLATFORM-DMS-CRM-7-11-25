@@ -16,8 +16,8 @@ export function BrandingSettings() {
   const [primaryColor, setPrimaryColor] = useState(tenant?.branding.primaryColor || mockCompanySettings.branding.primaryColor)
   const [secondaryColor, setSecondaryColor] = useState(tenant?.branding.secondaryColor || mockCompanySettings.branding.secondaryColor)
   const [fontFamily, setFontFamily] = useState(tenant?.branding.fontFamily || mockCompanySettings.branding.fontFamily)
-  const [logoUrl, setLogoUrl] = useState(tenant?.branding.logo || '')
-  const [logoPreview, setLogoPreview] = useState(tenant?.branding.logo || '')
+  const [logoUrl, setLogoUrl] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
+  const [logoPreview, setLogoPreview] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const fontOptions = mockCompanySettings.branding.fontOptions
