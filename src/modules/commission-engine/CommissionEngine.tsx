@@ -19,6 +19,8 @@ import { CommissionDetail } from './components/CommissionDetail'
 import { CommissionRulesList } from './components/CommissionRulesList'
 import { CommissionRuleForm } from './components/CommissionRuleForm'
 import { CommissionReportGenerator } from './components/CommissionReportGenerator'
+import { CommissionAuditTrail } from './components/CommissionAuditTrail'
+import { mockCommissionEngine } from '@/mocks/commissionEngineMock'
 
 // Mock data for sales reps and deals
 const mockSalesReps = [
@@ -657,9 +659,213 @@ function CommissionsList() {
 }
 
 export default function CommissionEngine() {
+  const [activeTab, setActiveTab] = useState('overview')
+  const [showCommissionForm, setShowCommissionForm] = useState(false)
+  const [showRuleForm, setShowRuleForm] = useState(false)
+  const [editingRule, setEditingRule] = useState<any>(null)
+
+  // Use mock data as fallback - in real app, this would come from tenant context
+  const commissions = mockCommissionEngine.sampleCommissions.map(comm => {
+    const rep = mockCommissionEngine.salesReps.find(r => r.id === comm.repId)
+    const rule = mockCommissionEngine.sampleRules.find(r => r.id === comm.ruleId)
+    return {
+      ...comm,
+      repName: rep?.name || 'Unknown Rep',
+      ruleName: rule?.name || 'Unknown Rule',
+      status: 'Paid' // Default status
+    }
+  })
+
+  const handleCreateCommission = (data: any) => {
+    console.log('Creating commission:', data)
+    setShowCommissionForm(false)
+  }
+
+  const handleCreateRule = (data: any) => {
+    console.log('Creating rule:', data)
+    setShowRuleForm(false)
+    setEditingRule(null)
+  }
+
+  const handleEditRule = (rule: any) => {
+    setEditingRule(rule)
+    setShowRuleForm(true)
+  }
+
   return (
     <Routes>
-      <Route path="/" element={<CommissionsList />} />
+      <Route path="/" element={
+        <div className="space-y-8">
+          {/* Commission Form Modal */}
+          {showCommissionForm && (
+            <CommissionForm
+              onSave={handleCreateCommission}
+              onCancel={() => setShowCommissionForm(false)}
+            />
+          )}
+          
+          {/* Rule Form Modal */}
+          {showRuleForm && (
+            <CommissionRuleForm
+              rule={editingRule}
+              onSave={handleCreateRule}
+              onCancel={() => {
+                setShowRuleForm(false)
+                setEditingRule(null)
+              }}
+            />
+          )}
+
+          {/* Page Header */}
+          <div className="ri-page-header">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="ri-page-title">Commission Engine</h1>
+                <p className="ri-page-description">
+                  Manage sales commissions and payment rules
+                </p>
+              </div>
+              <Button className="shadow-sm" onClick={() => setShowCommissionForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Commission
+              </Button>
+            </div>
+          </div>
+
+          {/* Main Content Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="rules">Commission Rules</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              {/* Stats Cards */}
+              <div className="ri-stats-grid">
+                <Card className="shadow-sm border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-blue-900">Total Commissions</CardTitle>
+                    <DollarSign className="h-4 w-4 text-blue-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-900">$2,125</div>
+                    <p className="text-xs text-blue-600 flex items-center mt-1">
+                      <User className="h-3 w-3 mr-1" />
+                      2 commissions
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm border-0 bg-gradient-to-br from-green-50 to-green-100/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-green-900">Paid Out</CardTitle>
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-900">$1,250</div>
+                    <p className="text-xs text-green-600 flex items-center mt-1">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      1 payment
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm border-0 bg-gradient-to-br from-yellow-50 to-yellow-100/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-yellow-900">Pending</CardTitle>
+                    <Clock className="h-4 w-4 text-yellow-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-900">$875</div>
+                    <p className="text-xs text-yellow-600 flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      1 pending
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-purple-900">Active Rules</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-purple-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-purple-900">3</div>
+                    <p className="text-xs text-purple-600 flex items-center mt-1">
+                      <BarChart3 className="h-3 w-3 mr-1" />
+                      commission rules
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Commissions */}
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl">Recent Commissions</CardTitle>
+                      <CardDescription>
+                        Latest commission calculations and payments
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="shadow-sm">
+                      View All
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {commissions.map((commission) => (
+                      <div key={commission.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <h4 className="font-medium">{commission.repName}</h4>
+                            <Badge variant={commission.status === 'Paid' ? 'default' : 'secondary'}>
+                              {commission.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {commission.ruleName} - {commission.period}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Sale: ${commission.saleAmount?.toLocaleString() || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-semibold">${commission.amount?.toLocaleString() || 'N/A'}</div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {commissions.length === 0 && (
+                      <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                        <p>No commissions recorded</p>
+                        <p className="text-sm mt-1">Commissions will appear here once sales are processed</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rules">
+              <CommissionRulesList
+                rules={mockCommissionEngine.sampleRules}
+                onCreateRule={() => setShowRuleForm(true)}
+                onEditRule={handleEditRule}
+                onDeleteRule={(id) => console.log('Delete rule:', id)}
+              />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <CommissionReportGenerator
+                salesReps={mockCommissionEngine.salesReps}
+                onGenerateReport={(data) => console.log('Generate report:', data)}
+                onExportCSV={() => console.log('Export CSV')}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      } />
       <Route path="/*" element={<CommissionsList />} />
     </Routes>
   )
