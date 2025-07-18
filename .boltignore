@@ -1,53 +1,42 @@
-# 🔒 Ignore all other apps
-apps/agreement-vault/
-apps/client-portal/
-apps/commission-engine/
-apps/crm-prospecting/
-apps/delivery-tracker/
-apps/inventory-management/
-apps/invoice-payments/
-apps/platform-admin/
-apps/quote-builder/
-apps/reporting-suite/
-apps/service-ops/
+# 🔒 Ignore all other modules except company-settings
+src/modules/agreement-vault/
+src/modules/client-portal/
+src/modules/commission-engine/
+src/modules/crm-prospecting/
+src/modules/delivery-tracker/
+src/modules/inventory-management/
+src/modules/invoice-payments/
+src/modules/platform-admin/
+src/modules/quote-builder/
+src/modules/reporting-suite/
+src/modules/service-ops/
+src/modules/crm-sales-deal/
+src/modules/finance/
+src/modules/pdi-checklist/
 
 # ✅ Keep company-settings active
-!apps/company-settings/
+!src/modules/company-settings/
 
-# ✅ Keep settings-related core files exposed
-!shared-core/
-!src/components/settings/
-!src/components/forms/
-!src/hooks/useSettings.ts
-!src/hooks/useCompanyConfig.ts
-!src/lib/settings/
-!src/lib/supabase/
-!src/lib/config/
-!src/lib/types/
-!src/lib/utils/
+# 🔒 Ignore most core files except settings-related
+src/components/layout/
+src/components/auth/
+src/pages/Dashboard.tsx
+src/pages/Login.tsx
+src/contexts/AuthContext.tsx
+src/contexts/TenantContext.tsx
+src/contexts/ThemeContext.tsx
 
-# 🔒 Ignore unrelated shared files
-src/components/
-src/hooks/
-src/lib/
+# 🔒 Ignore package files and configs
+package.json
+package-lock.json
+tsconfig.json
+tsconfig.node.json
+tailwind.config.js
+vite.config.ts
+postcss.config.js
+knip.json
 
-# 🔒 Ignore test and mock data
-__tests__/
-*.test.*
-*.spec.*
-mocks/
-mock-data/
-test-data/
-*.mock.*
-*.json
-*.csv
-
-# 🔒 Ignore backend and Supabase migrations
-supabase/
-*.sql
-supabase_discarded_migrations/
-
-# 🔒 Ignore static assets
+# 🔒 Ignore static assets and build files
 public/
 dist/
 *.png
@@ -57,13 +46,21 @@ dist/
 *.svg
 *.mp4
 
-# 🔒 Ignore documentation and config
+# 🔒 Ignore documentation and misc files
 README.md
 docs/
 CHANGELOG.md
 LICENSE
 .env
 .env.*
-tsconfig.json
-tailwind.config.js
-vite.config.ts
+*.yaml
+*.yml
+
+# 🔒 Ignore test files
+__tests__/
+*.test.*
+*.spec.*
+mocks/
+mock-data/
+test-data/
+*.mock.*
