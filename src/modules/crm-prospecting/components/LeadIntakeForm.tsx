@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Plus, Save, X } from 'lucide-react'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 import { LeadIntakeForm, LeadFormField, LeadSource } from '../types'
 import { useLeadManagement } from '../hooks/useLeadManagement'
 
@@ -18,6 +17,10 @@ interface LeadIntakeFormProps {
   sources: LeadSource[]
   onSave: (formData: Partial<LeadIntakeForm>) => void
   onCancel: () => void
+}
+
+export function LeadIntakeFormBuilder({ form, sources, onSave, onCancel }: LeadIntakeFormProps) {
+  const [formData, setFormData] = useState<Partial<LeadIntakeForm>>(form || {
     name: '',
     description: '',
     sourceId: '',
@@ -32,10 +35,9 @@ interface LeadIntakeFormProps {
     required: false,
     placeholder: '',
     order: (formData.fields?.length || 0) + 1,
-  // Use mock data as fallback when tenant data is unavailable
-  const leadSources = mockCrmProspecting.leadSources
-  const leadStatuses = mockCrmProspecting.leadStatuses
-  const preferredContactMethods = mockCrmProspecting.preferredContactMethods
+    isActive: true
+  })
+
   const [showAddField, setShowAddField] = useState(false)
 
   const fieldTypes = [
@@ -421,7 +423,7 @@ export function DynamicLeadForm({ form, onSubmit }: DynamicLeadFormProps) {
                 <SelectValue placeholder={field.placeholder || `Select ${field.label}`} />
               </SelectTrigger>
               <SelectContent>
-                {mockCrmProspecting.preferredContactMethods.map(method => (
+                {field.options?.map(option => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
