@@ -13,6 +13,7 @@ import { AgreementViewer } from './components/AgreementViewer'
 import { sendSignatureRequest, generateSignatureLink } from './utils/sendSignatureRequest'
 import { cn } from '@/lib/utils'
 import { toast } from '@/hooks/use-toast'
+import { mockAgreements } from '@/mocks/agreementsMock'
 
 const mockAgreements: Agreement[] = [
   {
@@ -440,44 +441,6 @@ function AgreementsList() {
                       </div>
                     )}
                     <div className="mt-2 bg-muted/30 p-2 rounded-md">
-                      <p className="text-sm text-muted-foreground">
-                        {agreement.terms}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="ri-action-buttons">
-                  {(agreement.status === 'DRAFT' || agreement.status === 'PENDING') && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleSendSignatureRequest(agreement.id)}
-                      disabled={loading}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleViewAgreement(agreement)}>
-                    <Eye className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleEditAgreement(agreement)}>
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleDeleteAgreement(agreement.id)}>
-                    <Download className="h-3 w-3 mr-1" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 export default function AgreementVault() {
   return (
     <Routes>
