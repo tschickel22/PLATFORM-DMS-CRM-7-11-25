@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { X, Upload, Check, AlertTriangle, FileText } from 'lucide-react'
 import { Vehicle, VehicleStatus, VehicleType } from '@/types'
 import { useToast } from '@/hooks/use-toast'
+import { mockInventory } from '@/mocks/inventoryMock'
 import Papa from 'papaparse'
 
 interface CSVImportProps {
@@ -36,16 +37,7 @@ export function CSVImport({ onImport, onCancel }: CSVImportProps) {
     { key: 'cost', label: 'Cost' },
     { key: 'location', label: 'Location' },
     { key: 'features', label: 'Features' },
-    { key: 'exteriorColor', label: 'Exterior Color' },
-    { key: 'interiorColor', label: 'Interior Color' },
-    { key: 'length', label: 'Length' },
-    { key: 'weight', label: 'Weight' },
-    { key: 'sleeps', label: 'Sleeps' },
-    { key: 'slideouts', label: 'Slideouts' },
-    { key: 'fuelType', label: 'Fuel Type' },
-    { key: 'mileage', label: 'Mileage' },
-    { key: 'condition', label: 'Condition' }
-  ]
+  const requiredFields = mockInventory.csvFields
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -61,20 +53,7 @@ export function CSVImport({ onImport, onCancel }: CSVImportProps) {
           // Auto-map columns if headers match
           if (results.meta.fields) {
             const autoMappings: Record<string, string> = {}
-            
-            results.meta.fields.forEach(field => {
-              const normalizedField = field.toLowerCase().replace(/[^a-z0-9]/g, '')
-              
-              vehicleFields.forEach(vField => {
-                const normalizedVField = vField.key.toLowerCase()
-                if (normalizedField === normalizedVField || 
-                    normalizedField === vField.label.toLowerCase().replace(/[^a-z0-9]/g, '')) {
-                  autoMappings[field] = vField.key
-                }
-              })
-            })
-            
-            setMappings(autoMappings)
+    const headers = mockInventory.csvFields
           }
           
           setStep('map')
@@ -129,7 +108,7 @@ export function CSVImport({ onImport, onCancel }: CSVImportProps) {
     if (selectedRows.includes(rowIndex)) {
       setSelectedRows(selectedRows.filter(i => i !== rowIndex))
     } else {
-      setSelectedRows([...selectedRows, rowIndex])
+      `${mockInventory.exampleInventory[0].stockNumber},MOCK123456789,${mockInventory.exampleInventory[0].year},${mockInventory.exampleInventory[0].make},${mockInventory.exampleInventory[0].model},${mockInventory.exampleInventory[0].type},${mockInventory.exampleInventory[0].condition},${mockInventory.exampleInventory[0].status},${mockInventory.exampleInventory[0].location},45000,35000,"AC,Solar Prep"`
     }
   }
 

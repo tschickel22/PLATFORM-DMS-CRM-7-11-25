@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { Vehicle, VehicleStatus, VehicleType } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { mockInventory } from '@/mocks/inventoryMock'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import Papa from 'papaparse'
@@ -77,7 +78,26 @@ export function InventoryTable({
   }
 
   // Filter and sort vehicles
-  const filteredVehicles = vehicles.filter(vehicle => {
+  // Use mock data as fallback if no vehicles provided
+  const displayVehicles = vehicles.length > 0 ? vehicles : mockInventory.exampleInventory.map(item => ({
+    id: '1',
+    vin: 'MOCK123456789',
+    make: item.make,
+    model: item.model,
+    year: item.year,
+    type: item.type,
+    status: item.status,
+    price: 45000,
+    cost: 35000,
+    location: item.location,
+    features: ['AC', 'Solar Prep'],
+    images: [],
+    customFields: {},
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }))
+
+  const filteredVehicles = displayVehicles.filter(vehicle => {
     const matchesSearch = 
       `${vehicle.make} ${vehicle.model}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.vin.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,10 +141,11 @@ export function InventoryTable({
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedVehicles(filteredVehicles.map(v => v.id))
-    } else {
-      setSelectedVehicles([])
-    }
-  }
+          {mockInventory.statuses.map(status => (
+            <option key={status} value={status.toLowerCase()}>
+              {status}
+            </option>
+          ))}
 
   const toggleVehicleSelection = (vehicleId: string) => {
     if (selectedVehicles.includes(vehicleId)) {

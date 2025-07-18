@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { X, Camera, Check } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { mockInventory } from '@/mocks/inventoryMock'
 
 interface BarcodeScannerProps {
   onScan: (data: string) => void
@@ -13,6 +14,13 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const { toast } = useToast()
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+
+  // Mock scan results for testing
+  const mockScanResults = [
+    'MOCK123456789',
+    'TEST987654321',
+    'DEMO555666777'
+  ]
 
   // In a real implementation, this would use a barcode scanning library
   // For this demo, we'll simulate scanning
@@ -48,6 +56,15 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
     }
   }
 
+  const simulateScan = () => {
+    const randomVin = mockScanResults[Math.floor(Math.random() * mockScanResults.length)]
+    onScan(randomVin)
+    toast({
+      title: 'Mock Scan Complete',
+      description: `Scanned VIN: ${randomVin}`,
+    })
+  }
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60]">
       <Card className="w-full max-w-md">
@@ -76,6 +93,9 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
                 </div>
               </>
             ) : (
+                  <Button onClick={simulateScan} variant="secondary">
+                    Simulate Scan
+                  </Button>
               <Camera className="h-12 w-12 text-white/50" />
             )}
           </div>
@@ -96,6 +116,25 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
             )}
           </div>
         </CardContent>
+
+        {/* Test Data Section */}
+        <div className="bg-yellow-50 p-3 rounded-lg">
+          <h4 className="font-medium text-yellow-900 mb-2">Test VINs</h4>
+          <div className="space-y-1">
+            {mockScanResults.map((vin, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setManualVin(vin)
+                  onScan(vin)
+                }}
+                className="block text-sm text-yellow-700 hover:text-yellow-900 font-mono"
+              >
+                {vin}
+              </button>
+            ))}
+          </div>
+        </div>
       </Card>
     </div>
   )

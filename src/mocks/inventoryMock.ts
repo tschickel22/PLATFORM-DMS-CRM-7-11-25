@@ -4,6 +4,20 @@ export const mockInventory = {
   statuses: ['Available', 'Pending', 'Sold', 'On Hold'],
   locations: ['Main Lot', 'Overflow Lot', 'Service Bay', 'Offsite'],
   features: ['AC', 'Washer/Dryer', 'Solar Prep', 'Porch', 'Skirting', 'Appliances Included'],
+  csvFields: [
+    'stockNumber',
+    'vin',
+    'year',
+    'make',
+    'model',
+    'type',
+    'condition',
+    'status',
+    'location',
+    'price',
+    'cost',
+    'features'
+  ],
   exampleInventory: [
     {
       stockNumber: 'RV-001',

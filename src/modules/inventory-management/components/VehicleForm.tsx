@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Add MH types to the Select component
+import { mockInventory } from '@/mocks/inventoryMock'
 
 interface VehicleFormProps {
   vehicle?: Vehicle
@@ -26,8 +27,8 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<Vehicle>>({
     vin: '',
-    make: '',
-    model: '',
+    type: vehicle?.type || mockInventory.vehicleTypes[0],
+    status: vehicle?.status || mockInventory.statuses[0],
     year: new Date().getFullYear(),
     type: VehicleType.RV,
     status: VehicleStatus.AVAILABLE,
@@ -84,7 +85,7 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
       }))
       
       toast({
-        title: 'Images Added',
+    location: vehicle?.location || mockInventory.locations[0],
         description: `Added ${acceptedFiles.length} images`,
       })
     }
@@ -187,23 +188,63 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
         description: 'The scanned barcode does not appear to be a valid VIN',
         variant: 'destructive'
       })
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  {mockInventory.vehicleTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{vehicle ? 'Edit Vehicle' : 'Add New Home'}</CardTitle>
-              <CardDescription>
-                {vehicle ? 'Update vehicle details' : 'Add a new home to inventory'}
-              </CardDescription>
+              <Label htmlFor="condition">Condition</Label>
+              <Select
+                value={formData.condition}
+                onValueChange={(value) => setFormData({ ...formData, condition: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select condition" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockInventory.conditions.map((condition) => (
+                    <SelectItem key={condition} value={condition}>
+                      {condition}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <CardTitle>{vehicle ? 'Edit Vehicle' : 'Add New Home'}</CardTitle>
+                  {mockInventory.statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
             <Button variant="ghost" size="sm" onClick={onCancel}>
               <X className="h-4 w-4" />
             </Button>
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Select
+                value={formData.location}
+                onValueChange={(value) => setFormData({ ...formData, location: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockInventory.locations.map((location) => (
+                    <SelectItem key={location} value={location}>
+                      {location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -924,16 +965,6 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
-
-      {/* Barcode Scanner Modal */}
-      {showBarcodeScanner && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60]">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Scan VIN Barcode</CardTitle>
-              <CardDescription>
                 Position the barcode in front of your camera
               </CardDescription>
             </CardHeader>
@@ -945,6 +976,9 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setShowBarcodeScanner(false)}>
                   Cancel
+            <div className="text-xs text-muted-foreground mt-1">
+              Available features: {mockInventory.features.join(', ')}
+            </div>
                 </Button>
                 <Button onClick={() => {
                   // Simulate a barcode scan
