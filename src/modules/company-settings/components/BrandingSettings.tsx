@@ -7,28 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Palette, Upload, Image as ImageIcon, Save } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
+import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 export function BrandingSettings() {
   const { tenant, updateTenantSettings } = useTenant()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [primaryColor, setPrimaryColor] = useState(tenant?.branding.primaryColor || '#3b82f6')
-  const [secondaryColor, setSecondaryColor] = useState(tenant?.branding.secondaryColor || '#64748b')
-  const [fontFamily, setFontFamily] = useState(tenant?.branding.fontFamily || 'Inter')
+  const [primaryColor, setPrimaryColor] = useState(tenant?.branding.primaryColor || mockCompanySettings.branding.primaryColor)
+  const [secondaryColor, setSecondaryColor] = useState(tenant?.branding.secondaryColor || mockCompanySettings.branding.secondaryColor)
+  const [fontFamily, setFontFamily] = useState(tenant?.branding.fontFamily || mockCompanySettings.branding.fontFamily)
   const [logoUrl, setLogoUrl] = useState(tenant?.branding.logo || '')
   const [logoPreview, setLogoPreview] = useState(tenant?.branding.logo || '')
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  const fontOptions = [
-    { value: 'Inter', label: 'Inter' },
-    { value: 'Roboto', label: 'Roboto' },
-    { value: 'Open Sans', label: 'Open Sans' },
-    { value: 'Montserrat', label: 'Montserrat' },
-    { value: 'Lato', label: 'Lato' },
-    { value: 'Poppins', label: 'Poppins' },
-    { value: 'Source Sans Pro', label: 'Source Sans Pro' },
-    { value: 'Oswald', label: 'Oswald' }
-  ]
+  const fontOptions = mockCompanySettings.branding.fontOptions
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
