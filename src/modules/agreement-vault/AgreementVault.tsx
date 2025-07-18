@@ -369,44 +369,8 @@ function AgreementsList() {
         <div className="ri-search-bar">
           <Search className="ri-search-icon" />
           <Input
-            placeholder="Search agreements..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="ri-search-input shadow-sm"
-          />
-        </div>
-        <Button variant="outline" className="shadow-sm">
-          <Filter className="h-4 w-4 mr-2" />
-          Filter
-        </Button>
-        {agreementTypes.map(type => (
-          <Button
-            key={type.value}
-            variant={typeFilter === type.value ? 'default' : 'outline'}
-            onClick={() => setTypeFilter(type.value as AgreementType)}
-          >
-            {type.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Agreements Table */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Agreements</CardTitle>
-          <CardDescription>
-            Manage contracts, purchase agreements, and legal documents
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-          </div>
-        </CardContent>
-      </Card>
-    </div>
   )
 }
-
 export default function AgreementVault() {
   return (
     <Routes>
