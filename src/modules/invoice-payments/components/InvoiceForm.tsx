@@ -10,6 +10,7 @@ import { Invoice, InvoiceStatus, InvoiceItem } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
+import { mockInvoice } from '@/mocks/invoiceMock'
 
 interface InvoiceFormProps {
   invoice?: Invoice
@@ -27,15 +28,15 @@ export function InvoiceForm({ invoice, onSave, onCancel }: InvoiceFormProps) {
     items: [],
     subtotal: 0,
     tax: 0,
-    total: 0,
-    status: InvoiceStatus.DRAFT,
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    notes: '',
-    customFields: {}
-  })
+    customerId: mockInvoice.formDefaults.customerId,
+    dueDate: mockInvoice.formDefaults.dueDate,
+    recurrence: mockInvoice.formDefaults.recurrence,
+    notes: mockInvoice.formDefaults.notes,
+    paymentMethod: mockInvoice.formDefaults.paymentMethod,
+    lineItems: [...mockInvoice.formDefaults.lineItems]
 
   const [newItem, setNewItem] = useState<Partial<InvoiceItem>>({
-    description: '',
+  const paymentMethods = mockInvoice.paymentMethods
     quantity: 1,
     unitPrice: 0,
     total: 0
