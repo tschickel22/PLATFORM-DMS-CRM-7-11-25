@@ -1,5 +1,7 @@
 // src/modules/finance/components/LoanPaymentHistory.tsx
 import React, { useState } from 'react'
+
+export const LoanPaymentHistory = ({ loanId }: { loanId: string }) => {
   const getStatusColor = (status: string) => {
     return mockFinance.paymentStatusColors[status] || 'bg-gray-100 text-gray-800'
   }
