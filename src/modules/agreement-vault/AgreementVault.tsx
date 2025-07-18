@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Plus, Search, Filter, Download, Eye, Edit, Trash2, Send } from 'lucide-react'
+import { FileText, Plus, Search, Filter, Download, Eye, Edit, Trash2, Send, FileCheck, TrendingUp, Calendar } from 'lucide-react'
 import { Agreement, AgreementStatus, AgreementType } from '@/types'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { mockAgreements } from '@/mocks/agreementsMock'
@@ -12,6 +12,7 @@ import { AgreementForm } from './components/AgreementForm'
 import { AgreementViewer } from './components/AgreementViewer'
 import { sendSignatureRequest, generateSignatureLink } from './utils/sendSignatureRequest'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 const mockAgreements: Agreement[] = [
   {
@@ -66,13 +67,15 @@ const mockAgreements: Agreement[] = [
 function AgreementsList() {
   const [agreements] = useState<Agreement[]>(mockAgreements)
   const [searchTerm, setSearchTerm] = useState('')
-
-  const getStatusColor = (status: AgreementStatus) => {
   const [showForm, setShowForm] = useState(false)
   const [showViewer, setShowViewer] = useState(false)
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null)
   const [loading, setLoading] = useState(false)
+  const [typeFilter, setTypeFilter] = useState('')
+
+  const getStatusColor = (status: AgreementStatus) => {
     switch (status) {
+      case AgreementStatus.DRAFT:
         return 'bg-gray-50 text-gray-700 border-gray-200'
       case AgreementStatus.PENDING:
         return 'bg-yellow-50 text-yellow-700 border-yellow-200'
@@ -83,19 +86,36 @@ function AgreementsList() {
       case AgreementStatus.EXPIRED:
         return 'bg-orange-50 text-orange-700 border-orange-200'
       case AgreementStatus.CANCELLED:
-  // Use tenant agreements if available, otherwise fallback to mock data
-  const agreements = tenant?.agreements || mockAgreements.sampleAgreements
-  const agreementTypes = tenant?.agreementTypes || mockAgreements.agreementTypes
-  const agreementStatuses = tenant?.agreementStatuses || mockAgreements.agreementStatuses
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
   }
-      agreement.terms.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (agreement.customerName && agreement.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  const getTypeColor = (type: AgreementType) => {
+    return 'bg-gray-50 text-gray-700 border-gray-200'
+  }
+
+  // Use tenant agreements if available, otherwise fallback to mock data
+  const tenant = null
+  const agreements = tenant?.agreements || mockAgreements
+  const agreementTypes = tenant?.agreementTypes || [
+    { value: 'PURCHASE', label: 'Purchase Agreement' },
+    { value: 'SERVICE', label: 'Service Contract' }
+  ]
+  const agreementStatuses = tenant?.agreementStatuses || [
+    { value: 'DRAFT', label: 'Draft', color: 'bg-gray-100 text-gray-800' },
+    { value: 'PENDING', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'SIGNED', label: 'Signed', color: 'bg-blue-100 text-blue-800' },
+    { value: 'ACTIVE', label: 'Active', color: 'bg-green-100 text-green-800' },
+    { value: 'EXPIRED', label: 'Expired', color: 'bg-orange-100 text-orange-800' },
+    { value: 'CANCELLED', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
+  ]
+
   const filteredAgreements = agreements.filter(agreement =>
     agreement.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agreement.customerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agreement.type.toLowerCase().includes(searchTerm.toLowerCase())
+    agreement.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agreement.terms.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (agreement.customerName && agreement.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const handleCreateAgreement = () => {
@@ -199,7 +219,7 @@ function AgreementsList() {
     })
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor2 = (status: string) => {
     const statusConfig = agreementStatuses.find(s => s.value === status)
     return statusConfig?.color || 'bg-gray-100 text-gray-800'
   }
@@ -359,6 +379,15 @@ function AgreementsList() {
           <Filter className="h-4 w-4 mr-2" />
           Filter
         </Button>
+        {agreementTypes.map(type => (
+          <Button
+            key={type.value}
+            variant={typeFilter === type.value ? 'default' : 'outline'}
+            onClick={() => setTypeFilter(type.value as AgreementType)}
+          >
+            {type.label}
+          </Button>
+        ))}
       </div>
 
       {/* Agreements Table */}
@@ -378,16 +407,17 @@ function AgreementsList() {
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-semibold text-foreground">Agreement #{agreement.id}</h3>
                       <Badge className={cn("ri-badge-status", getTypeColor(agreement.type))}>
-                      <p className="text-sm text-muted-foreground">
                         {getTypeLabel(agreement.type)}
-                        {agreement.customerName && ` • ${agreement.customerName}`}
-                        {agreement.vehicleInfo && ` • ${agreement.vehicleInfo}`}
-                      </p>
                       </Badge>
-                      <Badge className={cn("ri-badge-status", getStatusColor(agreement.status))}>
-                        {agreement.status.toUpperCase()}
+                      <Badge className={cn("ri-badge-status", getStatusColor2(agreement.status))}>
+                        {getStatusLabel(agreement.status)}
                       </Badge>
                     </div>
+                    <p className="text-sm text-muted-foreground">
+                      {getTypeLabel(agreement.type)}
+                      {agreement.customerName && ` • ${agreement.customerName}`}
+                      {agreement.vehicleInfo && ` • ${agreement.vehicleInfo}`}
+                    </p>
                     <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                       <div>
                         <span className="font-medium">Customer:</span> {agreement.customerId}
@@ -404,45 +434,44 @@ function AgreementsList() {
                         </div>
                       )}
                     </div>
-                  {agreement.totalAmount && (
-                    <div className="text-sm font-medium">
-                      {formatCurrency(agreement.totalAmount)}
-                    </div>
-                  )}
-                    <div className="mt-2 bg-muted/30 p-2 rounded-md">
-                    {(agreement.status === 'DRAFT' || agreement.status === 'PENDING') && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleSendSignatureRequest(agreement.id)}
-                        disabled={loading}
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
+                    {agreement.totalAmount && (
+                      <div className="text-sm font-medium">
+                        {formatCurrency(agreement.totalAmount)}
+                      </div>
                     )}
+                    <div className="mt-2 bg-muted/30 p-2 rounded-md">
                       <p className="text-sm text-muted-foreground">
                         {agreement.terms}
                       </p>
-                      onClick={() => handleViewAgreement(agreement)}
                     </div>
                   </div>
                 </div>
                 <div className="ri-action-buttons">
-                  <Badge className={getStatusColor(agreement.status)}>
-                    {getStatusLabel(agreement.status)}
-                      onClick={() => handleEditAgreement(agreement)}
+                  {(agreement.status === 'DRAFT' || agreement.status === 'PENDING') && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleSendSignatureRequest(agreement.id)}
+                      disabled={loading}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleViewAgreement(agreement)}>
+                    <Eye className="h-3 w-3 mr-1" />
                     View
                   </Button>
-                  <Button variant="outline" size="sm" className="shadow-sm">
-            {agreementTypes.map(type => (
+                  <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleEditAgreement(agreement)}>
+                    <Edit className="h-3 w-3 mr-1" />
                     Edit
-                key={type.value}
-                      onClick={() => handleDeleteAgreement(agreement.id)}
-                variant={typeFilter === type.value ? 'default' : 'outline'}
-                    <Download className="h-3 w-3 mr-1" />
-                onClick={() => setTypeFilter(type.value as AgreementType)}
                   </Button>
-                {type.label}
+                  <Button variant="outline" size="sm" className="shadow-sm">
+                    <Download className="h-3 w-3 mr-1" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleDeleteAgreement(agreement.id)}>
+                    <Trash2 className="h-3 w-3 mr-1" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
