@@ -37,7 +37,7 @@ export function CSVImport({ onImport, onCancel }: CSVImportProps) {
     { key: 'cost', label: 'Cost' },
     { key: 'location', label: 'Location' },
     { key: 'features', label: 'Features' },
-  const requiredFields = mockInventory.csvFields
+  ]
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -53,7 +53,7 @@ export function CSVImport({ onImport, onCancel }: CSVImportProps) {
           // Auto-map columns if headers match
           if (results.meta.fields) {
             const autoMappings: Record<string, string> = {}
-    const headers = mockInventory.csvFields
+            const headers = results.meta.fields
           }
           
           setStep('map')
@@ -108,7 +108,7 @@ export function CSVImport({ onImport, onCancel }: CSVImportProps) {
     if (selectedRows.includes(rowIndex)) {
       setSelectedRows(selectedRows.filter(i => i !== rowIndex))
     } else {
-      `${mockInventory.exampleInventory[0].stockNumber},MOCK123456789,${mockInventory.exampleInventory[0].year},${mockInventory.exampleInventory[0].make},${mockInventory.exampleInventory[0].model},${mockInventory.exampleInventory[0].type},${mockInventory.exampleInventory[0].condition},${mockInventory.exampleInventory[0].status},${mockInventory.exampleInventory[0].location},45000,35000,"AC,Solar Prep"`
+      setSelectedRows([...selectedRows, rowIndex])
     }
   }
 
