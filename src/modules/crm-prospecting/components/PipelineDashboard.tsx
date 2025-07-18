@@ -7,7 +7,6 @@ import { TrendingUp, Users, DollarSign, Calendar, ArrowRight } from 'lucide-reac
 import { Lead } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface PipelineDashboardProps {
   leads: Lead[]
