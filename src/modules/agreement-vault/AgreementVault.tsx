@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, FileText, BookTemplate as FileTemplate, Eye, Edit, Trash2, Download, Send, Filter } from 'lucide-react'
+import { Search, Plus, FileText, BookTemplate as FileTemplate, Eye, Edit, Trash2, Download, Send, Filter, Settings } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
@@ -144,10 +144,19 @@ function AgreementVaultPage() {
               Manage contracts, agreements, and digital signatures
             </p>
           </div>
-          <Button className="shadow-sm" onClick={() => setShowNewAgreementForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Agreement
-          </Button>
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/agreements/templates')}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Templates
+            </Button>
+            <Button onClick={() => setShowNewAgreementForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Agreement
+            </Button>
+          </div>
         </div>
       </div>
 
