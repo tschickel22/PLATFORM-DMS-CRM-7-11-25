@@ -89,15 +89,15 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
                   <div className="w-3/4 h-1 bg-red-500 animate-pulse"></div>
                 </div>
                 <div className="text-white text-sm absolute bottom-2 left-2">
-                  {result ? `Scanned: ${result}` : 'Scanning...'}
-                </div>
-              </>
-            ) : (
-                  <Button onClick={simulateScan} variant="secondary">
+                <div className="flex flex-col items-center">
+                  <Button 
+                    onClick={handleSimulateScan}
+                    className="mb-4 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  >
                     Simulate Scan
                   </Button>
                   <Camera className="h-12 w-12 text-white/50" />
-                </>
+                </div>
               ) : (
                 <>
                   <Camera className="h-12 w-12 text-white/50" />
