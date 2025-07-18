@@ -400,6 +400,13 @@ function AgreementsList() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export default function AgreementVault() {
   return (
     <Routes>
