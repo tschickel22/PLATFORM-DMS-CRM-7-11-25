@@ -1,220 +1,208 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { BarChart3, Users, Database, Cloud, RefreshCw, Download, Activity, Mail, MessageSquare } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts'
-
-// Mock data for usage statistics
-const mockUsageStats = {
-  totalApiCalls: 123456,
-  activeUsers: 85,
-  storageUsedGB: 12.5,
-  emailsSent: 5678,
-  smsSent: 3456,
-  modulesEnabled: 10,
-  dailyApiCalls: [
-    { date: '2024-06-20', calls: 1200 },
-    { date: '2024-06-21', calls: 1500 },
-    { date: '2024-06-22', calls: 1300 },
-    { date: '2024-06-23', calls: 1800 },
-    { date: '2024-06-24', calls: 1600 },
-    { date: '2024-06-25', calls: 2000 },
-    { date: '2024-06-26', calls: 1900 },
-  ],
-  moduleUsage: [
-    { name: 'CRM & Prospecting', usage: 45000 },
-    { name: 'Inventory Management', usage: 30000 },
-    { name: 'Quote Builder', usage: 15000 },
-    { name: 'Service Operations', usage: 10000 },
-    { name: 'Delivery Tracker', usage: 5000 },
-  ],
-};
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { TrendingUp, TrendingDown, Users, Building, Database, Zap, Clock, AlertTriangle } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import { mockPlatformAdmin } from '@/mocks/platformAdminMock'
 
 export function UsageStats() {
-  const { toast } = useToast();
-  const [stats, setStats] = useState(mockUsageStats);
-  const [timeframe, setTimeframe] = useState('7d');
-  const [loading, setLoading] = useState(false);
+  // Use mock usage statistics as fallback - in real app, this would come from API
+  const stats = mockPlatformAdmin.usageStats
+  const systemHealth = mockPlatformAdmin.systemHealth
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      // Simulate fetching new data
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setStats(mockUsageStats); // In a real app, this would be updated data
-      toast({
-        title: 'Usage Stats Refreshed',
-        description: 'Latest usage data has been loaded.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh usage stats.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Healthy':
+        return 'bg-green-100 text-green-800'
+      case 'Warning':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'Critical':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
-  };
-
-  const handleExport = () => {
-    // Simulate exporting data
-    toast({
-      title: 'Export Initiated',
-      description: 'Usage data is being prepared for download.',
-    });
-  };
+  }
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Platform Usage Statistics</h2>
+        <p className="text-muted-foreground">
+          Monitor platform-wide usage, performance, and system health
+        </p>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tenants</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalTenants}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +{stats.monthlyGrowth}%
+              </span>
+              {' '}from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Tenants</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeTenants}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +8.2%
+              </span>
+              {' '}from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +15.3%
+              </span>
+              {' '}from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +11.7%
+              </span>
+              {' '}from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Performance */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Storage Used</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.storageUsed} TB</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-orange-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +5.2%
+              </span>
+              {' '}from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">API Calls</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{(stats.apiCalls / 1000000).toFixed(1)}M</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +22.1%
+              </span>
+              {' '}from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uptime}%</div>
+            <Progress value={stats.uptime} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Last 30 days
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Response Time</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{systemHealth.responseTime}ms</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center text-green-600">
+                <TrendingDown className="h-3 w-3 mr-1" />
+                -12ms
+              </span>
+              {' '}from last hour
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Health */}
+      <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-primary" />
-                Platform Usage Statistics
-              </CardTitle>
-              <CardDescription>
-                Monitor key performance indicators and usage trends
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
-                {loading ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                )}
-                Refresh
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2" />
+            System Health
+          </CardTitle>
+          <CardDescription>
+            Real-time status of platform services
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total API Calls</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalApiCalls.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">All time</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeUsers}</div>
-                <p className="text-xs text-muted-foreground">Currently logged in</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Storage Used</CardTitle>
-                <Database className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.storageUsedGB} GB</div>
-                <p className="text-xs text-muted-foreground">Total across all tenants</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Emails Sent</CardTitle>
-                <Mail className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.emailsSent.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Last 30 days</p>
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Overall Status</span>
+              <Badge className={getStatusColor(systemHealth.status)}>
+                {systemHealth.status}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {systemHealth.services.map((service, index) => (
+                <div key={index} className="flex items-center justify-between p-2 rounded-lg border">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">{service.name}</span>
+                    <Badge variant="outline" className={getStatusColor(service.status)}>
+                      {service.status}
+                    </Badge>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {service.responseTime}ms
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle>Daily API Calls</CardTitle>
-                <CardDescription>API call volume over time</CardDescription>
-              </CardHeader>
-              <CardContent className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stats.dailyApiCalls}>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="calls" stroke="#8884d8" fill="#8884d8" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle>Module Usage</CardTitle>
-                <CardDescription>API calls by module</CardDescription>
-              </CardHeader>
-              <CardContent className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.moduleUsage} layout="vertical">
-                    <XAxis type="number" tick={{ fontSize: 10 }} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={120} />
-                    <Tooltip />
-                    <Bar dataKey="usage" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Usage Trends</CardTitle>
-              <CardDescription>Historical data and forecasts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2 mb-4">
-                <Label htmlFor="timeframe">Timeframe:</Label>
-                <Select value={timeframe} onValueChange={setTimeframe}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7d">Last 7 Days</SelectItem>
-                    <SelectItem value="30d">Last 30 Days</SelectItem>
-                    <SelectItem value="90d">Last 90 Days</SelectItem>
-                    <SelectItem value="1y">Last Year</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={stats.dailyApiCalls} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="calls" stroke="#8884d8" activeDot={{ r: 8 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
