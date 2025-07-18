@@ -441,6 +441,52 @@ function AgreementsList() {
                       </div>
                     )}
                     <div className="mt-2 bg-muted/30 p-2 rounded-md">
+                      <p className="text-xs text-muted-foreground">{agreement.terms}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewAgreement(agreement)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditAgreement(agreement)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {agreement.status === AgreementStatus.DRAFT && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSendSignatureRequest(agreement.id)}
+                        disabled={loading}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteAgreement(agreement.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export default function AgreementVault() {
   return (
     <Routes>
