@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { TrendingDown, Download, Calendar, RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
 
 // Define types for metrics data
