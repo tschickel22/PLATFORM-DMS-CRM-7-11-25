@@ -6,22 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { 
-  Package, 
-  Search, 
-  Filter, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Download, 
-  Upload, 
-  MoreHorizontal,
-  ScanBarcode,
-  Image as ImageIcon,
-  Video,
-  Check,
-  X
-} from 'lucide-react'
+import { Package, Search, Filter, Eye, Edit, Trash2, Download, Upload, MoreHorizontal, ScanIcon as ScanBarcode, Image as ImageIcon, Video, Check, X } from 'lucide-react'
 import { Vehicle, VehicleStatus, VehicleType } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { mockInventory } from '@/mocks/inventoryMock'
@@ -141,11 +126,10 @@ export function InventoryTable({
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedVehicles(filteredVehicles.map(v => v.id))
-          {mockInventory.statuses.map(status => (
-            <option key={status} value={status.toLowerCase()}>
-              {status}
-            </option>
-          ))}
+    } else {
+      setSelectedVehicles([])
+    }
+  }
 
   const toggleVehicleSelection = (vehicleId: string) => {
     if (selectedVehicles.includes(vehicleId)) {
