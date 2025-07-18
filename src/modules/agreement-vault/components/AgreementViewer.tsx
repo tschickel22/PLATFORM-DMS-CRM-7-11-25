@@ -7,6 +7,7 @@ import { FileText, Download, Send, Eye, Calendar, User, Car, FileCheck, Clock, M
 import { Agreement, Document } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreements } from '@/mocks/agreementsMock'
+import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatDateTime } from '@/lib/utils'
 
 interface AgreementViewerProps {
@@ -26,18 +27,14 @@ export function AgreementViewer({
 }: AgreementViewerProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  // Use tenant data if available, otherwise fallback to mock data
+  const agreementStatuses = tenant?.agreementStatuses || mockAgreements.agreementStatuses
+
 
   // Use mock data for status colors
   const getStatusColor = (status: string) => {
-    const statusConfig = mockAgreements.agreementStatuses.find(s => s.value === status)
+    const statusConfig = agreementStatuses.find(s => s.value === status)
     return statusConfig?.color || 'bg-gray-100 text-gray-800'
-  }
-
-  const getStatusLabel = (status: string) => {
-    const statusConfig = mockAgreements.agreementStatuses.find(s => s.value === status)
-    return statusConfig?.label || status
-  }
-
   const getTypeLabel = (type: string) => {
     const typeConfig = mockAgreements.agreementTypes.find(t => t.value === type)
     return typeConfig?.label || type

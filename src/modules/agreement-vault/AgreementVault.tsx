@@ -13,7 +13,6 @@ import { AgreementViewer } from './components/AgreementViewer'
 import { sendSignatureRequest, generateSignatureLink } from './utils/sendSignatureRequest'
 import { cn } from '@/lib/utils'
 import { toast } from '@/hooks/use-toast'
-import { mockAgreements } from '@/mocks/agreementsMock'
 
 const mockAgreements: Agreement[] = [
   {

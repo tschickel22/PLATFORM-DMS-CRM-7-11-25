@@ -127,6 +127,25 @@ export const mockAgreements = {
     }
   ],
 
+  // Sample data for dropdowns when tenant data is not available
+  sampleCustomers: [
+    { id: 'cust-001', name: 'John Smith', email: 'john.smith@email.com' },
+    { id: 'cust-002', name: 'Maria Rodriguez', email: 'maria.rodriguez@email.com' },
+    { id: 'cust-003', name: 'David Johnson', email: 'david.johnson@email.com' }
+  ],
+
+  sampleVehicles: [
+    { id: 'veh-001', info: '2023 Forest River Cherokee 274RK' },
+    { id: 'veh-002', info: '2024 Keystone Montana 3761FL' },
+    { id: 'veh-003', info: '2022 Grand Design Solitude 310GK' }
+  ],
+
+  sampleQuotes: [
+    { id: 'quote-001', number: 'Q-2024-001', amount: 35000 },
+    { id: 'quote-002', number: 'Q-2024-002', amount: 62000 },
+    { id: 'quote-003', number: 'Q-2024-003', amount: 48000 }
+  ],
+
   defaultAgreement: {
     type: 'PURCHASE',
     status: 'DRAFT',
