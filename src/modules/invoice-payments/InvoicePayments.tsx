@@ -183,7 +183,6 @@ function InvoicesList() {
         />
       )}
       
-  const statusOptions = mockInvoice.statusOptions
       {showInvoiceDetail && selectedInvoice && (
         <InvoiceDetail
           invoice={selectedInvoice}
@@ -198,10 +197,6 @@ function InvoicesList() {
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
-      case 'Draft':
-        return 'bg-gray-100 text-gray-800'
-      case 'Cancelled':
-        return 'bg-gray-100 text-gray-800'
           <div>
             <h1 className="ri-page-title">Invoice & Payments</h1>
             <p className="ri-page-description">
@@ -228,30 +223,22 @@ function InvoicesList() {
               <TrendingUp className="h-3 w-3 mr-1" />
               All invoices
             </p>
-    const csvHeaders = mockInvoice.csvFields
           </CardContent>
         </Card>
         <Card className="shadow-sm border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
-      invoice.totalAmount,
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-orange-900">Outstanding</CardTitle>
-      invoice.dueDate,
-      invoice.recurrence
+            <DollarSign className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-900">
+              {formatCurrency(invoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.totalAmount, 0))}
+            </div>
+            <p className="text-xs text-orange-600 flex items-center mt-1">
+              <Clock className="h-3 w-3 mr-1" />
+              {formatCurrency(invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + i.totalAmount, 0))} overdue
+            </p>
           </CardContent>
-
-    return (
-      <Card className="shadow-sm border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-blue-900">
-            Total Invoices
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-blue-900">
-            {mockInvoice.sampleInvoices.length}
-          </div>
-          <p className="text-xs text-blue-700 mt-1">
-            All invoices
-          </p>
         </Card>
         <Card className="shadow-sm border-0 bg-gradient-to-br from-green-50 to-green-100/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -322,7 +309,7 @@ function InvoicesList() {
           <TabsTrigger value="payments" className="flex items-center">
             <CreditCard className="h-4 w-4 mr-2" />
             Payments
-              {formatCurrency(invoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.totalAmount, 0))}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="invoices">
@@ -337,7 +324,7 @@ function InvoicesList() {
                 className="ri-search-input shadow-sm"
               />
             </div>
-              {formatCurrency(invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + i.totalAmount, 0))}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -352,7 +339,7 @@ function InvoicesList() {
               </SelectContent>
             </Select>
             <Button variant="outline" className="shadow-sm">
-              {formatCurrency(invoices.reduce((sum, i) => sum + i.totalAmount, 0))}
+              <Filter className="h-4 w-4 mr-2" />
               Filter
             </Button>
           </div>
@@ -367,7 +354,7 @@ function InvoicesList() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-              {formatCurrency(invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.totalAmount, 0))}
+                {filteredInvoices.map((invoice) => (
                   <div key={invoice.id} className="ri-table-row">
                     <div className="flex items-center space-x-4 flex-1">
                       <div className="flex-1">
@@ -432,7 +419,7 @@ function InvoicesList() {
                         size="sm" 
                         className="shadow-sm"
                       >
-                  <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
+                        <Download className="h-3 w-3 mr-1" />
                         PDF
                       </Button>
                       {invoice.status !== InvoiceStatus.PAID && (
@@ -498,5 +485,3 @@ export default function InvoicePayments() {
     </Routes>
   )
 }
-  // Use mock data - replace with real data from your backend
-  const invoices = mockInvoice.sampleInvoices
