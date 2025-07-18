@@ -1,29 +1,49 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { TrendingUp, User, Activity, Heart } from 'lucide-react'
-import { LeadScore } from '../types'
-import { cn } from '@/lib/utils'
+import { TrendingUp, Star, AlertCircle } from 'lucide-react'
+import { Lead } from '@/types'
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface LeadScoringProps {
-  score: LeadScore
-  className?: string
+  lead: Lead
+  onScoreUpdate?: (leadId: string, score: number) => void
 }
 
-export function LeadScoring({ score, className }: LeadScoringProps) {
+export function LeadScoring({ lead, onScoreUpdate }: LeadScoringProps) {
+  const [score, setScore] = useState(lead.score || 0)
+  const [factors, setFactors] = useState<Array<{name: string, weight: number, value: number}>>([])
+
+  useEffect(() => {
+    // Calculate score based on various factors
+    const scoringFactors = [
+      { name: 'Email Engagement', weight: 0.3, value: lead.emailEngagement || 0 },
+      { name: 'Website Activity', weight: 0.25, value: lead.websiteActivity || 0 },
+      { name: 'Budget Match', weight: 0.2, value: lead.budgetMatch || 0 },
+      { name: 'Timeline Urgency', weight: 0.15, value: lead.timelineUrgency || 0 },
+      { name: 'Location Preference', weight: 0.1, value: lead.locationMatch || 0 }
+    ]
+
+    setFactors(scoringFactors)
+
+    const calculatedScore = scoringFactors.reduce((total, factor) => {
+      return total + (factor.value * factor.weight * 100)
+    }, 0)
+
+    const finalScore = Math.min(Math.round(calculatedScore), 100)
+    setScore(finalScore)
+
+    if (onScoreUpdate && finalScore !== lead.score) {
+      onScoreUpdate(lead.id, finalScore)
+    }
+  }, [lead, onScoreUpdate])
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600'
     if (score >= 60) return 'text-yellow-600'
     if (score >= 40) return 'text-orange-600'
     return 'text-red-600'
-  }
-
-  const getScoreBadgeColor = (score: number) => {
-    if (score >= 80) return 'bg-green-50 text-green-700 border-green-200'
-    if (score >= 60) return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-    if (score >= 40) return 'bg-orange-50 text-orange-700 border-orange-200'
-    return 'bg-red-50 text-red-700 border-red-200'
   }
 
   const getScoreLabel = (score: number) => {
@@ -34,104 +54,82 @@ export function LeadScoring({ score, className }: LeadScoringProps) {
   }
 
   return (
-    <Card className={cn("shadow-sm", className)}>
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg">Lead Score</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5" />
+              Lead Score
+            </CardTitle>
             <CardDescription>
-              Last calculated: {score.lastCalculated.toLocaleDateString()}
+              Automatically calculated based on engagement and fit
             </CardDescription>
           </div>
           <div className="text-right">
-            <div className={cn("text-3xl font-bold", getScoreColor(score.totalScore))}>
-              {score.totalScore}
+            <div className={`text-3xl font-bold ${getScoreColor(score)}`}>
+              {score}
             </div>
-            <Badge className={cn("ri-badge-status", getScoreBadgeColor(score.totalScore))}>
-              {getScoreLabel(score.totalScore)}
+            <Badge variant={score >= 60 ? "default" : "secondary"}>
+              {getScoreLabel(score)}
             </Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Score Breakdown */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-medium">Demographics</span>
+        <div className="space-y-3">
+          <h4 className="font-medium">Score Breakdown</h4>
+          {factors.map((factor, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <span className="text-sm">{factor.name}</span>
+              <div className="flex items-center gap-2">
+                <Progress 
+                  value={factor.value * 100} 
+                  className="w-20" 
+                />
+                <span className="text-sm font-medium w-8">
+                  {Math.round(factor.value * factor.weight * 100)}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Progress value={(score.demographicScore / 50) * 100} className="w-20" />
-              <span className="text-sm font-bold w-8">{score.demographicScore}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Activity className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Behavior</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Progress value={(score.behaviorScore / 50) * 100} className="w-20" />
-              <span className="text-sm font-bold w-8">{score.behaviorScore}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Heart className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium">Engagement</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Progress value={(score.engagementScore / 50) * 100} className="w-20" />
-              <span className="text-sm font-bold w-8">{score.engagementScore}</span>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Score Factors */}
-        <div>
-          <h4 className="font-semibold text-sm mb-3 flex items-center">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Score Factors
-          </h4>
-          <div className="space-y-2">
-            {score.factors.map((factor, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
-                <div>
-                  <span className="text-sm font-medium">{factor.factor}</span>
-                  <p className="text-xs text-muted-foreground">{factor.reason}</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  +{factor.points}
-                </Badge>
-              </div>
+        {/* Lead Tags */}
+        <div className="space-y-3">
+          <h4 className="font-medium">Lead Tags</h4>
+          <div className="flex flex-wrap gap-2">
+            {mockCrmProspecting.tags.map(tag => (
+              <Badge 
+                key={tag} 
+                variant={lead.customFields?.tags?.includes(tag) ? "default" : "outline"}
+                className="cursor-pointer"
+              >
+                {tag}
+              </Badge>
             ))}
           </div>
         </div>
 
         {/* Recommendations */}
         <div className="bg-blue-50 p-3 rounded-lg">
-          <h4 className="font-semibold text-sm text-blue-900 mb-2">Recommendations</h4>
-          <div className="space-y-1 text-xs text-blue-700">
-            {score.totalScore >= 80 && (
+          <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Recommendations
+          </h4>
+          <div className="space-y-1 text-sm text-blue-700">
+            {score >= 80 && (
               <p>• High priority lead - schedule immediate follow-up</p>
             )}
-            {score.totalScore >= 60 && score.totalScore < 80 && (
+            {score >= 60 && score < 80 && (
               <p>• Good potential - maintain regular contact</p>
             )}
-            {score.totalScore >= 40 && score.totalScore < 60 && (
+            {score >= 40 && score < 60 && (
               <p>• Nurture with educational content</p>
             )}
-            {score.totalScore < 40 && (
+            {score < 40 && (
               <p>• Low priority - add to drip campaign</p>
-            )}
-            {score.behaviorScore < 20 && (
-              <p>• Increase engagement with personalized outreach</p>
-            )}
-            {score.engagementScore < 20 && (
-              <p>• Try different communication channels</p>
             )}
           </div>
         </div>

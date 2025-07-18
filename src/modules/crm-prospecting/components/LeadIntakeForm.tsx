@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Plus, Save, X } from 'lucide-react'
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 import { LeadIntakeForm, LeadFormField, LeadSource } from '../types'
 import { useLeadManagement } from '../hooks/useLeadManagement'
 
@@ -16,10 +17,6 @@ interface LeadIntakeFormProps {
   sources: LeadSource[]
   onSave: (formData: Partial<LeadIntakeForm>) => void
   onCancel: () => void
-}
-
-export function LeadIntakeFormBuilder({ form, sources, onSave, onCancel }: LeadIntakeFormProps) {
-  const [formData, setFormData] = useState<Partial<LeadIntakeForm>>(form || {
     name: '',
     description: '',
     sourceId: '',
@@ -422,7 +419,7 @@ export function DynamicLeadForm({ form, onSubmit }: DynamicLeadFormProps) {
                 <SelectValue placeholder={field.placeholder || `Select ${field.label}`} />
               </SelectTrigger>
               <SelectContent>
-                {field.options?.map(option => (
+                {mockCrmProspecting.preferredContactMethods.map(method => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
