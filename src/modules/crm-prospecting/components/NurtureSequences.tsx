@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Play, Pause, RotateCcw, Mail, MessageSquare, Phone } from 'lucide-react'
 import { Lead } from '@/types'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface NurtureSequencesProps {
   leads: Lead[]
@@ -15,13 +14,14 @@ interface NurtureSequencesProps {
   onSequenceReset: (leadId: string) => void
 }
 
+export default function NurtureSequences({
   // Use mock data as fallback for sequence options
-  const sequences = mockCrmProspecting.sequences
   leads, 
   onSequenceStart, 
   onSequencePause, 
   onSequenceReset 
 }: NurtureSequencesProps) {
+  const sequences = mockCrmProspecting.sequences
   const [selectedSequence, setSelectedSequence] = useState('')
 
   const getSequenceIcon = (type: string) => {
