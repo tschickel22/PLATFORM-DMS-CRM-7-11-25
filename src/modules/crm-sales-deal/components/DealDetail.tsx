@@ -7,6 +7,7 @@ import { X, Edit, DollarSign, Calendar, User, Target, Package, MapPin, Clock, Al
 import { Deal, DealStage, DealStatus, DealPriority } from '../types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 
 interface DealDetailProps {
   deal: Deal
