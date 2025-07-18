@@ -11,6 +11,7 @@ import { CommissionReportFilters, CommissionReportSummary } from '../types'
 import { formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import Papa from 'papaparse'
+import { mockCommissionEngine } from '@/mocks/commissionEngineMock'
 
 interface CommissionReportGeneratorProps {
   salesReps: any[] // Using existing sales rep data
