@@ -35,6 +35,13 @@ export function AgreementViewer({
   const getStatusColor = (status: string) => {
     const statusConfig = agreementStatuses.find(s => s.value === status)
     return statusConfig?.color || 'bg-gray-100 text-gray-800'
+  }
+
+  const getStatusLabel = (status: string) => {
+    const statusConfig = agreementStatuses.find(s => s.value === status)
+    return statusConfig?.label || status
+  }
+
   const getTypeLabel = (type: string) => {
     const typeConfig = mockAgreements.agreementTypes.find(t => t.value === type)
     return typeConfig?.label || type
