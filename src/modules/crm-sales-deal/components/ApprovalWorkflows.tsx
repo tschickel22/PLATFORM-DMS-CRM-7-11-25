@@ -9,6 +9,7 @@ import { CheckCircle, XCircle, AlertTriangle, Clock, User, ArrowRight, ThumbsUp,
 import { Deal, ApprovalWorkflow, ApprovalStatus, ApprovalStep } from '../types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 
 interface ApprovalWorkflowsProps {
   deals: Deal[]
