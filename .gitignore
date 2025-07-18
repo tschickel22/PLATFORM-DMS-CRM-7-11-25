@@ -1,2 +1,48 @@
+# ================================
+# 🔧 Basic project hygiene
+# ================================
 node_modules/
+dist/
+.vite/
+.cache/
+.bolt/
+.bolt-cache/
+.boltignore.bak
 .env
+.env.*
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/
+.idea/
+*.swp
+
+# ================================
+# ⚙️ Control app/module visibility (Bolt workaround)
+# ================================
+
+# Ignore everything by default
+*
+
+# ✅ Allow Git and this ignore file to be visible
+!.gitignore
+
+# ✅ Allow core project files
+!index.html
+!vite.config.ts
+!package.json
+!tsconfig.json
+!tailwind.config.js
+!README.md
+
+# ✅ Allow shared frontend code
+!src/**
+
+# ✅ Allow the ONE app you’re working on
+# Swap this path out depending on what module you're focusing on
+!apps/company-settings/**
+
+# OPTIONAL: If you want to allow your build output to be tracked
+!dist/**
