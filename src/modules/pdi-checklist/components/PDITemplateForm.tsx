@@ -22,10 +22,12 @@ interface PDITemplateFormProps {
 
 export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormProps) {
   const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
     name: template?.name || mockPDI.formDefaults.unitId,
     description: template?.description || '',
     unitTypes: template?.unitTypes || [],
-    description: '',
+    categories: [],
     vehicleType: VehicleType.RV,
     isActive: true,
     sections: []
@@ -36,6 +38,14 @@ export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormP
     name: '',
     description: '',
     items: []
+  })
+  const [showAddItem, setShowAddItem] = useState(false)
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
+  const [newItem, setNewItem] = useState<Partial<PDITemplateItem>>({
+    name: '',
+    description: '',
+    itemType: 'checkbox',
+    isRequired: true
   })
   // Get available unit types from template options
   const availableUnitTypes = [...new Set(mockPDI.templateOptions.flatMap(t => t.unitTypes))]
@@ -308,44 +318,95 @@ export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormP
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-              {mockPDI.inspectionCategories.map(category => (
-                <div key={category.id} className="flex items-center space-x-2">
+            <div className="space-y-4">
               <h3 className="text-lg font-semibold">Template Information</h3>
-                    id={`category-${category.id}`}
-                    checked={formData.categories.includes(category.name)}
-                <div>
-                  <Label htmlFor="name">Template Name *</Label>
-                        setFormData(prev => ({ ...prev, categories: [...prev.categories, category.name] }))
-                    id="name"
-                        setFormData(prev => ({ ...prev, categories: prev.categories.filter(c => c !== category.name) }))
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., RV Pre-Delivery Inspection"
-                  />
-                </div>
+              
+              <div>
+                <Label>Base Template</Label>
+                <Select
+                  value=""
+                  onValueChange={(value) => {
+                    const selectedTemplate = mockPDI.templateOptions.find(t => t.id === value)
+                    if (selectedTemplate) {
+                      setFormData(prev => ({
+                        ...prev,
+                        name: selectedTemplate.name,
+                        description: selectedTemplate.description,
+                        unitTypes: selectedTemplate.unitTypes
+                      }))
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Start from existing template (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockPDI.templateOptions.map(template => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select a template to copy its settings as a starting point
+                </p>
+              </div>
+              
+              <div>
+                <Label>Categories</Label>
+                {mockPDI.inspectionCategories.map(category => (
+                  <div key={category.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`category-${category.id}`}
+                      checked={formData.categories.includes(category.name)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData(prev => ({ ...prev, categories: [...prev.categories, category.name] }))
+                        } else {
+                          setFormData(prev => ({ ...prev, categories: prev.categories.filter(c => c !== category.name) }))
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`category-${category.id}`} className="text-sm">
+                      {category.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
                 
-                <div>
-                  <Label htmlFor="vehicleType">Home/Vehicle Type *</Label>
-                  <Select 
-                    value={formData.vehicleType} 
-                    onValueChange={(value: VehicleType) => setFormData(prev => ({ ...prev, vehicleType: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={VehicleType.RV}>RV</SelectItem>
-                      <SelectItem value={VehicleType.MOTORHOME}>Motorhome</SelectItem>
-                      <SelectItem value={VehicleType.TRAVEL_TRAILER}>Travel Trailer</SelectItem>
-                      <SelectItem value={VehicleType.FIFTH_WHEEL}>Fifth Wheel</SelectItem>
-                      <SelectItem value={VehicleType.TOY_HAULER}>Toy Hauler</SelectItem>
-                      <SelectItem value={VehicleType.SINGLE_WIDE}>Single Wide MH</SelectItem>
-                      <SelectItem value={VehicleType.DOUBLE_WIDE}>Double Wide MH</SelectItem>
-                      <SelectItem value={VehicleType.TRIPLE_WIDE}>Triple Wide MH</SelectItem>
-                      <SelectItem value={VehicleType.PARK_MODEL}>Park Model</SelectItem>
-                      <SelectItem value={VehicleType.MODULAR_HOME}>Modular Home</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="name">Template Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., RV Pre-Delivery Inspection"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="vehicleType">Home/Vehicle Type *</Label>
+                <Select 
+                  value={formData.vehicleType} 
+                  onValueChange={(value: VehicleType) => setFormData(prev => ({ ...prev, vehicleType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={VehicleType.RV}>RV</SelectItem>
+                    <SelectItem value={VehicleType.MOTORHOME}>Motorhome</SelectItem>
+                    <SelectItem value={VehicleType.TRAVEL_TRAILER}>Travel Trailer</SelectItem>
+                    <SelectItem value={VehicleType.FIFTH_WHEEL}>Fifth Wheel</SelectItem>
+                    <SelectItem value={VehicleType.TOY_HAULER}>Toy Hauler</SelectItem>
+                    <SelectItem value={VehicleType.SINGLE_WIDE}>Single Wide MH</SelectItem>
+                    <SelectItem value={VehicleType.DOUBLE_WIDE}>Double Wide MH</SelectItem>
+                    <SelectItem value={VehicleType.TRIPLE_WIDE}>Triple Wide MH</SelectItem>
+                    <SelectItem value={VehicleType.PARK_MODEL}>Park Model</SelectItem>
+                    <SelectItem value={VehicleType.MODULAR_HOME}>Modular Home</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -628,45 +689,13 @@ export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormP
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-6 border-t">
               <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-                  <Label htmlFor={`category-${category.id}`} className="text-sm">
-                    {category.name}
+                Cancel
+              </Button>
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     {template ? 'Updating...' : 'Creating...'}
-          
-          <div>
-            <Label>Base Template</Label>
-            <Select
-              value=""
-              onValueChange={(value) => {
-                const selectedTemplate = mockPDI.templateOptions.find(t => t.id === value)
-                if (selectedTemplate) {
-                  setFormData(prev => ({
-                    ...prev,
-                    name: selectedTemplate.name,
-                    description: selectedTemplate.description,
-                    unitTypes: selectedTemplate.unitTypes
-                  }))
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Start from existing template (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockPDI.templateOptions.map(template => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Select a template to copy its settings as a starting point
-            </p>
-          </div>
                   </>
                 ) : (
                   <>
