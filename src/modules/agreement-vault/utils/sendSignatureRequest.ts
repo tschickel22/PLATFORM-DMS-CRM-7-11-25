@@ -1,6 +1,33 @@
 import { Agreement } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 
+// Define merge field data mapping
+export function createMergeFieldData(agreement: Agreement): Record<string, string> {
+  const currentDate = new Date().toLocaleDateString()
+  
+  return {
+    customer_name: agreement.customerName,
+    agreement_type: agreement.type,
+    vehicle_info: agreement.vehicleInfo || 'N/A',
+    effective_date: new Date(agreement.effectiveDate).toLocaleDateString(),
+    current_date: currentDate,
+    company_name: 'Your Company Name', // In real app, get from tenant settings
+    company_phone: '(555) 123-4567', // In real app, get from tenant settings
+  }
+}
+
+// Process merge fields in text content
+export function processMergeFields(content: string, mergeData: Record<string, string>): string {
+  let processedContent = content
+  
+  Object.entries(mergeData).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g')
+    processedContent = processedContent.replace(regex, value)
+  })
+  
+  return processedContent
+}
+
 interface SignatureRequestOptions {
   method: 'email' | 'sms' | 'both'
   reminderEnabled?: boolean

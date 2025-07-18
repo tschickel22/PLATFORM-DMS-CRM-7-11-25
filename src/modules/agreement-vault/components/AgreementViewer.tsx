@@ -7,6 +7,7 @@ import { X, Edit, Download, Send, FileText, User, Calendar, DollarSign } from 'l
 import { Agreement } from '@/types'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { mockAgreements } from '@/mocks/agreementsMock'
+import { processMergeFields, createMergeFieldData } from '@/modules/agreement-vault/utils/sendSignatureRequest'
 
 interface AgreementViewerProps {
   agreement: Agreement
@@ -16,6 +17,10 @@ interface AgreementViewerProps {
 
 export function AgreementViewer({ agreement, onClose, onEdit }: AgreementViewerProps) {
   const [activeTab, setActiveTab] = useState('details')
+  
+  // Process merge fields in agreement terms for display
+  const mergeData = createMergeFieldData(agreement)
+  const processedTerms = processMergeFields(agreement.terms, mergeData)
 
   const typeConfig = mockAgreements.agreementTypes.find(t => t.value === agreement.type)
   const statusConfig = mockAgreements.agreementStatuses.find(s => s.value === agreement.status)

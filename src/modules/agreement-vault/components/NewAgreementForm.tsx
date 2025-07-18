@@ -19,6 +19,28 @@ interface NewAgreementFormProps {
 export function NewAgreementForm({ agreement, onSave, onCancel }: NewAgreementFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  
+  // Define available merge fields
+  const mergeFields = [
+    { label: 'Customer Name', value: '{{customer_name}}' },
+    { label: 'Customer Email', value: '{{customer_email}}' },
+    { label: 'Customer Phone', value: '{{customer_phone}}' },
+    { label: 'Vehicle Information', value: '{{vehicle_info}}' },
+    { label: 'Total Amount', value: '{{total_amount}}' },
+    { label: 'Down Payment', value: '{{down_payment}}' },
+    { label: 'Financing Amount', value: '{{financing_amount}}' },
+    { label: 'Monthly Payment', value: '{{monthly_payment}}' },
+    { label: 'Security Deposit', value: '{{security_deposit}}' },
+    { label: 'Annual Fee', value: '{{annual_fee}}' },
+    { label: 'Coverage Level', value: '{{coverage_level}}' },
+    { label: 'Effective Date', value: '{{effective_date}}' },
+    { label: 'Expiration Date', value: '{{expiration_date}}' },
+    { label: 'Company Name', value: '{{company_name}}' },
+    { label: 'Today\'s Date', value: '{{current_date}}' },
+    { label: 'Agreement Type', value: '{{agreement_type}}' },
+    { label: 'Quote Number', value: '{{quote_number}}' }
+  ]
+
   const [formData, setFormData] = useState<Partial<Agreement>>({
     type: AgreementType.PURCHASE,
     customerId: '',
@@ -117,6 +139,13 @@ export function NewAgreementForm({ agreement, onSave, onCancel }: NewAgreementFo
       documents: prev.documents?.map(doc => 
         doc.id === docId ? { ...doc, [field]: value } : doc
       ) || []
+    }))
+  }
+
+  const insertMergeField = (mergeField: string) => {
+    setFormData(prev => ({
+      ...prev,
+      terms: (prev.terms || '') + mergeField
     }))
   }
 
@@ -369,7 +398,24 @@ export function NewAgreementForm({ agreement, onSave, onCancel }: NewAgreementFo
               <h3 className="text-lg font-semibold">Terms and Conditions</h3>
               
               <div>
-                <Label htmlFor="terms">Agreement Terms</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="terms">Agreement Terms</Label>
+                  <Select
+                    value=""
+                    onValueChange={insertMergeField}
+                  >
+                    <SelectTrigger className="w-[200px] shadow-sm">
+                      <SelectValue placeholder="Insert merge field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mergeFields.map(field => (
+                        <SelectItem key={field.value} value={field.value}>
+                          {field.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Textarea
                   id="terms"
                   value={formData.terms}
