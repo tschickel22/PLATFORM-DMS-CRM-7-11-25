@@ -14,13 +14,13 @@ interface NurtureSequencesProps {
   onSequenceReset: (leadId: string) => void
 }
 
-export default function NurtureSequences({
+export const NurtureSequences = ({
   // Use mock data as fallback for sequence options
   leads, 
   onSequenceStart, 
   onSequencePause, 
   onSequenceReset
-}: NurtureSequencesProps) {
+}: NurtureSequencesProps) => {
   const sequences = mockCrmProspecting.sequences
   const [selectedSequence, setSelectedSequence] = useState('')
 
