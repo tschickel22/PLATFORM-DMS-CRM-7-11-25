@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import { TrendingUp, Star, AlertCircle } from 'lucide-react'
 import { Lead } from '@/types'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface LeadScoringProps {
   lead: Lead
@@ -14,7 +15,8 @@ interface LeadScoringProps {
 export function LeadScoring({ lead, onScoreUpdate }: LeadScoringProps) {
   const [score, setScore] = useState(lead.score || 0)
   const [factors, setFactors] = useState<Array<{name: string, weight: number, value: number}>>([])
-
+  // Use mock data as fallback for scoring criteria
+  const scoringTags = mockCrmProspecting.tags
   useEffect(() => {
     // Calculate score based on various factors
     const scoringFactors = [

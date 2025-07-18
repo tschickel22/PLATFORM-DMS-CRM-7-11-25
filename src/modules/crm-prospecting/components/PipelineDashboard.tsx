@@ -7,6 +7,7 @@ import { TrendingUp, Users, DollarSign, Calendar, ArrowRight } from 'lucide-reac
 import { Lead } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface PipelineDashboardProps {
   leads: Lead[]
@@ -16,7 +17,8 @@ interface PipelineDashboardProps {
 export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps) {
   const [stageData, setStageData] = useState<Array<{
     stage: string
-    count: number
+  // Use mock data as fallback for pipeline stages
+  const pipelineStages = mockCrmProspecting.pipelines
     value: number
     conversionRate: number
   }>>([])
@@ -36,7 +38,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
     })
     
     setStageData(data)
-  }, [leads, mockCrmProspecting.pipelines])
+  }, [leads, pipelineStages])
 
   const totalValue = stageData.reduce((sum, stage) => sum + stage.value, 0)
   const totalLeads = stageData.reduce((sum, stage) => sum + stage.count, 0)
