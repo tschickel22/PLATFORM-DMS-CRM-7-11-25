@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Building, Save, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { mockPlatformAdmin } from '@/mocks/platformAdminMock'
-import { mockPlatformAdmin } from '@/mocks/platformAdminMock'
 
 interface AddTenantFormProps {
   onClose: () => void
@@ -21,9 +20,9 @@ export function AddTenantForm({ onClose }: AddTenantFormProps) {
   const [domain, setDomain] = useState('')
   const [platformType, setPlatformType] = useState(mockPlatformAdmin.platformTypes[0].value)
   const [adminEmail, setAdminEmail] = useState('')
-    platformType: mockPlatformAdmin.platformTypes[0].value,
-    timezone: 'America/New_York', // Keep as reasonable default
-    currency: 'USD', // Keep as reasonable default
+  const [adminName, setAdminName] = useState('')
+  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({})
+
   // Initialize selected features with default permissions
   React.useEffect(() => {
     setSelectedFeatures(Object.keys(mockPlatformAdmin.defaultPermissions).reduce((acc, key) => {
@@ -82,18 +81,16 @@ export function AddTenantForm({ onClose }: AddTenantFormProps) {
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
-              value={mockPlatformAdmin.subscriptionPlans[1].id}
+            <div>
               <CardTitle className="flex items-center">
                 <Building className="h-5 w-5 mr-2 text-primary" />
                 Add New Tenant
               </CardTitle>
               <CardDescription>
-                {mockPlatformAdmin.platformTypes.map(type => (
-                {mockPlatformAdmin.subscriptionPlans.map(plan => (
-                  <SelectItem key={plan.id} value={plan.id}>
-                    {plan.name} - ${plan.price}/month
-                  </SelectItem>
-                ))}
+                Create a new tenant with admin user and feature permissions
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
