@@ -417,6 +417,18 @@ function AgreementsList() {
                       {getTypeLabel(agreement.type)}
                       {agreement.customerName && ` • ${agreement.customerName}`}
                       {agreement.vehicleInfo && ` • ${agreement.vehicleInfo}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export default function AgreementVault() {
   return (
     <Routes>
