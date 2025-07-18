@@ -1,57 +1,15 @@
 // src/modules/finance/components/LoanPaymentHistory.tsx
 import React, { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Filter, Download, Calendar } from 'lucide-react'
-import { formatCurrency, formatDate } from '@/lib/utils'
-import { mockFinance } from '@/mocks/financeMock'
-
-export function LoanPaymentHistory() {
+  const getStatusColor = (status: string) => {
+    return mockFinance.paymentStatusColors[status] || 'bg-gray-100 text-gray-800'
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
 
   // Use mock payment data as fallback
-  const payments = mockFinance.samplePayments.map(payment => ({
-    id: payment.id,
-    loanId: 'loan-001',
-    customerName: 'John Smith',
-    amount: payment.amount,
-    dueDate: payment.date,
-    paidDate: payment.status === 'Completed' ? payment.date : null,
-    status: payment.status === 'Completed' ? 'Paid' : 'Pending',
-    method: 'Auto Pay'
-  }))
-
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      'Paid': 'bg-green-100 text-green-800',
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Late': 'bg-red-100 text-red-800',
-      'Failed': 'bg-red-100 text-red-800',
-      'Current': 'bg-blue-100 text-blue-800',
-      'Default': 'bg-red-100 text-red-800',
-      'Paid Off': 'bg-green-100 text-green-800'
-    }
-    
-    return (
-      <Badge className={statusColors[status] || 'bg-gray-100 text-gray-800'}>
-        {status}
-      </Badge>
-    )
-  }
-
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || payment.status.toLowerCase() === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
+  // Filter mock payments by loanId
+  const payments = mockFinance.samplePayments.filter(payment => payment.loanId === loanId)
   return (
     <Card>
       <CardHeader>

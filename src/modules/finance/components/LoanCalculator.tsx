@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { mockFinance } from '@/mocks/financeMock'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DollarSign, Calculator, Calendar, TrendingDown, Download, Printer } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
@@ -33,10 +34,10 @@ export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculato
   const [includeInsurance, setIncludeInsurance] = useState(false)
   const [insuranceAmount, setInsuranceAmount] = useState(0)
   const [includeTax, setIncludeTax] = useState(false)
-  const [taxRate, setTaxRate] = useState(0)
-  const [activeTab, setActiveTab] = useState('calculator')
-  
-  // Calculated values
+  const [loanAmount, setLoanAmount] = useState(mockFinance.calculatorDefaults.loanAmount)
+  const [downPayment, setDownPayment] = useState(mockFinance.calculatorDefaults.downPayment)
+  const [interestRate, setInterestRate] = useState(mockFinance.calculatorDefaults.interestRate)
+  const [termMonths, setTermMonths] = useState(mockFinance.calculatorDefaults.termMonths)
   const [monthlyPayment, setMonthlyPayment] = useState(0)
   const [totalInterest, setTotalInterest] = useState(0)
   const [totalCost, setTotalCost] = useState(0)
@@ -118,11 +119,11 @@ export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculato
       // Calculate interest for this period
       const interestPayment = balance * monthlyRate
       
-      // Calculate principal for this period
-      let principalPayment = monthlyPayment - interestPayment
-      
-      // Adjust for final payment
-      if (balance < principalPayment) {
+                {mockFinance.interestRates.map(rate => (
+                  <SelectItem key={rate} value={rate.toString()}>
+                    {rate}%
+                  </SelectItem>
+                ))}
         principalPayment = balance
       }
       
@@ -432,12 +433,11 @@ export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculato
         </TabsContent>
 
         <TabsContent value="amortization">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2 text-primary" />
+                {mockFinance.termOptions.map(term => (
+                  <SelectItem key={term} value={term.toString()}>
+                    {term} months
+                  </SelectItem>
+                ))}
                     Amortization Schedule
                   </CardTitle>
                   <CardDescription>

@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DollarSign, Calculator, CreditCard, FileText, Plus, Search, Filter, TrendingUp, Clock, Calendar } from 'lucide-react'
+import { mockFinance } from '@/mocks/financeMock'
+import { useTenant } from '@/contexts/TenantContext'
 import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
 import { formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
@@ -51,6 +53,7 @@ export const FinanceModule: React.FC = () => {
   const { toast } = useToast()
   const { vehicles } = useInventoryManagement()
   const [loans, setLoans] = useState<Loan[]>([])
+  const { tenant } = useTenant()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [showNewLoanForm, setShowNewLoanForm] = useState(false) 
@@ -63,35 +66,8 @@ export const FinanceModule: React.FC = () => {
       id: '1',
       customerId: 'cust-1',
       customerName: 'John Smith',
-      vehicleId: 'veh-1',
-      vehicleInfo: '2023 Honda Civic',
-      amount: 25000,
-      downPayment: 5000,
-      term: 60,
-      rate: 4.5,
-      paymentAmount: 372.86,
-      startDate: new Date('2024-01-15'),
-      status: 'active',
-      remainingBalance: 22000,
-      nextPaymentDate: new Date('2024-02-15'),
-      createdAt: new Date('2024-01-10'),
-      payments: [
-        {
-          id: 'payment-1',
-          invoiceId: '1',
-          amount: 372.86,
-          method: PaymentMethod.CREDIT_CARD,
-          status: PaymentStatus.COMPLETED,
-          processedDate: new Date('2024-01-15'),
-          notes: 'Initial payment',
-          transactionId: 'txn_123456',
-          customFields: {},
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-15')
-        }
-      ]
-    }
-  ]
+  // Use mock loan data as fallback when no tenant data is available
+  const loans = tenant?.settings ? [] : mockFinance.sampleLoans
 
   React.useEffect(() => {
     setLoans(mockLoans)
@@ -141,20 +117,9 @@ export const FinanceModule: React.FC = () => {
 
       // Update the loans state with the new payment
       setLoans(prevLoans => {
-        if (!Array.isArray(prevLoans)) return [];
-        
-        return prevLoans.map(loan => {
-          if (loan?.id === selectedLoan?.id) {
-            return { 
-              ...loan, 
-              payments: Array.isArray(loan.payments) 
-                ? [...loan.payments, newPayment] 
-                : [newPayment] 
-            };
-          }
-          return loan;
-        });
-      });
+  const getStatusColor = (status: string) => {
+    return mockFinance.statusColors[status] || 'bg-gray-100 text-gray-800'
+  }
 
       toast({
         title: "Payment Recorded",
@@ -302,20 +267,16 @@ export const FinanceModule: React.FC = () => {
               nextPaymentDate: new Date(),
               createdAt: new Date(),
               payments: []
-            }}
-            onClose={() => {}}
-          />
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <LoanSettings />
-        </TabsContent>
-      </Tabs>
-
-      {/* Payment History Modal */}
-      {showPaymentHistoryModal && selectedLoan && (
-        <LoanPaymentHistory
-          loan={selectedLoan}
+              {mockFinance.statusOptions.map(status => (
+                <Button
+                  key={status}
+                  variant={statusFilter === status.toLowerCase() ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter(status.toLowerCase())}
+                >
+                  {status}
+                </Button>
+              ))}
           onClose={() => setShowPaymentHistoryModal(false)}
           onRecordPayment={handleRecordPayment}
         />

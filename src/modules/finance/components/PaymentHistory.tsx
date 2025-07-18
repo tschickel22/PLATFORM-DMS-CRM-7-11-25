@@ -5,63 +5,21 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter, CreditCard, Calendar, Download, Printer, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { mockFinance } from '@/mocks/financeMock'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { mockFinance } from '@/mocks/financeMock'
 import { cn } from '@/lib/utils'
 
 // Mock payment history data
 const mockPayments = [
-  {
-    id: '1',
-    loanId: '1',
-    customerId: 'cust-1',
-    customerName: 'John Smith',
-    amount: 1621.23,
-    scheduledDate: new Date('2024-01-15'),
-    paymentDate: new Date('2024-01-15'),
-    status: 'completed',
-    method: 'credit_card',
-    notes: 'On-time payment',
-    createdAt: new Date('2024-01-15')
-  },
-  {
-    id: '2',
-    loanId: '2',
-    customerId: 'cust-2',
-    customerName: 'Sarah Johnson',
-    amount: 1142.62,
-    scheduledDate: new Date('2024-01-01'),
-    paymentDate: new Date('2024-01-03'),
-    status: 'completed',
-    method: 'bank_transfer',
-    notes: 'Payment received 2 days late',
-    createdAt: new Date('2024-01-03')
-  },
-  {
-    id: '3',
-    loanId: '1',
-    customerId: 'cust-1',
-    customerName: 'John Smith',
-    amount: 1621.23,
-    scheduledDate: new Date('2024-02-15'),
-    status: 'pending',
-    createdAt: new Date('2024-01-15')
-  }
-]
-
-export function PaymentHistory() {
-  const [payments, setPayments] = useState(mockPayments)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [dateFilter, setDateFilter] = useState('all')
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-50 text-green-700 border-green-200'
-      case 'pending':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-      case 'failed':
+  // Use mock payment data with customer lookup
+  const payments = mockFinance.samplePayments.map(payment => {
+    const loan = mockFinance.sampleLoans.find(l => l.id === payment.loanId)
+    return {
+      ...payment,
+      customerName: loan?.customerName || 'Unknown Customer'
+    }
+  })
         return 'bg-red-50 text-red-700 border-red-200'
       case 'late':
         return 'bg-orange-50 text-orange-700 border-orange-200'
@@ -70,18 +28,9 @@ export function PaymentHistory() {
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-500" />
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />
-      case 'late':
-        return <Clock className="h-4 w-4 text-orange-500" />
-      default:
-        return null
+  const getStatusColor = (status: string) => {
+    return mockFinance.paymentStatusColors[status] || 'bg-gray-100 text-gray-800'
+  }
     }
   }
 

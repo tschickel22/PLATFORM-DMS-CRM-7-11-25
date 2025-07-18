@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils'
 
 interface AmortizationScheduleProps {
   schedule: Array<{
+import { mockFinance } from '@/mocks/financeMock'
     month: number
     payment: number
     principal: number
@@ -17,9 +18,9 @@ interface AmortizationScheduleProps {
 }
 
 export function AmortizationSchedule({ schedule }: AmortizationScheduleProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [sortField, setSortField] = useState<string>('month')
+  const [loanAmount, setLoanAmount] = useState(mockFinance.calculatorDefaults.loanAmount)
+  const [interestRate, setInterestRate] = useState(mockFinance.calculatorDefaults.interestRate)
+  const [termMonths, setTermMonths] = useState(mockFinance.calculatorDefaults.termMonths)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const rowsPerPage = 12
 
@@ -217,11 +218,11 @@ export function AmortizationSchedule({ schedule }: AmortizationScheduleProps) {
                 <Button
                   key={pageNum}
                   variant={currentPage === pageNum ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(pageNum)}
-                >
-                  {pageNum}
-                </Button>
+                {mockFinance.interestRates.map(rate => (
+                  <SelectItem key={rate} value={rate.toString()}>
+                    {rate}%
+                  </SelectItem>
+                ))}
               )
             })}
           </div>
@@ -236,12 +237,11 @@ export function AmortizationSchedule({ schedule }: AmortizationScheduleProps) {
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(totalPages)}
-            disabled={currentPage === totalPages}
-          >
-            Last
-          </Button>
+                {mockFinance.termOptions.map(term => (
+                  <SelectItem key={term} value={term.toString()}>
+                    {term} months
+                  </SelectItem>
+                ))}
         </div>
       )}
     </div>
