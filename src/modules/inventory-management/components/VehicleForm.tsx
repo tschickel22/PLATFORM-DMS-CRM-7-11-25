@@ -85,7 +85,7 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
       }))
       
       toast({
-    location: vehicle?.location || mockInventory.locations[0],
+        title: 'Images Added',
         description: `Added ${acceptedFiles.length} images`,
       })
     }
@@ -188,63 +188,50 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
         description: 'The scanned barcode does not appear to be a valid VIN',
         variant: 'destructive'
       })
-                  {mockInventory.vehicleTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      {showBarcodeScanner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-60">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Scan Barcode</CardTitle>
+              <CardDescription>
+                Position the barcode in front of your camera
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-black h-64 flex items-center justify-center rounded-md">
+                <Camera className="h-12 w-12 text-white/50" />
+                {/* In a real implementation, this would be a video feed from the camera */}
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowBarcodeScanner(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  // Simulate a barcode scan
+                  handleBarcodeScanned('1FDXE4FS8KDC' + Math.floor(Math.random() * 100000).toString().padStart(5, '0'))
+                }}>
+                  Simulate Scan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="condition">Condition</Label>
-              <Select
-                value={formData.condition}
-                onValueChange={(value) => setFormData({ ...formData, condition: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockInventory.conditions.map((condition) => (
-                    <SelectItem key={condition} value={condition}>
-                      {condition}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
               <CardTitle>{vehicle ? 'Edit Vehicle' : 'Add New Home'}</CardTitle>
-                  {mockInventory.statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
+            </div>
             <Button variant="ghost" size="sm" onClick={onCancel}>
               <X className="h-4 w-4" />
             </Button>
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <Select
-                value={formData.location}
-                onValueChange={(value) => setFormData({ ...formData, location: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockInventory.locations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -427,6 +414,9 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
                   <div className="text-sm text-muted-foreground">No features added yet</div>
                 )}
               </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Available features: {mockInventory.features.join(', ')}
+              </div>
             </div>
 
             {/* MH-specific fields */}
@@ -554,129 +544,6 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
                       placeholder="e.g., Shingle, Metal"
                     />
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* MH-specific fields */}
-            {(formData.type === VehicleType.SINGLE_WIDE || 
-              formData.type === VehicleType.DOUBLE_WIDE || 
-              formData.type === VehicleType.TRIPLE_WIDE || 
-              formData.type === VehicleType.PARK_MODEL || 
-              formData.type === VehicleType.MODULAR_HOME) && (
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label htmlFor="squareFootage">Square Footage</Label>
-                  <Input
-                    id="squareFootage"
-                    value={formData.customFields?.squareFootage || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      customFields: {
-                        ...prev.customFields,
-                        squareFootage: e.target.value
-                      }
-                    }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="constructionType">Construction Type</Label>
-                  <Select 
-                    value={formData.customFields?.constructionType || ''} 
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      customFields: {
-                        ...prev.customFields,
-                        constructionType: value
-                      }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Manufactured">Manufactured</SelectItem>
-                      <SelectItem value="Modular">Modular</SelectItem>
-                      <SelectItem value="Park Model">Park Model</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
-                  <Select 
-                    value={formData.customFields?.bedrooms || ''} 
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      customFields: {
-                        ...prev.customFields,
-                        bedrooms: value
-                      }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select number" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="5+">5+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
-                  <Select 
-                    value={formData.customFields?.bathrooms || ''} 
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      customFields: {
-                        ...prev.customFields,
-                        bathrooms: value
-                      }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select number" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="1.5">1.5</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="2.5">2.5</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="3+">3+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="exteriorSiding">Exterior Siding</Label>
-                  <Input
-                    id="exteriorSiding"
-                    value={formData.customFields?.exteriorSiding || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      customFields: {
-                        ...prev.customFields,
-                        exteriorSiding: e.target.value
-                      }
-                    }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="roofType">Roof Type</Label>
-                  <Input
-                    id="roofType"
-                    value={formData.customFields?.roofType || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      customFields: {
-                        ...prev.customFields,
-                        roofType: e.target.value
-                      }
-                    }))}
-                  />
                 </div>
               </div>
             )}
@@ -965,32 +832,8 @@ export function VehicleForm({ vehicle, onSave, onCancel, onScanBarcode }: Vehicl
               </Button>
             </div>
           </form>
-                Position the barcode in front of your camera
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-black h-64 flex items-center justify-center rounded-md">
-                <Camera className="h-12 w-12 text-white/50" />
-                {/* In a real implementation, this would be a video feed from the camera */}
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowBarcodeScanner(false)}>
-                  Cancel
-            <div className="text-xs text-muted-foreground mt-1">
-              Available features: {mockInventory.features.join(', ')}
-            </div>
-                </Button>
-                <Button onClick={() => {
-                  // Simulate a barcode scan
-                  handleBarcodeScanned('1FDXE4FS8KDC' + Math.floor(Math.random() * 100000).toString().padStart(5, '0'))
-                }}>
-                  Simulate Scan
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
