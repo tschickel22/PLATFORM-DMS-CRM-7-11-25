@@ -29,6 +29,7 @@ import {
   PDIInspectionStatus
 } from '../types'
 import { Vehicle } from '@/types'
+import { mockPDI } from '@/mocks/pdiMock'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { useDropzone } from 'react-dropzone'
@@ -41,16 +42,16 @@ interface PDIInspectionFormProps {
   onUpdateItem: (inspectionId: string, itemId: string, itemData: Partial<PDIInspectionItem>) => Promise<void>
   onAddDefect: (inspectionId: string, defectData: Partial<PDIDefect>) => Promise<void>
   onAddPhoto: (inspectionId: string, photoData: Partial<PDIPhoto>) => Promise<void>
-  onCancel: () => void
-}
-
-export function PDIInspectionForm({
-  inspection,
-  vehicles,
-  onSave,
-  onComplete,
-  onUpdateItem,
-  onAddDefect,
+  const [formData, setFormData] = useState({
+    unitId: inspection?.unitId || mockPDI.formDefaults.unitId,
+    technicianId: inspection?.technicianId || mockPDI.formDefaults.technicianId,
+    templateId: inspection?.templateId || mockPDI.formDefaults.templateId,
+    status: inspection?.status || mockPDI.formDefaults.status,
+    startedDate: inspection?.startedDate || mockPDI.formDefaults.startedDate,
+    notes: inspection?.notes || mockPDI.formDefaults.notes,
+    customerNotified: inspection?.customerNotified || mockPDI.formDefaults.customerNotified,
+    deliveryApproved: inspection?.deliveryApproved || mockPDI.formDefaults.deliveryApproved
+  })
   onAddPhoto,
   onCancel
 }: PDIInspectionFormProps) {
@@ -279,9 +280,14 @@ export function PDIInspectionForm({
                 "bg-red-50 text-red-700 border-red-200"
               )}>
                 {inspection.status.replace('_', ' ').toUpperCase()}
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={onCancel}>
-                <X className="h-4 w-4" />
+                {mockPDI.technicianOptions.map(tech => (
+                  <SelectItem key={tech.id} value={tech.id}>
+                {mockPDI.templateOptions.map(template => (
+                {mockPDI.checklistStatuses.map(status => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
               </Button>
             </div>
           </div>

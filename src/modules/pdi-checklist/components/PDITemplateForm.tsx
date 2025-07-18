@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { mockPDI } from '@/mocks/pdiMock'
 import { Badge } from '@/components/ui/badge'
 import { X, Save, Plus, Trash2, CheckSquare, ArrowUp, ArrowDown, Clipboard } from 'lucide-react'
 import { PDITemplate, PDITemplateSection, PDITemplateItem } from '../types'
@@ -21,9 +22,9 @@ interface PDITemplateFormProps {
 
 export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormProps) {
   const { toast } = useToast()
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<Partial<PDITemplate>>({
-    name: '',
+    name: template?.name || mockPDI.formDefaults.unitId,
+    description: template?.description || '',
+    unitTypes: template?.unitTypes || [],
     description: '',
     vehicleType: VehicleType.RV,
     isActive: true,
@@ -36,24 +37,8 @@ export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormP
     description: '',
     items: []
   })
-
-  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
-  const [showAddItem, setShowAddItem] = useState(false)
-  const [newItem, setNewItem] = useState<Partial<PDITemplateItem>>({
-    name: '',
-    description: '',
-    itemType: 'checkbox',
-    isRequired: true
-  })
-
-  // Initialize form with template data if editing
-  useEffect(() => {
-    if (template) {
-      setFormData({
-        ...template
-      })
-    }
-  }, [template])
+  // Get available unit types from template options
+  const availableUnitTypes = [...new Set(mockPDI.templateOptions.flatMap(t => t.unitTypes))]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -323,16 +308,16 @@ export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormP
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
-            <div className="space-y-4">
+              {mockPDI.inspectionCategories.map(category => (
+                <div key={category.id} className="flex items-center space-x-2">
               <h3 className="text-lg font-semibold">Template Information</h3>
-              
-              <div className="grid gap-4 md:grid-cols-2">
+                    id={`category-${category.id}`}
+                    checked={formData.categories.includes(category.name)}
                 <div>
                   <Label htmlFor="name">Template Name *</Label>
-                  <Input
+                        setFormData(prev => ({ ...prev, categories: [...prev.categories, category.name] }))
                     id="name"
-                    value={formData.name}
+                        setFormData(prev => ({ ...prev, categories: prev.categories.filter(c => c !== category.name) }))
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., RV Pre-Delivery Inspection"
                   />
@@ -643,13 +628,45 @@ export function PDITemplateForm({ template, onSave, onCancel }: PDITemplateFormP
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-6 border-t">
               <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-                Cancel
-              </Button>
+                  <Label htmlFor={`category-${category.id}`} className="text-sm">
+                    {category.name}
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     {template ? 'Updating...' : 'Creating...'}
+          
+          <div>
+            <Label>Base Template</Label>
+            <Select
+              value=""
+              onValueChange={(value) => {
+                const selectedTemplate = mockPDI.templateOptions.find(t => t.id === value)
+                if (selectedTemplate) {
+                  setFormData(prev => ({
+                    ...prev,
+                    name: selectedTemplate.name,
+                    description: selectedTemplate.description,
+                    unitTypes: selectedTemplate.unitTypes
+                  }))
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Start from existing template (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {mockPDI.templateOptions.map(template => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Select a template to copy its settings as a starting point
+            </p>
+          </div>
                   </>
                 ) : (
                   <>
