@@ -236,15 +236,6 @@ function InvoicesList() {
             <CardTitle className="text-sm font-medium text-orange-900">Outstanding</CardTitle>
       invoice.dueDate,
       invoice.recurrence
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-900">
-              {formatCurrency(invoices.filter(i => i.status !== InvoiceStatus.PAID).reduce((sum, i) => sum + i.total, 0))}
-            </div>
-            <p className="text-xs text-orange-600 flex items-center mt-1">
-              <DollarSign className="h-3 w-3 mr-1" />
-              Unpaid invoices
-            </p>
           </CardContent>
         </Card>
         <Card className="shadow-sm border-0 bg-gradient-to-br from-green-50 to-green-100/50">
