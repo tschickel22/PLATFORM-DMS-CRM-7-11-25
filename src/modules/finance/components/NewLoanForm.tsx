@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { X, Save, DollarSign, Calculator, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { mockFinance } from '@/mocks/financeMock'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
 import { LoanCalculator } from './LoanCalculator'
@@ -20,12 +21,12 @@ interface NewLoanFormProps {
 }
 
 export function NewLoanForm({
-  onSave, onCancel, onAddNewCustomer, preselectedCustomerId
-}: NewLoanFormProps) {
-  const { toast } = useToast()
-  const { leads } = useLeadManagement()
-  const { vehicles, getAvailableVehicles } = useInventoryManagement()
-  const [loading, setLoading] = useState(false)
+  const [loanAmount, setLoanAmount] = useState(mockFinance.defaultLoan.amount.toString())
+  const [downPayment, setDownPayment] = useState(mockFinance.defaultLoan.downPayment.toString())
+  const [interestRate, setInterestRate] = useState(mockFinance.defaultLoan.rate.toString())
+  const [termMonths, setTermMonths] = useState(mockFinance.defaultLoan.termMonths.toString())
+  const [paymentFrequency, setPaymentFrequency] = useState(mockFinance.paymentFrequencies[0])
+  const [loanType, setLoanType] = useState('Retail')
   const [showCalculator, setShowCalculator] = useState(false)
   const [calculatorResults, setCalculatorResults] = useState<any>(null)
 
@@ -105,6 +106,8 @@ export function NewLoanForm({
     }))
   }
 
+  const loanTypes = ['Retail', 'Rent-to-Own', 'Lease']
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.customerId || !formData.vehicleId) {
@@ -144,13 +147,13 @@ export function NewLoanForm({
         <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Create New Loan</CardTitle>
-                <CardDescription>
-                  Set up a new loan for a customer
-                </CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" onClick={onCancel}>
+                  {mockFinance.interestRates.map(rate => (
+                    <SelectItem key={rate} value={rate.toString()}>
+                  {mockFinance.paymentFrequencies.map(frequency => (
+                    <SelectItem key={frequency} value={frequency}>
+                      {frequency}
+                    </SelectItem>
+                  ))}
                 <X className="h-4 w-4" />
               </Button>
             </div>

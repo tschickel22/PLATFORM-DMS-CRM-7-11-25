@@ -10,6 +10,7 @@ import { DollarSign, Calculator, Calendar, TrendingDown, Download, Printer } fro
 import { formatCurrency } from '@/lib/utils'
 import { AmortizationSchedule } from './AmortizationSchedule'
 import { useToast } from '@/hooks/use-toast'
+import { mockFinance } from '@/mocks/financeMock'
 
 interface LoanCalculatorProps {
   initialValues?: {
@@ -24,11 +25,11 @@ interface LoanCalculatorProps {
 
 export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculatorProps) {
   const { toast } = useToast()
-  const [loanAmount, setLoanAmount] = useState(initialValues?.loanAmount || 100000)
-  const [downPayment, setDownPayment] = useState(initialValues?.downPayment || 20000)
-  const [interestRate, setInterestRate] = useState(initialValues?.interestRate || 6.99)
-  const [loanTerm, setLoanTerm] = useState(initialValues?.loanTerm || 60)
-  const [paymentFrequency, setPaymentFrequency] = useState('monthly')
+  const [loanAmount, setLoanAmount] = useState(initialValues?.loanAmount || mockFinance.defaultLoan.amount)
+  const [downPayment, setDownPayment] = useState(initialValues?.downPayment || mockFinance.defaultLoan.downPayment)
+  const [interestRate, setInterestRate] = useState(initialValues?.interestRate || mockFinance.defaultLoan.rate)
+  const [loanTerm, setLoanTerm] = useState(initialValues?.loanTerm || mockFinance.defaultLoan.termMonths)
+  const [paymentFrequency, setPaymentFrequency] = useState(mockFinance.paymentFrequencies[0])
   const [includeInsurance, setIncludeInsurance] = useState(false)
   const [insuranceAmount, setInsuranceAmount] = useState(0)
   const [includeTax, setIncludeTax] = useState(false)
@@ -262,13 +263,21 @@ export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculato
                 
                 <div>
                   <Label htmlFor="interestRate">Interest Rate (%)</Label>
-                  <Input
-                    id="interestRate"
-                    type="number"
-                    step="0.01"
-                    value={interestRate}
-                    onChange={(e) => setInterestRate(parseFloat(e.target.value) || 0)}
-                  />
+                  <Select
+                    value={interestRate.toString()}
+                    onValueChange={(value) => setInterestRate(parseFloat(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockFinance.interestRates.map(rate => (
+                        <SelectItem key={rate} value={rate.toString()}>
+                          {rate}%
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div>
@@ -281,17 +290,11 @@ export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculato
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="12">12 months (1 year)</SelectItem>
-                      <SelectItem value="24">24 months (2 years)</SelectItem>
-                      <SelectItem value="36">36 months (3 years)</SelectItem>
-                      <SelectItem value="48">48 months (4 years)</SelectItem>
-                      <SelectItem value="60">60 months (5 years)</SelectItem>
-                      <SelectItem value="72">72 months (6 years)</SelectItem>
-                      <SelectItem value="84">84 months (7 years)</SelectItem>
-                      <SelectItem value="96">96 months (8 years)</SelectItem>
-                      <SelectItem value="120">120 months (10 years)</SelectItem>
-                      <SelectItem value="180">180 months (15 years)</SelectItem>
-                      <SelectItem value="240">240 months (20 years)</SelectItem>
+                      {mockFinance.termOptions.map(term => (
+                        <SelectItem key={term} value={term.toString()}>
+                          {term} months
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -306,9 +309,11 @@ export function LoanCalculator({ initialValues, onSave, onClose }: LoanCalculato
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
+                      {mockFinance.paymentFrequencies.map(frequency => (
+                        <SelectItem key={frequency} value={frequency}>
+                          {frequency}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
