@@ -1,4 +1,4 @@
-# 🔒 Ignore all other modules except company-settings
+# Ignore all modules except company-settings
 src/modules/crm-prospecting/
 src/modules/inventory-management/
 src/modules/quote-builder/
@@ -6,53 +6,59 @@ src/modules/finance/
 src/modules/crm-sales-deal/
 src/modules/agreement-vault/
 src/modules/service-ops/
-src/modules/pdi-checklist/
 src/modules/delivery-tracker/
+src/modules/pdi-checklist/
 src/modules/commission-engine/
 src/modules/client-portal/
 src/modules/invoice-payments/
 src/modules/platform-admin/
 src/modules/reporting-suite/
 
-# ✅ Keep company-settings active (explicitly allow)
+# Keep company-settings visible
 !src/modules/company-settings/
 
-# 🔒 Ignore most components except UI components
+# Ignore apps directories
+apps/
+
+# Ignore most components except UI
 src/components/layout/
 src/components/auth/
-src/pages/
 
-# ✅ Keep essential UI components
+# Keep essential UI components
 !src/components/ui/
 
-# 🔒 Ignore contexts except tenant context
-src/contexts/AuthContext.tsx
-src/contexts/ThemeContext.tsx
+# Ignore most hooks except essential ones
+src/hooks/
+!src/hooks/use-toast.ts
 
-# ✅ Keep tenant context for settings
+# Keep essential core files
+!src/types/
+!src/lib/utils.ts
 !src/contexts/TenantContext.tsx
+!src/contexts/ThemeContext.tsx
 
-# 🔒 Ignore build files and assets
+# Ignore build and config files
 dist/
 public/
 node_modules/
-*.png
-*.jpg
-*.jpeg
-*.svg
-
-# 🔒 Ignore config and docs
-README.md
-package.json
 package-lock.json
 tsconfig.json
 tsconfig.node.json
 vite.config.ts
 tailwind.config.js
 postcss.config.js
-.gitignore
-knip.json
 
-# 🔒 Ignore API specs
-renter_insight_openapi.yaml
-renter_insight_bolt_manifest.json
+# Ignore documentation
+README.md
+*.md
+
+# Ignore assets
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# Ignore YAML and JSON files
+*.yaml
+*.json
+!package.json
