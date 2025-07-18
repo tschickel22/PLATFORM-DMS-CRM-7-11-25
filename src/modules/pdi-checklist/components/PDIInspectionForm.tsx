@@ -42,16 +42,16 @@ interface PDIInspectionFormProps {
   onUpdateItem: (inspectionId: string, itemId: string, itemData: Partial<PDIInspectionItem>) => Promise<void>
   onAddDefect: (inspectionId: string, defectData: Partial<PDIDefect>) => Promise<void>
   onAddPhoto: (inspectionId: string, photoData: Partial<PDIPhoto>) => Promise<void>
-  const [formData, setFormData] = useState({
-    unitId: inspection?.unitId || mockPDI.formDefaults.unitId,
-    technicianId: inspection?.technicianId || mockPDI.formDefaults.technicianId,
-    templateId: inspection?.templateId || mockPDI.formDefaults.templateId,
-    status: inspection?.status || mockPDI.formDefaults.status,
-    startedDate: inspection?.startedDate || mockPDI.formDefaults.startedDate,
-    notes: inspection?.notes || mockPDI.formDefaults.notes,
-    customerNotified: inspection?.customerNotified || mockPDI.formDefaults.customerNotified,
-    deliveryApproved: inspection?.deliveryApproved || mockPDI.formDefaults.deliveryApproved
-  })
+  onCancel: () => void
+}
+
+export default function PDIInspectionForm({
+  inspection,
+  vehicles,
+  onSave,
+  onComplete,
+  onUpdateItem,
+  onAddDefect,
   onAddPhoto,
   onCancel
 }: PDIInspectionFormProps) {
@@ -68,6 +68,16 @@ interface PDIInspectionFormProps {
   })
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
   const [photoCaption, setPhotoCaption] = useState('')
+  const [formData, setFormData] = useState({
+    unitId: inspection?.unitId || mockPDI.formDefaults.unitId,
+    technicianId: inspection?.technicianId || mockPDI.formDefaults.technicianId,
+    templateId: inspection?.templateId || mockPDI.formDefaults.templateId,
+    status: inspection?.status || mockPDI.formDefaults.status,
+    startedDate: inspection?.startedDate || mockPDI.formDefaults.startedDate,
+    notes: inspection?.notes || mockPDI.formDefaults.notes,
+    customerNotified: inspection?.customerNotified || mockPDI.formDefaults.customerNotified,
+    deliveryApproved: inspection?.deliveryApproved || mockPDI.formDefaults.deliveryApproved
+  })
 
   useEffect(() => {
     setNotes(inspection.notes || '')
@@ -280,14 +290,9 @@ interface PDIInspectionFormProps {
                 "bg-red-50 text-red-700 border-red-200"
               )}>
                 {inspection.status.replace('_', ' ').toUpperCase()}
-                {mockPDI.technicianOptions.map(tech => (
-                  <SelectItem key={tech.id} value={tech.id}>
-                {mockPDI.templateOptions.map(template => (
-                {mockPDI.checklistStatuses.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={onCancel}>
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
