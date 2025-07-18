@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Search, ArrowUp, ArrowDown } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
+import { mockFinance } from '@/mocks/financeMock'
 interface AmortizationScheduleProps {
   schedule: Array<{
-import { mockFinance } from '@/mocks/financeMock'
     month: number
     payment: number
     principal: number
