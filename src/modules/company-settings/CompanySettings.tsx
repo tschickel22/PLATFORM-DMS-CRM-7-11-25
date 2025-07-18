@@ -14,6 +14,7 @@ import { BrandingSettings } from './components/BrandingSettings'
 import { LabelOverrides } from './components/LabelOverrides'
 import { NotificationTemplates } from './components/NotificationTemplates'
 import { IntegrationSettings } from './components/IntegrationSettings'
+import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 function CompanySettingsPage() {
   const { tenant, customFields, updateTenantSettings, addCustomField, updateCustomField, deleteCustomField } = useTenant()
@@ -21,6 +22,7 @@ function CompanySettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [showCustomFieldModal, setShowCustomFieldModal] = useState(false)
 
+  // Use tabs and modules from mock
   const tabs = [
     { id: 'general', name: 'General', icon: Building },
     { id: 'branding', name: 'Branding', icon: Palette },
@@ -30,16 +32,7 @@ function CompanySettingsPage() {
     { id: 'users', name: 'Users', icon: Users },
     { id: 'custom-fields', name: 'Custom Fields', icon: Settings },
   ]
-
-  const modules = [
-    'crm',
-    'inventory',
-    'quotes',
-    'agreements',
-    'service',
-    'delivery',
-    'invoices'
-  ]
+  const modules = mockCompanySettings.customFields.modules
 
   const handleCreateCustomField = () => {
     setSelectedCustomField(null)

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Mail, MessageSquare, Save, Plus, Trash2, RefreshCw, Eye } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
+import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 interface EmailTemplate {
   id: string
@@ -60,38 +61,10 @@ export function NotificationTemplates() {
   const [previewType, setPreviewType] = useState<'email' | 'sms'>('email')
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | SMSTemplate | null>(null)
 
-  const emailTypes = [
-    { value: 'welcome', label: 'Welcome Email' },
-    { value: 'quote', label: 'Quote Email' },
-    { value: 'service', label: 'Service Notification' },
-    { value: 'delivery', label: 'Delivery Notification' },
-    { value: 'invoice', label: 'Invoice Email' },
-    { value: 'password_reset', label: 'Password Reset' },
-    { value: 'custom', label: 'Custom Email' }
-  ]
-
-  const smsTypes = [
-    { value: 'welcome', label: 'Welcome SMS' },
-    { value: 'quote', label: 'Quote SMS' },
-    { value: 'service', label: 'Service Notification' },
-    { value: 'delivery', label: 'Delivery Notification' },
-    { value: 'appointment', label: 'Appointment Reminder' },
-    { value: 'custom', label: 'Custom SMS' }
-  ]
-
-  const commonVariables = [
-    '{{first_name}}',
-    '{{last_name}}',
-    '{{company_name}}',
-    '{{quote_number}}',
-    '{{invoice_number}}',
-    '{{service_ticket}}',
-    '{{delivery_date}}',
-    '{{appointment_date}}',
-    '{{appointment_time}}',
-    '{{login_url}}',
-    '{{reset_url}}'
-  ]
+  // Use template types and variables from mock
+  const emailTypes = mockCompanySettings.notifications.emailTypes
+  const smsTypes = mockCompanySettings.notifications.smsTypes
+  const commonVariables = mockCompanySettings.notifications.commonVariables
 
   const resetEmailForm = () => {
     setEditingEmailTemplate(null)

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Globe, Mail, MessageSquare, Webhook, Save, Plus, Trash2 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
+import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 export function IntegrationSettings() {
   const { tenant, updateTenantSettings } = useTenant()
@@ -39,31 +40,10 @@ export function IntegrationSettings() {
   const [allowedOrigins, setAllowedOrigins] = useState<string[]>(tenant?.settings?.allowedOrigins || [])
   const [newAllowedOrigin, setNewAllowedOrigin] = useState('')
 
-  const emailProviders = [
-    { value: 'default', label: 'Default (Platform)' },
-    { value: 'sendgrid', label: 'SendGrid' },
-    { value: 'mailchimp', label: 'Mailchimp' },
-    { value: 'mailgun', label: 'Mailgun' },
-    { value: 'smtp', label: 'Custom SMTP' }
-  ]
-
-  const smsProviders = [
-    { value: 'default', label: 'Default (Platform)' },
-    { value: 'twilio', label: 'Twilio' },
-    { value: 'messagebird', label: 'MessageBird' },
-    { value: 'vonage', label: 'Vonage (Nexmo)' }
-  ]
-
-  const webhookEvents = [
-    { value: 'lead.created', label: 'Lead Created' },
-    { value: 'lead.updated', label: 'Lead Updated' },
-    { value: 'quote.created', label: 'Quote Created' },
-    { value: 'quote.accepted', label: 'Quote Accepted' },
-    { value: 'service.created', label: 'Service Ticket Created' },
-    { value: 'service.completed', label: 'Service Completed' },
-    { value: 'vehicle.created', label: 'Home/RV Created' },
-    { value: 'vehicle.sold', label: 'Home/RV Sold' }
-  ]
+  // Use providers and events from mock
+  const emailProviders = mockCompanySettings.integrations.emailProviders
+  const smsProviders = mockCompanySettings.integrations.smsProviders
+  const webhookEvents = mockCompanySettings.integrations.webhookEvents
 
   const addWebhook = () => {
     if (!newWebhookEvent || !newWebhookUrl) return

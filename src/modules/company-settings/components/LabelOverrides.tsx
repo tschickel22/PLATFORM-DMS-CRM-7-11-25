@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tag, Save, RefreshCw } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
+import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 export function LabelOverrides() {
   const { tenant, updateTenantSettings } = useTenant()
@@ -21,48 +22,8 @@ export function LabelOverrides() {
     tenant?.settings?.platformType || 'both'
   )
 
-  // Default labels for each module
-  const defaultLabels = {
-    general: {
-      'vehicle': 'Home/RV',
-      'customer': 'Customer',
-      'deal': 'Deal',
-      'quote': 'Quote',
-      'service': 'Service',
-      'inventory': 'Inventory'
-    },
-    crm: {
-      'lead': 'Lead',
-      'prospect': 'Prospect',
-      'contact': 'Contact',
-      'activity': 'Activity',
-      'source': 'Source'
-    },
-    inventory: {
-      'vin': 'VIN',
-      'make': 'Make',
-      'model': 'Model',
-      'year': 'Year',
-      'type': 'Type',
-      'price': 'Price',
-      'cost': 'Cost',
-      'features': 'Features'
-    },
-    sales: {
-      'salesperson': 'Sales Rep',
-      'commission': 'Commission',
-      'deal_stage': 'Deal Stage',
-      'close_date': 'Close Date',
-      'financing': 'Financing'
-    },
-    service: {
-      'technician': 'Technician',
-      'service_ticket': 'Service Ticket',
-      'parts': 'Parts',
-      'labor': 'Labor',
-      'warranty': 'Warranty'
-    }
-  }
+  // Use default labels from mock
+  const defaultLabels = mockCompanySettings.labelOverrides.defaultLabels
 
   const handleLabelChange = (module: string, key: string, value: string) => {
     setLabelOverrides({
@@ -139,9 +100,11 @@ export function LabelOverrides() {
               <SelectValue placeholder="Select platform type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="rv">RV Dealership</SelectItem>
-              <SelectItem value="mh">Manufactured Housing</SelectItem>
-              <SelectItem value="both">Both RV & Manufactured Housing</SelectItem>
+              {mockCompanySettings.labelOverrides.platformTypes.map(type => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">
