@@ -7,6 +7,12 @@ import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 import { TrendingUp, TrendingDown, DollarSign, Target, Clock, BarChart3 } from 'lucide-react'
 
 interface DealMetricsProps {
+  // Props can be defined here if needed
+}
+
+export function DealMetrics(props: DealMetricsProps) {
+  const { tenant } = useTenant()
+  
   // Use tenant metrics if available, otherwise fallback to mock data
   const metrics = tenant?.dealMetrics || mockCrmSalesDeal.metrics
 
