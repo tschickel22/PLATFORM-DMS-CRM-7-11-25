@@ -96,7 +96,7 @@ function AgreementsList() {
 
   // Use tenant agreements if available, otherwise fallback to mock data
   const tenant = null
-  const agreements = tenant?.agreements || mockAgreements
+  const agreementsData = tenant?.agreements || mockAgreements
   const agreementTypes = tenant?.agreementTypes || [
     { value: 'PURCHASE', label: 'Purchase Agreement' },
     { value: 'SERVICE', label: 'Service Contract' }
