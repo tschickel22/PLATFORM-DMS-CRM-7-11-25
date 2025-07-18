@@ -182,6 +182,23 @@ export interface Agreement {
   coverageLevel?: string
 }
 
+export interface AgreementTemplate {
+  id: string
+  name: string
+  description: string
+  type: AgreementType
+  terms: string
+  mergeFields: string[]
+  category?: string
+  isActive: boolean
+  version: string
+  createdAt: Date
+  updatedAt: Date
+  createdBy: string
+  usageCount?: number
+  tags?: string[]
+}
+
 export interface Document {
   id: string
   name: string
