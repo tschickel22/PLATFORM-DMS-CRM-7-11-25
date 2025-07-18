@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { mockDelivery } from '@/mocks/deliveryMock'
 import {
   Card,
   CardContent,
@@ -210,6 +211,23 @@ export function ETANotificationForm({ delivery, onSend, onCancel }: ETANotificat
                   onChange={(e) => setEstimatedArrivalTime(e.target.value)}
                 />
               </div>
+            </div>
+
+            {/* Driver Assignment */}
+            <div>
+              <Label htmlFor="driver">Assign Driver</Label>
+              <Select defaultValue={mockDelivery.driverNames[0]}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select driver" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockDelivery.driverNames.map(driver => (
+                    <SelectItem key={driver} value={driver}>
+                      {driver}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

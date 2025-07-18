@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { mockDelivery } from '@/mocks/deliveryMock'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,6 +24,11 @@ interface DeliveryFormProps {
 export function DeliveryForm({ delivery, vehicles, customers, onSave, onCancel }: DeliveryFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [deliveryType, setDeliveryType] = useState(delivery?.type || mockDelivery.deliveryTypes[0])
+  const [status, setStatus] = useState(delivery?.status || mockDelivery.deliveryStatuses[0])
+  const [scheduledDate, setScheduledDate] = useState(
+    delivery?.scheduledDate ? new Date(delivery.scheduledDate).toISOString().split('T')[0] : ''
+  )
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false)
   const [formData, setFormData] = useState<Partial<Delivery>>({
     customerId: '',
@@ -48,6 +54,17 @@ export function DeliveryForm({ delivery, vehicles, customers, onSave, onCancel }
       departureNotes: '',
       deliveryNotes: '',
       deliveryPhotos: []
+    }
+  })
+  const [notes, setNotes] = useState(delivery?.notes || '')
+  const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
+    const defaultChecklist: Record<string, boolean> = {}
+    mockDelivery.checklistItems.forEach(item => {
+      defaultChecklist[item] = false
+    })
+    return {
+      ...defaultChecklist,
+      ...delivery?.checklist
     }
   })
 
@@ -286,22 +303,38 @@ export function DeliveryForm({ delivery, vehicles, customers, onSave, onCancel }
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value: DeliveryStatus) => setFormData(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-50">
-                    <SelectItem value={DeliveryStatus.SCHEDULED}>Scheduled</SelectItem>
-                    <SelectItem value={DeliveryStatus.IN_TRANSIT}>In Transit</SelectItem>
-                    <SelectItem value={DeliveryStatus.DELIVERED}>Delivered</SelectItem>
-                    <SelectItem value={DeliveryStatus.CANCELLED}>Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="deliveryType">Delivery Type</Label>
+                  <Select value={deliveryType} onValueChange={setDeliveryType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select delivery type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockDelivery.deliveryTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockDelivery.deliveryStatuses.map(status => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
@@ -523,6 +556,23 @@ export function DeliveryForm({ delivery, vehicles, customers, onSave, onCancel }
                   placeholder="Add any notes about this delivery"
                   rows={3}
                 />
+              </div>
+
+              <div>
+                <Label>Delivery Checklist</Label>
+                <div className="space-y-2 mt-2">
+                  {mockDelivery.checklistItems.map(item => (
+                    <div key={item} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={checklist[item] || false}
+                        onCheckedChange={(checked) => 
+                          setChecklist(prev => ({ ...prev, [item]: !!checked }))
+                        }
+                      />
+                      <Label className="text-sm">{item}</Label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

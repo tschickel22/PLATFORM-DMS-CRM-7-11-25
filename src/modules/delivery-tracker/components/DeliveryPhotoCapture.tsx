@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { mockDelivery } from '@/mocks/deliveryMock'
 import {
   Card,
   CardHeader,
@@ -177,6 +178,19 @@ export function DeliveryPhotoCapture({ onCapture, onCancel }: DeliveryPhotoCaptu
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Photo Instructions */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Photo Instructions</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
+              {mockDelivery.photoInstructions.map((instruction, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span>{instruction}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* ...camera and upload code remains the same... */}
           {photos.length > 0 && (
             <div className="space-y-4">
