@@ -237,6 +237,21 @@ function InvoicesList() {
       invoice.dueDate,
       invoice.recurrence
           </CardContent>
+
+    return (
+      <Card className="shadow-sm border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-blue-900">
+            Total Invoices
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-blue-900">
+            {mockInvoice.sampleInvoices.length}
+          </div>
+          <p className="text-xs text-blue-700 mt-1">
+            All invoices
+          </p>
         </Card>
         <Card className="shadow-sm border-0 bg-gradient-to-br from-green-50 to-green-100/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
