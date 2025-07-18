@@ -19,7 +19,7 @@ export default function NurtureSequences({
   leads, 
   onSequenceStart, 
   onSequencePause, 
-export function NurtureSequences({ leads }: NurtureSequencesProps) {
+  onSequenceReset
 }: NurtureSequencesProps) {
   const sequences = mockCrmProspecting.sequences
   const [selectedSequence, setSelectedSequence] = useState('')
@@ -128,3 +128,4 @@ export function NurtureSequences({ leads }: NurtureSequencesProps) {
       </div>
     </div>
   )
+}
