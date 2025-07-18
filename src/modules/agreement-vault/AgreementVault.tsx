@@ -369,6 +369,143 @@ function AgreementsList() {
         <div className="ri-search-bar">
           <Search className="ri-search-icon" />
           <Input
+            className="ri-search-input"
+            placeholder="Search agreements..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {(tenant?.agreementStatuses || mockAgreements.agreementStatuses).map((status) => (
+              <SelectItem key={status.value} value={status.value}>
+                {status.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {(tenant?.agreementTypes || mockAgreements.agreementTypes).map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Agreements Grid */}
+      <div className="space-y-4">
+        {filteredAgreements.length > 0 ? (
+          filteredAgreements.map((agreement) => {
+            const statusConfig = (tenant?.agreementStatuses || mockAgreements.agreementStatuses)
+              .find(s => s.value === agreement.status)
+            
+            return (
+              <div key={agreement.id} className="ri-table-row">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {(tenant?.agreementTypes || mockAgreements.agreementTypes)
+                          .find(t => t.value === agreement.type)?.label || agreement.type}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {agreement.customerName} • {agreement.vehicleInfo}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Created: {formatDate(agreement.createdAt)}
+                        {agreement.signedAt && ` • Signed: ${formatDate(agreement.signedAt)}`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Badge className={statusConfig?.color || 'bg-gray-100 text-gray-800'}>
+                    {statusConfig?.label || agreement.status}
+                  </Badge>
+                  
+                  <div className="ri-action-buttons">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewAgreement(agreement)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditAgreement(agreement)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    
+                    {agreement.status === 'DRAFT' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSendForSignature(agreement)}
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Send
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>No agreements found</p>
+            <p className="text-sm">Create your first agreement to get started</p>
+          </div>
+        )}
+      </div>
+
+      {/* Agreement Form Modal */}
+      {showAgreementForm && (
+        <AgreementForm
+          agreement={selectedAgreement}
+          onClose={() => {
+            setShowAgreementForm(false)
+            setSelectedAgreement(null)
+          }}
+          onSave={handleSaveAgreement}
+        />
+      )}
+
+      {/* Agreement Viewer Modal */}
+      {showAgreementViewer && selectedAgreement && (
+        <AgreementViewer
+          agreement={selectedAgreement}
+          onClose={() => {
+            setShowAgreementViewer(false)
+            setSelectedAgreement(null)
+          }}
+        />
+      )}
+    </div>
   )
 }
 export default function AgreementVault() {
