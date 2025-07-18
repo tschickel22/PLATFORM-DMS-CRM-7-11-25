@@ -7,6 +7,7 @@ import { ReportType } from '@/types'
 import { Search, Download, Filter, Eye, FileText, Calendar } from 'lucide-react'
 import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
 import { useTenant } from '@/contexts/TenantContext'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableHeader,
@@ -125,9 +126,51 @@ export function ReportDisplayTable({
     // Default string comparison
     const aString = aValue.toString().toLowerCase()
     const bString = bValue.toString().toLowerCase()
+    
+    return sortDirection === 'asc' 
+      ? aString.localeCompare(bString)
+      : bString.localeCompare(aString)
+  })
+
+  // Pagination
+  const totalPages = Math.ceil(sortedData.length / rowsPerPage)
+  const paginatedData = sortedData.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  )
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const formatCellValue = (value: any, type?: string) => {
+    if (value === null || value === undefined) return '-'
+    
+    switch (type) {
+      case 'currency':
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(value)
+      case 'number':
+        return new Intl.NumberFormat('en-US').format(value)
+      case 'date':
+        return new Date(value).toLocaleDateString()
+      case 'boolean':
+        return value ? 'Yes' : 'No'
+      default:
+        return value.toString()
+    }
+  }
+
   // Get available categories from mock data
   const categories = ['All', ...mockReportingSuite.reportCategories.filter(cat => cat !== 'All')]
-        return value.toString()
+  
   // Filter reports based on search term and category
   const filteredReports = sampleReports.filter(report => {
     const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -216,67 +259,6 @@ export function ReportDisplayTable({
               />
             </div>
           </div>
-          
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {columns.map((column) => (
-                    <TableHead 
-                      key={column.key}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort(column.key)}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>{column.label}</span>
-                        {sortField === column.key && (
-                          sortDirection === 'asc' 
-                            ? <ArrowUp className="h-3 w-3" /> 
-                            : <ArrowDown className="h-3 w-3" />
-                        )}
-                      </div>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedData.length > 0 ? (
-                  paginatedData.map((row, rowIndex) => (
-                    <TableRow key={rowIndex}>
-                      {columns.map((column) => (
-                        <TableCell key={column.key}>
-                          {formatCellValue(row[column.key], column.type)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      No results found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * rowsPerPage + 1} to {Math.min(currentPage * rowsPerPage, sortedData.length)} of {sortedData.length} results
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <Button
           
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -381,13 +363,13 @@ export function ReportDisplayTable({
             <p className="text-sm text-muted-foreground">
               Showing {filteredReports.length} of {sampleReports.length} reports
             </p>
-                  size="sm"
-                </Button>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
               Export Selected
-            </div>
-          )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
 }
-        )}
