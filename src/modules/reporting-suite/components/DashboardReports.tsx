@@ -5,7 +5,8 @@ import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
 import { useTenant } from '@/contexts/TenantContext'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BarChart3, TrendingUp, TrendingDown, Download, Calendar, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { TrendingDown, Download, Calendar, RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts'
@@ -29,10 +30,89 @@ interface ChartData {
 
 export function DashboardReports() {
   const { tenant } = useTenant()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  const [timeframe, setTimeframe] = useState('7d')
+  const [activeTab, setActiveTab] = useState('overview')
   
   // Use tenant dashboard data if available, otherwise fall back to mock
   const dashboardWidgets = tenant?.dashboardWidgets || mockReportingSuite.dashboardWidgets
   const reportResults = mockReportingSuite.sampleReportResults
+
+  // Mock data for metrics
+  const [metrics, setMetrics] = useState<MetricData[]>([
+    {
+      metric: 'Total Leads',
+      value: '2,651',
+      change: '+12.5%',
+      changePercent: '12.5%',
+      category: 'leads',
+      trend: 'up'
+    },
+    {
+      metric: 'Conversion Rate',
+      value: '3.2%',
+      change: '+0.4%',
+      changePercent: '0.4%',
+      category: 'leads',
+      trend: 'up'
+    },
+    {
+      metric: 'Avg Response Time',
+      value: '3.2 hrs',
+      change: '-0.8 hrs',
+      changePercent: '20%',
+      category: 'leads',
+      trend: 'up'
+    },
+    {
+      metric: 'Total Revenue',
+      value: '$1,245,890',
+      change: '+8.3%',
+      changePercent: '8.3%',
+      category: 'sales',
+      trend: 'up'
+    },
+    {
+      metric: 'Units Sold',
+      value: '87',
+      change: '+12.4%',
+      changePercent: '12.4%',
+      category: 'sales',
+      trend: 'up'
+    },
+    {
+      metric: 'Avg Deal Size',
+      value: '$14,320',
+      change: '-2.1%',
+      changePercent: '2.1%',
+      category: 'sales',
+      trend: 'down'
+    },
+    {
+      metric: 'Gross Profit Margin',
+      value: '22.4%',
+      change: '+1.5%',
+      changePercent: '1.5%',
+      category: 'sales',
+      trend: 'up'
+    }
+  ])
+
+  // Mock data for charts
+  const [leadsBySource, setLeadsBySource] = useState<ChartData[]>([
+    { name: 'Website', value: 1245 },
+    { name: 'Referral', value: 654 },
+    { name: 'Social Media', value: 432 },
+    { name: 'Trade Show', value: 320 }
+  ])
+
+  const [salesByProduct, setSalesByProduct] = useState<ChartData[]>([
+    { name: 'Motorhomes', value: 520000 },
+    { name: 'Travel Trailers', value: 380000 },
+    { name: 'Fifth Wheels', value: 245000 },
+    { name: 'Toy Haulers', value: 100000 }
+  ])
 
   const getIconComponent = (type: string) => {
     switch (type) {
@@ -42,6 +122,53 @@ export function DashboardReports() {
       case 'numberCard': return TrendingUp
       default: return BarChart3
     }
+  }
+
+  const handleRefresh = async () => {
+    setLoading(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      toast({
+        title: 'Dashboard Refreshed',
+        description: 'Latest data has been loaded.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh dashboard data.',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExport = () => {
+    toast({
+      title: 'Export Started',
+      description: 'Your dashboard report is being prepared for download.',
+    })
+    
+    // Simulate download delay
+    setTimeout(() => {
+      toast({
+        title: 'Export Complete',
+        description: 'Your dashboard report has been downloaded.',
+      })
+    }, 2000)
+  }
+
+  const handleTimeframeChange = (value: string) => {
+    setTimeframe(value)
+    
+    // Simulate data change based on timeframe
+    setLoading(true)
+    setTimeout(() => {
+      // This would be replaced with actual API calls in a real implementation
+      setLoading(false)
+    }, 1000)
   }
 
   const renderWidget = (widget: any) => {
@@ -115,110 +242,6 @@ export function DashboardReports() {
       </Card>
     )
   }
-    },
-    {
-      metric: 'Avg Response Time',
-      value: '3.2 hrs',
-      change: '-0.8 hrs',
-      changePercent: '20%',
-      category: 'leads',
-      trend: 'up'
-    },
-    {
-      metric: 'Total Revenue',
-      value: '$1,245,890',
-      change: '+8.3%',
-      changePercent: '8.3%',
-      category: 'sales',
-      trend: 'up'
-    },
-    {
-      metric: 'Units Sold',
-      value: '87',
-      change: '+12.4%',
-      changePercent: '12.4%',
-      category: 'sales',
-      trend: 'up'
-    },
-    {
-      metric: 'Avg Deal Size',
-      value: '$14,320',
-      change: '-2.1%',
-      changePercent: '2.1%',
-      category: 'sales',
-      trend: 'down'
-    },
-    {
-      metric: 'Gross Profit Margin',
-      value: '22.4%',
-      change: '+1.5%',
-      changePercent: '1.5%',
-      category: 'sales',
-      trend: 'up'
-    }
-  ])
-
-  // Mock data for charts
-  const [leadsBySource, setLeadsBySource] = useState<ChartData[]>([
-    { name: 'Website', value: 1245 },
-    { name: 'Referral', value: 654 },
-    { name: 'Social Media', value: 432 },
-    { name: 'Trade Show', value: 320 }
-  ])
-
-  const [salesByProduct, setSalesByProduct] = useState<ChartData[]>([
-    { name: 'Motorhomes', value: 520000 },
-    { name: 'Travel Trailers', value: 380000 },
-    { name: 'Fifth Wheels', value: 245000 },
-    { name: 'Toy Haulers', value: 100000 }
-  ])
-
-  const handleRefresh = async () => {
-    setLoading(true)
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      toast({
-        title: 'Dashboard Refreshed',
-        description: 'Latest data has been loaded.',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh dashboard data.',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleExport = () => {
-    toast({
-      title: 'Export Started',
-      description: 'Your dashboard report is being prepared for download.',
-    })
-    
-    // Simulate download delay
-    setTimeout(() => {
-      toast({
-        title: 'Export Complete',
-        description: 'Your dashboard report has been downloaded.',
-      })
-    }, 2000)
-  }
-
-  const handleTimeframeChange = (value: string) => {
-    setTimeframe(value)
-    
-    // Simulate data change based on timeframe
-    setLoading(true)
-    setTimeout(() => {
-      // This would be replaced with actual API calls in a real implementation
-      setLoading(false)
-    }, 1000)
-  }
 
   return (
     <div className="space-y-6">
@@ -227,6 +250,22 @@ export function DashboardReports() {
         <p className="text-muted-foreground">
           Key performance indicators and metrics for your {tenant?.name || 'business'}
         </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Performance Dashboard</CardTitle>
+              <CardDescription>Monitor your key business metrics and performance indicators</CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Select value={timeframe} onValueChange={handleTimeframeChange}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select timeframe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">Last 7 Days</SelectItem>
                   <SelectItem value="30d">Last 30 Days</SelectItem>
                   <SelectItem value="90d">Last 90 Days</SelectItem>
                   <SelectItem value="ytd">Year to Date</SelectItem>
@@ -344,6 +383,41 @@ export function DashboardReports() {
                       </div>
                     </CardContent>
                   </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="sales" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-4">
+                {metrics.filter(m => m.category === 'sales').map((metric, index) => (
+                  <Card key={index} className="shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">{metric.metric}</p>
+                        {metric.trend === 'up' ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <p className="text-2xl font-bold">{metric.value}</p>
+                        <p className={cn(
+                          "text-xs",
+                          metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                        )}>
+                          {metric.change} from last period
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
       {/* Dashboard Widgets */}
       <div className="space-y-6">
         {dashboardWidgets.map((widget, index) => (
@@ -351,7 +425,7 @@ export function DashboardReports() {
             {renderWidget(widget)}
           </div>
         ))}
-      </Card>
+      </div>
     </div>
   )
 }
