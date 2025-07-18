@@ -34,13 +34,16 @@ export function InvoiceForm({ invoice, onSave, onCancel }: InvoiceFormProps) {
     notes: mockInvoice.formDefaults.notes,
     paymentMethod: mockInvoice.formDefaults.paymentMethod,
     lineItems: [...mockInvoice.formDefaults.lineItems]
+  })
 
   const [newItem, setNewItem] = useState<Partial<InvoiceItem>>({
-  const paymentMethods = mockInvoice.paymentMethods
+    description: '',
     quantity: 1,
     unitPrice: 0,
     total: 0
   })
+
+  const paymentMethods = mockInvoice.paymentMethods
 
   const [taxRate, setTaxRate] = useState(0.08) // 8% default tax rate
 
