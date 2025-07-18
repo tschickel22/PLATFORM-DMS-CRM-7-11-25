@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { Deal, DealStage, DealStatus } from '../types'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Calendar, DollarSign, User, TrendingUp, AlertCircle } from 'lucide-react'
 import { DropResult, DraggableLocation } from 'react-beautiful-dnd'
+import { useTenant } from '@/contexts/TenantContext'
+import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 
 const stageConfig = [
   { stage: DealStage.PROSPECTING, name: 'Prospecting', color: 'bg-blue-500' },
@@ -26,7 +28,12 @@ interface DealPipelineProps {
 }
 
 export function DealPipeline({ deals, onDealStageChange, onDealClick }: DealPipelineProps) {
+  const { tenant } = useTenant()
   const [draggedDeal, setDraggedDeal] = useState<string | null>(null)
+
+  // Use tenant data if available, otherwise fallback to mock data
+  const stages = tenant?.settings?.dealStages || mockCrmSalesDeal.dealStages
+  const [dealsState, setDeals] = useState(tenant?.deals || mockCrmSalesDeal.sampleDeals)
 
   const getStatusColor = (status: DealStatus) => {
     switch (status) {
@@ -91,6 +98,10 @@ export function DealPipeline({ deals, onDealStageChange, onDealClick }: DealPipe
 
   const getWeightedStageValue = (stage: DealStage) => {
     return getStageDeals(stage).reduce((sum, deal) => sum + (deal.value * deal.probability / 100), 0)
+  }
+
+  const getStageColor = (stage: string) => {
+    return mockCrmSalesDeal.stageColors[stage] || 'bg-gray-100 text-gray-800'
   }
 
   return (

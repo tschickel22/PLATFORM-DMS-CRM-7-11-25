@@ -13,6 +13,7 @@ import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 
 interface DealFormProps {
   deal?: Deal

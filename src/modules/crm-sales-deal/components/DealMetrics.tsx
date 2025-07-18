@@ -3,18 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress'
 import { DealMetrics as DealMetricsType, StageConversionRate } from '../types'
 import { formatCurrency } from '@/lib/utils'
+import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 import { TrendingUp, TrendingDown, DollarSign, Target, Clock, BarChart3 } from 'lucide-react'
 
 interface DealMetricsProps {
-  metrics: DealMetricsType
-}
-
-export function DealMetrics({ metrics }: DealMetricsProps) {
-  const getConversionColor = (rate: number) => {
-    if (rate >= 80) return 'text-green-600'
-    if (rate >= 60) return 'text-yellow-600'
-    return 'text-red-600'
-  }
+  // Use tenant metrics if available, otherwise fallback to mock data
+  const metrics = tenant?.dealMetrics || mockCrmSalesDeal.metrics
 
   return (
     <div className="space-y-6">
