@@ -400,35 +400,6 @@ function AgreementsList() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredAgreements.map((agreement) => (
-              <div key={agreement.id} className="ri-table-row">
-                <div className="flex items-center space-x-4 flex-1">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-semibold text-foreground">Agreement #{agreement.id}</h3>
-                      <Badge className={cn("ri-badge-status", getTypeColor(agreement.type))}>
-                        {getTypeLabel(agreement.type)}
-                      </Badge>
-                      <Badge className={cn("ri-badge-status", getStatusColor2(agreement.status))}>
-                        {getStatusLabel(agreement.status)}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {getTypeLabel(agreement.type)}
-                      {agreement.customerName && ` • ${agreement.customerName}`}
-                      {agreement.vehicleInfo && ` • ${agreement.vehicleInfo}`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 export default function AgreementVault() {
   return (
     <Routes>
