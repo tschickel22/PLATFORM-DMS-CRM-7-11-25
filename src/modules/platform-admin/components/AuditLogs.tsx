@@ -93,6 +93,40 @@ const mockAuditLogs = [
   },
 ];
 
+const getActionIcon = (action: string) => {
+  switch (action) {
+    case 'tenant_created':
+      return <Building className="h-5 w-5" />;
+    case 'api_token_generated':
+      return <Key className="h-5 w-5" />;
+    case 'module_disabled':
+      return <Settings className="h-5 w-5" />;
+    case 'email_sent':
+      return <Mail className="h-5 w-5" />;
+    case 'sms_failed':
+      return <MessageSquare className="h-5 w-5" />;
+    case 'user_login':
+      return <User className="h-5 w-5" />;
+    case 'database_backup':
+      return <Database className="h-5 w-5" />;
+    case 'settings_updated':
+      return <Settings className="h-5 w-5" />;
+    default:
+      return <FileText className="h-5 w-5" />;
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'success':
+      return 'bg-green-50 text-green-700 border-green-200';
+    case 'failure':
+      return 'bg-red-50 text-red-700 border-red-200';
+    default:
+      return 'bg-gray-50 text-gray-700 border-gray-200';
+  }
+};
+
 export function AuditLogs() {
   const [logs, setLogs] = useState(mockAuditLogs);
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,8 +139,7 @@ export function AuditLogs() {
       tenant: tenant.name,
       timestamp: new Date(log.timestamp)
     }))
-  )
-  };
+  );
 
   const getLogTypeColor = (type: string) => {
     switch (type) {
