@@ -91,7 +91,7 @@ function AgreementsList() {
   }
 
   const getTypeColor = (type: AgreementType) => {
-    return 'bg-gray-50 text-gray-700 border-gray-200'
+    return 'bg-blue-50 text-blue-700 border-blue-200'
   }
 
   // Use tenant agreements if available, otherwise fallback to mock data
@@ -465,11 +465,8 @@ function AgreementsList() {
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="shadow-sm">
-                    <Download className="h-3 w-3 mr-1" />
-                  </Button>
                   <Button variant="outline" size="sm" className="shadow-sm" onClick={() => handleDeleteAgreement(agreement.id)}>
-                    <Trash2 className="h-3 w-3 mr-1" />
+                    <Download className="h-3 w-3 mr-1" />
                   </Button>
                 </div>
               </div>
