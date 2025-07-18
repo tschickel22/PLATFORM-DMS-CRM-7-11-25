@@ -1,66 +1,58 @@
 # 🔒 Ignore all other modules except company-settings
-src/modules/agreement-vault/
-src/modules/client-portal/
-src/modules/commission-engine/
 src/modules/crm-prospecting/
-src/modules/delivery-tracker/
 src/modules/inventory-management/
+src/modules/quote-builder/
+src/modules/finance/
+src/modules/crm-sales-deal/
+src/modules/agreement-vault/
+src/modules/service-ops/
+src/modules/pdi-checklist/
+src/modules/delivery-tracker/
+src/modules/commission-engine/
+src/modules/client-portal/
 src/modules/invoice-payments/
 src/modules/platform-admin/
-src/modules/quote-builder/
 src/modules/reporting-suite/
-src/modules/service-ops/
-src/modules/crm-sales-deal/
-src/modules/finance/
-src/modules/pdi-checklist/
 
-# ✅ Keep company-settings active
+# ✅ Keep company-settings active (explicitly allow)
 !src/modules/company-settings/
 
-# 🔒 Ignore most core files except settings-related
+# 🔒 Ignore most components except UI components
 src/components/layout/
 src/components/auth/
-src/pages/Dashboard.tsx
-src/pages/Login.tsx
+src/pages/
+
+# ✅ Keep essential UI components
+!src/components/ui/
+
+# 🔒 Ignore contexts except tenant context
 src/contexts/AuthContext.tsx
-src/contexts/TenantContext.tsx
 src/contexts/ThemeContext.tsx
 
-# 🔒 Ignore package files and configs
+# ✅ Keep tenant context for settings
+!src/contexts/TenantContext.tsx
+
+# 🔒 Ignore build files and assets
+dist/
+public/
+node_modules/
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# 🔒 Ignore config and docs
+README.md
 package.json
 package-lock.json
 tsconfig.json
 tsconfig.node.json
-tailwind.config.js
 vite.config.ts
+tailwind.config.js
 postcss.config.js
+.gitignore
 knip.json
 
-# 🔒 Ignore static assets and build files
-public/
-dist/
-*.png
-*.jpg
-*.jpeg
-*.pdf
-*.svg
-*.mp4
-
-# 🔒 Ignore documentation and misc files
-README.md
-docs/
-CHANGELOG.md
-LICENSE
-.env
-.env.*
-*.yaml
-*.yml
-
-# 🔒 Ignore test files
-__tests__/
-*.test.*
-*.spec.*
-mocks/
-mock-data/
-test-data/
-*.mock.*
+# 🔒 Ignore API specs
+renter_insight_openapi.yaml
+renter_insight_bolt_manifest.json
