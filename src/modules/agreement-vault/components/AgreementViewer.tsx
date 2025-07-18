@@ -3,19 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  FileText, 
-  Download, 
-  Send, 
-  Eye, 
-  Calendar, 
-  User, 
-  Car, 
-  FileCheck,
-  Clock,
-  MapPin,
-  Signature
-} from 'lucide-react'
+import { FileText, Download, Send, Eye, Calendar, User, Car, FileCheck, Clock, MapPin, FileSignature as Signature } from 'lucide-react'
 import { Agreement, Document } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreements } from '@/mocks/agreementsMock'
