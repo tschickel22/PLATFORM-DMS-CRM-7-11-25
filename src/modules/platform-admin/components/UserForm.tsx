@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { X, Save, User, Mail, Shield } from 'lucide-react'
+import { mockPlatformAdmin } from '@/mocks/platformAdminMock'
 import { useToast } from '@/hooks/use-toast'
 import { UserRole } from '@/types'
 
@@ -22,9 +23,10 @@ export function UserForm({ tenantId, user, onSave, onCancel }: UserFormProps) {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    role: user?.role || UserRole.USER,
+    role: user?.role || mockPlatformAdmin.tenantRoles[0]?.value || 'user',
     isActive: user?.is_active !== false,
-    sendInvite: !user
+    sendInvite: !user,
+    permissions: user?.permissions || []
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -134,13 +136,44 @@ export function UserForm({ tenantId, user, onSave, onCancel }: UserFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                    <SelectItem value={UserRole.MANAGER}>Manager</SelectItem>
-                    <SelectItem value={UserRole.SALES}>Sales</SelectItem>
-                    <SelectItem value={UserRole.SERVICE}>Service</SelectItem>
-                    <SelectItem value={UserRole.USER}>User</SelectItem>
+                    {mockPlatformAdmin.tenantRoles.map(role => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label>Permissions</Label>
+              <div className="grid gap-2 mt-2">
+                {Object.keys(mockPlatformAdmin.defaultPermissions).map(permission => (
+                  <div key={permission} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={permission}
+                      checked={formData.permissions.includes(permission)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData(prev => ({
+                            ...prev,
+                            permissions: [...prev.permissions, permission]
+                          }))
+                        } else {
+                          setFormData(prev => ({
+                            ...prev,
+                            permissions: prev.permissions.filter(p => p !== permission)
+                          }))
+                        }
+                      }}
+                    />
+                    <Label htmlFor={permission} className="capitalize">
+                      {permission.replace(/([A-Z])/g, ' $1').trim()}
+                    </Label>
+                  </div>
+                ))}
               </div>
             </div>
             
