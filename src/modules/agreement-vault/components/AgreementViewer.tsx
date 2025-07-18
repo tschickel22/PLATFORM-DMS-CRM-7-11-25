@@ -7,7 +7,6 @@ import { X, Edit, Download, Send, FileText, User, Calendar, DollarSign } from 'l
 import { Agreement } from '@/types'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { mockAgreements } from '@/mocks/agreementsMock'
-import { processMergeFields, createMergeFieldData } from '@/modules/agreement-vault/utils/sendSignatureRequest'
 
 interface AgreementViewerProps {
   agreement: Agreement
@@ -17,10 +16,6 @@ interface AgreementViewerProps {
 
 export function AgreementViewer({ agreement, onClose, onEdit }: AgreementViewerProps) {
   const [activeTab, setActiveTab] = useState('details')
-  
-  // Process merge fields in agreement terms for display
-  const mergeData = createMergeFieldData(agreement)
-  const processedTerms = processMergeFields(agreement.terms, mergeData)
 
   const typeConfig = mockAgreements.agreementTypes.find(t => t.value === agreement.type)
   const statusConfig = mockAgreements.agreementStatuses.find(s => s.value === agreement.status)
@@ -214,8 +209,20 @@ export function AgreementViewer({ agreement, onClose, onEdit }: AgreementViewerP
                   <Separator />
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Terms and Conditions</h3>
-                    <div className="bg-muted/30 p-4 rounded-lg">
-                      <p className="text-sm whitespace-pre-wrap">{agreement.terms}</p>
+                    <div className="prose prose-sm max-w-none bg-muted/30 p-4 rounded-lg">
+                      <div className="whitespace-pre-wrap">{processedTerms}</div>
+                      {processedTerms !== agreement.terms && (
+                        <div className="mt-4 pt-4 border-t border-muted-foreground/20">
+                          <details className="text-xs text-muted-foreground">
+                            <summary className="cursor-pointer hover:text-foreground">
+                              View original template
+                            </summary>
+                            <div className="mt-2 p-2 bg-muted/50 rounded whitespace-pre-wrap font-mono text-xs">
+                              {agreement.terms}
+                            </div>
+                          </details>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>
