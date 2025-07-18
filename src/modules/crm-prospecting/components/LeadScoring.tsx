@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress'
 import { TrendingUp, Star, AlertCircle } from 'lucide-react'
 import { Lead } from '@/types'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface LeadScoringProps {
   lead: Lead
