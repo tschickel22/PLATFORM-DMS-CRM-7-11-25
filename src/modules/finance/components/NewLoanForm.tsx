@@ -47,17 +47,6 @@ export function NewLoanForm({
     amount: 0,
     downPayment: 0,
     term: 60,
-    rate: 6.99,
-    paymentAmount: 0,
-    paymentFrequency: 'Monthly',
-    loanType: 'standard',
-    startDate: '',
-    includeInsurance: false,
-    insuranceAmount: 0,
-    includeTax: false,
-    taxRate: 0,
-    notes: ''
-  })
   const [formData, setFormData] = useState(mockFinance.formDefaults)
 
   useEffect(() => {
