@@ -227,6 +227,7 @@ function InvoicesList() {
             <p className="text-xs text-blue-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
               All invoices
+            </p>
     const csvHeaders = mockInvoice.csvFields
           </CardContent>
         </Card>
