@@ -12,7 +12,6 @@ import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate } from '@/lib/utils'
-import { mockAgreements } from '@/mocks/agreementsMock'
 
 interface AgreementFormProps {
   agreement?: Agreement
@@ -43,9 +42,20 @@ export function AgreementForm({
   // Use tenant agreement types if available, otherwise fallback to mock
   // Use tenant data if available, otherwise fallback to mock data
   const agreementTypes = tenant?.agreementTypes || mockAgreements.agreementTypes
-  const customers = tenant?.customers || mockAgreements.sampleCustomers || []
-  const vehicles = tenant?.vehicles || mockAgreements.sampleVehicles || []
-  const quotes = tenant?.quotes || mockAgreements.sampleQuotes || []
+  const agreementStatuses = mockAgreements.agreementStatuses
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      await onSave({
+        ...formData,
+        documents
+      })
+      
+      toast({
+        title: 'Success',
         description: `Agreement ${agreement ? 'updated' : 'created'} successfully`,
       })
     } catch (error) {
