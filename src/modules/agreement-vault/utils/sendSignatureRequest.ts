@@ -414,3 +414,5 @@ function generateSecureToken(agreementId: string): string {
   const randomString = Math.random().toString(36).substring(2, 15)
   return btoa(`${agreementId}:${timestamp}:${randomString}`)
 }
+
+export { sendSignatureRequest, generateSignatureLink }
