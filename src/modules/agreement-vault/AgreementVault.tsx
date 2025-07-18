@@ -4,9 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { FileCheck, Plus, Search, Filter, Download, Eye, Edit, TrendingUp, Calendar } from 'lucide-react'
+import { FileText, Plus, Search, Filter, Download, Eye, Edit, Trash2, Send } from 'lucide-react'
 import { Agreement, AgreementStatus, AgreementType } from '@/types'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatCurrency } from '@/lib/utils'
+import { mockAgreements } from '@/mocks/agreementsMock'
+import { AgreementForm } from './components/AgreementForm'
+import { AgreementViewer } from './components/AgreementViewer'
+import { sendSignatureRequest, generateSignatureLink } from './utils/sendSignatureRequest'
 import { cn } from '@/lib/utils'
 
 const mockAgreements: Agreement[] = [
@@ -64,8 +68,11 @@ function AgreementsList() {
   const [searchTerm, setSearchTerm] = useState('')
 
   const getStatusColor = (status: AgreementStatus) => {
+  const [showForm, setShowForm] = useState(false)
+  const [showViewer, setShowViewer] = useState(false)
+  const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null)
+  const [loading, setLoading] = useState(false)
     switch (status) {
-      case AgreementStatus.DRAFT:
         return 'bg-gray-50 text-gray-700 border-gray-200'
       case AgreementStatus.PENDING:
         return 'bg-yellow-50 text-yellow-700 border-yellow-200'
@@ -76,32 +83,188 @@ function AgreementsList() {
       case AgreementStatus.EXPIRED:
         return 'bg-orange-50 text-orange-700 border-orange-200'
       case AgreementStatus.CANCELLED:
-        return 'bg-red-50 text-red-700 border-red-200'
-      default:
+  // Use tenant agreements if available, otherwise fallback to mock data
+  const agreements = tenant?.agreements || mockAgreements.sampleAgreements
+  const agreementTypes = tenant?.agreementTypes || mockAgreements.agreementTypes
+  const agreementStatuses = tenant?.agreementStatuses || mockAgreements.agreementStatuses
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
   }
-
-  const getTypeColor = (type: AgreementType) => {
-    switch (type) {
-      case AgreementType.PURCHASE:
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case AgreementType.LEASE:
-        return 'bg-purple-50 text-purple-700 border-purple-200'
-      case AgreementType.SERVICE:
-        return 'bg-green-50 text-green-700 border-green-200'
-      case AgreementType.WARRANTY:
-        return 'bg-orange-50 text-orange-700 border-orange-200'
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
-    }
-  }
-
+      agreement.terms.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (agreement.customerName && agreement.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
   const filteredAgreements = agreements.filter(agreement =>
     agreement.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agreement.customerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agreement.type.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const handleCreateAgreement = () => {
+    setSelectedAgreement(null)
+    setShowForm(true)
+  }
+
+  const handleEditAgreement = (agreement: Agreement) => {
+    setSelectedAgreement(agreement)
+    setShowForm(true)
+  }
+
+  const handleViewAgreement = (agreement: Agreement) => {
+    setSelectedAgreement(agreement)
+    setShowViewer(true)
+  }
+
+  const handleSaveAgreement = async (agreementData: Partial<Agreement>) => {
+    // In a real app, this would save to the backend
+    console.log('Saving agreement:', agreementData)
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    setShowForm(false)
+    setSelectedAgreement(null)
+    
+    toast({
+      title: 'Success',
+      description: `Agreement ${selectedAgreement ? 'updated' : 'created'} successfully`,
+    })
+  }
+
+  const handleSendSignatureRequest = async (agreementId: string) => {
+    const agreement = agreements.find(a => a.id === agreementId)
+    if (!agreement) return
+
+    setLoading(true)
+    try {
+      // Generate signature link
+      const signatureLink = generateSignatureLink(agreementId)
+      
+      // Get company settings from tenant
+      const companySettings = {
+        name: tenant?.name || 'Demo Company',
+        phone: tenant?.settings?.phone,
+        emailProvider: tenant?.settings?.emailProvider,
+        emailApiKey: tenant?.settings?.emailApiKey,
+        emailFromAddress: tenant?.settings?.emailFromAddress,
+        emailFromName: tenant?.settings?.emailFromName,
+        smsProvider: tenant?.settings?.smsProvider,
+        smsApiKey: tenant?.settings?.smsApiKey,
+        smsFromNumber: tenant?.settings?.smsFromNumber
+      }
+
+      // Send signature request
+      const result = await sendSignatureRequest(
+        {
+          agreementId: agreement.id,
+          customerName: agreement.customerName || 'Customer',
+          customerEmail: agreement.customerEmail || '',
+          customerPhone: agreement.customerPhone,
+          agreementType: agreementTypes.find(t => t.value === agreement.type)?.label || agreement.type,
+          vehicleInfo: agreement.vehicleInfo,
+          effectiveDate: formatDate(agreement.effectiveDate),
+          signatureLink
+        },
+        companySettings,
+        undefined, // Platform settings would come from platform admin context
+        false // Send SMS - could be made configurable
+      )
+
+      if (result.success) {
+        toast({
+          title: 'Signature Request Sent',
+          description: result.message,
+        })
+      } else {
+        throw new Error(result.message)
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send signature request',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteAgreement = async (agreementId: string) => {
+    if (!window.confirm('Are you sure you want to delete this agreement?')) return
+    
+    // In a real app, this would delete from the backend
+    console.log('Deleting agreement:', agreementId)
+    
+    toast({
+      title: 'Agreement Deleted',
+      description: 'The agreement has been deleted successfully.',
+    })
+  }
+
+  const getStatusColor = (status: string) => {
+    const statusConfig = agreementStatuses.find(s => s.value === status)
+    return statusConfig?.color || 'bg-gray-100 text-gray-800'
+  }
+
+  const getStatusLabel = (status: string) => {
+    const statusConfig = agreementStatuses.find(s => s.value === status)
+    return statusConfig?.label || status
+  }
+
+  const getTypeLabel = (type: string) => {
+    const typeConfig = agreementTypes.find(t => t.value === type)
+    return typeConfig?.label || type
+  }
+
+  // Show form
+  if (showForm) {
+    return (
+      <AgreementForm
+        agreement={selectedAgreement || undefined}
+        onSave={handleSaveAgreement}
+        onCancel={() => {
+          setShowForm(false)
+          setSelectedAgreement(null)
+        }}
+        customers={[
+          { id: 'cust-001', name: 'John Smith', email: 'john.smith@email.com' },
+          { id: 'cust-002', name: 'Maria Rodriguez', email: 'maria.rodriguez@email.com' },
+          { id: 'cust-003', name: 'David Johnson', email: 'david.johnson@email.com' }
+        ]}
+        vehicles={[
+          { id: 'veh-001', info: '2023 Forest River Cherokee 274RK' },
+          { id: 'veh-002', info: '2024 Keystone Montana 3761FL' },
+          { id: 'veh-003', info: '2022 Grand Design Solitude 310GK' }
+        ]}
+        quotes={[
+          { id: 'quote-001', number: 'Q-2024-001' },
+          { id: 'quote-002', number: 'Q-2024-002' }
+        ]}
+      />
+    )
+  }
+
+  // Show viewer
+  if (showViewer && selectedAgreement) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setShowViewer(false)
+              setSelectedAgreement(null)
+            }}
+          >
+            ← Back to Agreements
+          </Button>
+        </div>
+        <AgreementViewer
+          agreement={selectedAgreement}
+          onSendSignatureRequest={handleSendSignatureRequest}
+          onEdit={handleEditAgreement}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -114,7 +277,7 @@ function AgreementsList() {
               Manage contracts, agreements, and legal documents
             </p>
           </div>
-          <Button className="shadow-sm">
+          <Button className="shadow-sm" onClick={handleCreateAgreement}>
             <Plus className="h-4 w-4 mr-2" />
             New Agreement
           </Button>
@@ -215,7 +378,11 @@ function AgreementsList() {
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-semibold text-foreground">Agreement #{agreement.id}</h3>
                       <Badge className={cn("ri-badge-status", getTypeColor(agreement.type))}>
-                        {agreement.type.toUpperCase()}
+                      <p className="text-sm text-muted-foreground">
+                        {getTypeLabel(agreement.type)}
+                        {agreement.customerName && ` • ${agreement.customerName}`}
+                        {agreement.vehicleInfo && ` • ${agreement.vehicleInfo}`}
+                      </p>
                       </Badge>
                       <Badge className={cn("ri-badge-status", getStatusColor(agreement.status))}>
                         {agreement.status.toUpperCase()}
@@ -237,27 +404,45 @@ function AgreementsList() {
                         </div>
                       )}
                     </div>
+                  {agreement.totalAmount && (
+                    <div className="text-sm font-medium">
+                      {formatCurrency(agreement.totalAmount)}
+                    </div>
+                  )}
                     <div className="mt-2 bg-muted/30 p-2 rounded-md">
+                    {(agreement.status === 'DRAFT' || agreement.status === 'PENDING') && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleSendSignatureRequest(agreement.id)}
+                        disabled={loading}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    )}
                       <p className="text-sm text-muted-foreground">
                         {agreement.terms}
                       </p>
+                      onClick={() => handleViewAgreement(agreement)}
                     </div>
                   </div>
                 </div>
                 <div className="ri-action-buttons">
-                  <Button variant="outline" size="sm" className="shadow-sm">
-                    <Eye className="h-3 w-3 mr-1" />
+                  <Badge className={getStatusColor(agreement.status)}>
+                    {getStatusLabel(agreement.status)}
+                      onClick={() => handleEditAgreement(agreement)}
                     View
                   </Button>
                   <Button variant="outline" size="sm" className="shadow-sm">
-                    <Edit className="h-3 w-3 mr-1" />
+            {agreementTypes.map(type => (
                     Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="shadow-sm">
+                key={type.value}
+                      onClick={() => handleDeleteAgreement(agreement.id)}
+                variant={typeFilter === type.value ? 'default' : 'outline'}
                     <Download className="h-3 w-3 mr-1" />
-                    Download
+                onClick={() => setTypeFilter(type.value as AgreementType)}
                   </Button>
-                </div>
+                {type.label}
               </div>
             ))}
           </div>

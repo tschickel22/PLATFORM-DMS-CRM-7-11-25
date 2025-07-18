@@ -153,17 +153,33 @@ export interface Agreement {
   id: string
   type: AgreementType
   customerId: string
+  customerName?: string
+  customerEmail?: string
+  customerPhone?: string
   vehicleId?: string
+  vehicleInfo?: string
   quoteId?: string
-  status: AgreementStatus
-  signedDate?: Date
-  effectiveDate: Date
-  expirationDate?: Date
   terms: string
+  customerId: string
+  signedDate?: Date
+  effectiveDate: Date | string
+  expirationDate?: Date
+  signedBy?: string
+  signedAt?: Date | string
+  ipAddress?: string
+  signatureData?: string
   documents: Document[]
   customFields: Record<string, any>
   createdAt: Date
   updatedAt: Date
+  createdBy?: string
+  totalAmount?: number
+  downPayment?: number
+  financingAmount?: number
+  monthlyPayment?: number
+  securityDeposit?: number
+  annualFee?: number
+  coverageLevel?: string
 }
 
 export interface Document {
