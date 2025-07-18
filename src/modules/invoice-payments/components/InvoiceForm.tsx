@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { X, Save, Plus, Trash2, Receipt, Calendar, DollarSign } from 'lucide-react'
 import { Invoice, InvoiceStatus, InvoiceItem } from '@/types'
 import { useToast } from '@/hooks/use-toast'
+import { mockInvoice } from '@/mocks/invoiceMock'
 import { formatCurrency } from '@/lib/utils'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
 import { mockInvoice } from '@/mocks/invoiceMock'
@@ -21,14 +22,14 @@ interface InvoiceFormProps {
 export function InvoiceForm({ invoice, onSave, onCancel }: InvoiceFormProps) {
   const { toast } = useToast()
   const { leads } = useLeadManagement()
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<Partial<Invoice>>({
-    customerId: '',
-    number: `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-    items: [],
-    subtotal: 0,
-    tax: 0,
-    customerId: mockInvoice.formDefaults.customerId,
+  const [formData, setFormData] = useState({
+    customerId: invoice?.customerId || mockInvoice.formDefaults.customerId,
+    dueDate: invoice?.dueDate || mockInvoice.formDefaults.dueDate,
+    recurrence: invoice?.recurrence || mockInvoice.formDefaults.recurrence,
+    notes: invoice?.notes || mockInvoice.formDefaults.notes,
+    paymentMethod: invoice?.paymentMethod || mockInvoice.formDefaults.paymentMethod,
+    lineItems: invoice?.lineItems || mockInvoice.formDefaults.lineItems
+  })
     dueDate: mockInvoice.formDefaults.dueDate,
     recurrence: mockInvoice.formDefaults.recurrence,
     notes: mockInvoice.formDefaults.notes,
@@ -185,10 +186,12 @@ export function InvoiceForm({ invoice, onSave, onCancel }: InvoiceFormProps) {
             <div>
               <CardTitle>{invoice ? 'Edit Invoice' : 'Create Invoice'}</CardTitle>
               <CardDescription>
-                {invoice ? 'Update invoice details' : 'Create a new invoice'}
-              </CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
+                {['One-Time', 'Monthly', 'Quarterly', 'Annually'].map(option => (
+                {mockInvoice.paymentMethods.map(method => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
+                ))}
               <X className="h-4 w-4" />
             </Button>
           </div>
