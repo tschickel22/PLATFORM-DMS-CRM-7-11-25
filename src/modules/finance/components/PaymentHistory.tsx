@@ -94,8 +94,14 @@ export function PaymentHistory() {
       case 'cash':
         return 'Cash'
       case 'check':
+        return 'Check'
+      default:
+        return method
+    }
+  }
+
   // Use mock payment data as fallback
-  const payments = mockFinance.samplePayments.map(payment => ({
+  const paymentsData = mockFinance.samplePayments.map(payment => ({
     id: payment.id,
     date: payment.date,
     amount: payment.amount,
@@ -105,17 +111,31 @@ export function PaymentHistory() {
     method: 'Auto Pay',
     confirmationNumber: payment.status === 'Completed' ? `CNF-${payment.id.split('-')[1]}` : null
   }))
-      const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 6)
-      matchesDate = paymentDate >= startOfWeek && paymentDate <= endOfWeek
-    } else if (dateFilter === 'this_month') {
-      matchesDate = 
-        paymentDate.getMonth() === now.getMonth() && 
-      'Cancelled': 'bg-gray-100 text-gray-800',
-      'Current': 'bg-blue-100 text-blue-800',
-      'Late': 'bg-orange-100 text-orange-800',
-      'Default': 'bg-red-100 text-red-800',
-      'Paid Off': 'bg-green-100 text-green-800'
+
+  const filteredPayments = payments.filter(payment => {
+    const matchesSearch = payment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.id.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter
+    
+    let matchesDate = true
+    if (dateFilter !== 'all') {
+      const now = new Date()
+      const paymentDate = payment.paymentDate || payment.scheduledDate
+      
+      if (dateFilter === 'today') {
+        matchesDate = paymentDate.toDateString() === now.toDateString()
+      } else if (dateFilter === 'this_week') {
+        const startOfWeek = new Date(now)
+        startOfWeek.setDate(now.getDate() - now.getDay())
+        const endOfWeek = new Date(startOfWeek)
+        endOfWeek.setDate(startOfWeek.getDate() + 6)
+        matchesDate = paymentDate >= startOfWeek && paymentDate <= endOfWeek
+      } else if (dateFilter === 'this_month') {
+        matchesDate = 
+          paymentDate.getMonth() === now.getMonth() && 
+          paymentDate.getFullYear() === now.getFullYear()
+      }
     }
     
     return matchesSearch && matchesStatus && matchesDate
