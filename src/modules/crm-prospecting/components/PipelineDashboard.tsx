@@ -14,10 +14,11 @@ interface PipelineDashboardProps {
 }
 
 export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps) {
-  const [stageData, setStageData] = useState<Array<{
-    stage: string
   // Use mock data as fallback for pipeline stages
   const pipelineStages = mockCrmProspecting.pipelines
+  
+  const [stageData, setStageData] = useState<Array<{
+    stage: string
     value: number
     conversionRate: number
   }>>([])
