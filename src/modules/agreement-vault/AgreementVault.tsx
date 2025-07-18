@@ -5,14 +5,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, FileText, Eye, Edit, Trash2, Download, Send, Filter } from 'lucide-react'
+import { Search, Plus, FileText, FileTemplate, Eye, Edit, Trash2, Download, Send, Filter } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
-import { NewAgreementForm } from './components/NewAgreementForm'
+import { AgreementInstanceForm } from './components/AgreementInstanceForm'
 import { AgreementViewer } from './components/AgreementViewer'
+import { AgreementTemplatesPage } from './components/AgreementTemplatesPage'
 import { useAgreementManagement } from './hooks/useAgreementManagement'
 
 function AgreementVaultPage() {
@@ -36,6 +37,7 @@ function AgreementVaultPage() {
   const [showNewAgreementForm, setShowNewAgreementForm] = useState(false)
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null)
   const [showAgreementViewer, setShowAgreementViewer] = useState(false)
+  const [activeView, setActiveView] = useState<'agreements' | 'templates'>('agreements')
 
   const handleCreateAgreement = async (agreementData: Partial<Agreement>) => {
     try {
@@ -125,7 +127,7 @@ function AgreementVaultPage() {
     <div className="space-y-6">
       {/* New Agreement Form Modal */}
       {showNewAgreementForm && (
-        <NewAgreementForm
+        <AgreementInstanceForm
           agreement={selectedAgreement}
           onSave={handleCreateAgreement}
           onCancel={() => {
@@ -137,17 +139,27 @@ function AgreementVaultPage() {
 
       {/* Page Header */}
       <div className="ri-page-header">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="ri-page-title">Agreement Vault</h1>
             <p className="ri-page-description">
               Manage contracts, agreements, and digital signatures
             </p>
           </div>
-          <Button className="shadow-sm" onClick={() => setShowNewAgreementForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Agreement
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/agreements/templates'}
+              className="shadow-sm"
+            >
+              <FileTemplate className="h-4 w-4 mr-2" />
+              Manage Templates
+            </Button>
+            <Button className="shadow-sm" onClick={() => setShowNewAgreementForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Agreement
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -310,6 +322,7 @@ function AgreementVaultPage() {
 export default function AgreementVault() {
   return (
     <Routes>
+      <Route path="/templates" element={<AgreementTemplatesPage />} />
       <Route path="/" element={<AgreementVaultPage />} />
       <Route path="/*" element={<AgreementVaultPage />} />
     </Routes>
