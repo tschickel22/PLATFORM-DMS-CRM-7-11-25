@@ -21,6 +21,15 @@ interface NewLoanFormProps {
 }
 
 export function NewLoanForm({
+  onSave,
+  onCancel,
+  onAddNewCustomer,
+  preselectedCustomerId
+}: NewLoanFormProps) {
+  const { toast } = useToast()
+  const { leads } = useLeadManagement()
+  const { vehicles } = useInventoryManagement()
+  const [loading, setLoading] = useState(false)
   const [loanAmount, setLoanAmount] = useState(mockFinance.defaultLoan.amount.toString())
   const [downPayment, setDownPayment] = useState(mockFinance.defaultLoan.downPayment.toString())
   const [interestRate, setInterestRate] = useState(mockFinance.defaultLoan.rate.toString())
@@ -147,13 +156,8 @@ export function NewLoanForm({
         <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <CardHeader>
             <div className="flex items-center justify-between">
-                  {mockFinance.interestRates.map(rate => (
-                    <SelectItem key={rate} value={rate.toString()}>
-                  {mockFinance.paymentFrequencies.map(frequency => (
-                    <SelectItem key={frequency} value={frequency}>
-                      {frequency}
-                    </SelectItem>
-                  ))}
+              <CardTitle>Create New Loan</CardTitle>
+              <Button variant="ghost" size="sm" onClick={onCancel}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
