@@ -59,6 +59,7 @@ export const FinanceModule: React.FC = () => {
   const [showNewLoanForm, setShowNewLoanForm] = useState(false) 
   const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false) 
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null) 
+  const [statusFilter, setStatusFilter] = useState('all')
 
   // Safe mock data for demonstration
   const mockLoans: Loan[] = [
@@ -66,8 +67,24 @@ export const FinanceModule: React.FC = () => {
       id: '1',
       customerId: 'cust-1',
       customerName: 'John Smith',
+      vehicleId: 'veh-1',
+      vehicleInfo: '2020 Honda Civic',
+      amount: 25000,
+      downPayment: 5000,
+      term: 60,
+      rate: 4.5,
+      paymentAmount: 372.86,
+      startDate: new Date(),
+      status: 'active',
+      remainingBalance: 20000,
+      nextPaymentDate: new Date(),
+      createdAt: new Date(),
+      payments: []
+    }
+  ]
+
   // Use mock loan data as fallback when no tenant data is available
-  const loans = tenant?.settings ? [] : mockFinance.sampleLoans
+  // const loans = tenant?.settings ? [] : mockFinance.sampleLoans
 
   React.useEffect(() => {
     setLoans(mockLoans)
@@ -117,9 +134,20 @@ export const FinanceModule: React.FC = () => {
 
       // Update the loans state with the new payment
       setLoans(prevLoans => {
-  const getStatusColor = (status: string) => {
-    return mockFinance.statusColors[status] || 'bg-gray-100 text-gray-800'
-  }
+        return prevLoans.map(loan => {
+          if (loan.id === selectedLoan.id) {
+            return {
+              ...loan,
+              payments: [...loan.payments, newPayment]
+            };
+          }
+          return loan;
+        });
+      });
+
+      const getStatusColor = (status: string) => {
+        return mockFinance.statusColors[status] || 'bg-gray-100 text-gray-800'
+      }
 
       toast({
         title: "Payment Recorded",
@@ -267,16 +295,20 @@ export const FinanceModule: React.FC = () => {
               nextPaymentDate: new Date(),
               createdAt: new Date(),
               payments: []
-              {mockFinance.statusOptions.map(status => (
-                <Button
-                  key={status}
-                  variant={statusFilter === status.toLowerCase() ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter(status.toLowerCase())}
-                >
-                  {status}
-                </Button>
-              ))}
+            }}
+            onClose={() => setShowPaymentHistoryModal(false)}
+            onRecordPayment={handleRecordPayment}
+          />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <LoanSettings />
+        </TabsContent>
+      </Tabs>
+
+      {showPaymentHistoryModal && selectedLoan && (
+        <LoanPaymentHistory 
+          loan={selectedLoan}
           onClose={() => setShowPaymentHistoryModal(false)}
           onRecordPayment={handleRecordPayment}
         />
