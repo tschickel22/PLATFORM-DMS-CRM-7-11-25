@@ -10,9 +10,15 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { mockFinance } from '@/mocks/financeMock'
 import { cn } from '@/lib/utils'
 
+export default function PaymentHistory() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('all')
+
 // Mock payment history data
 const mockPayments = [
   // Use mock payment data with customer lookup
+]
   const payments = mockFinance.samplePayments.map(payment => {
     const loan = mockFinance.sampleLoans.find(l => l.id === payment.loanId)
     return {
@@ -20,6 +26,27 @@ const mockPayments = [
       customerName: loan?.customerName || 'Unknown Customer'
     }
   })
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-3 w-3" />
+      case 'pending':
+        return <Clock className="h-3 w-3" />
+      case 'failed':
+        return <XCircle className="h-3 w-3" />
+      default:
+        return <Clock className="h-3 w-3" />
+    }
+  }
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-50 text-green-700 border-green-200'
+      case 'pending':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+      case 'failed':
         return 'bg-red-50 text-red-700 border-red-200'
       case 'late':
         return 'bg-orange-50 text-orange-700 border-orange-200'
@@ -30,8 +57,6 @@ const mockPayments = [
 
   const getStatusColor = (status: string) => {
     return mockFinance.paymentStatusColors[status] || 'bg-gray-100 text-gray-800'
-  }
-    }
   }
 
   const getMethodLabel = (method: string) => {
