@@ -22,6 +22,9 @@ export function AmortizationSchedule({ schedule }: AmortizationScheduleProps) {
   const [interestRate, setInterestRate] = useState(mockFinance.calculatorDefaults.interestRate)
   const [termMonths, setTermMonths] = useState(mockFinance.calculatorDefaults.termMonths)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortField, setSortField] = useState('month')
+  const [currentPage, setCurrentPage] = useState(1)
   const rowsPerPage = 12
 
   // Filter and sort the schedule
@@ -218,11 +221,11 @@ export function AmortizationSchedule({ schedule }: AmortizationScheduleProps) {
                 <Button
                   key={pageNum}
                   variant={currentPage === pageNum ? "default" : "outline"}
-                {mockFinance.interestRates.map(rate => (
-                  <SelectItem key={rate} value={rate.toString()}>
-                    {rate}%
-                  </SelectItem>
-                ))}
+                  size="sm"
+                  onClick={() => handlePageChange(pageNum)}
+                >
+                  {pageNum}
+                </Button>
               )
             })}
           </div>
@@ -237,11 +240,12 @@ export function AmortizationSchedule({ schedule }: AmortizationScheduleProps) {
           </Button>
           <Button
             variant="outline"
-                {mockFinance.termOptions.map(term => (
-                  <SelectItem key={term} value={term.toString()}>
-                    {term} months
-                  </SelectItem>
-                ))}
+            size="sm"
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+          >
+            Last
+          </Button>
         </div>
       )}
     </div>
