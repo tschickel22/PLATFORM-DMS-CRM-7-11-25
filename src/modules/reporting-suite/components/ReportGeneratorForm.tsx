@@ -303,4 +303,3 @@ export function ReportGeneratorForm({
     </Card>
   )
 }
-

@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { TrendingUp, Users, Package, DollarSign, BarChart3, PieChart, LineChart } from 'lucide-react'
+import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
+import { useTenant } from '@/contexts/TenantContext'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BarChart3, TrendingUp, TrendingDown, Download, Calendar, RefreshCw } from 'lucide-react'
@@ -26,36 +28,93 @@ interface ChartData {
 }
 
 export function DashboardReports() {
-  const { toast } = useToast()
-  const [timeframe, setTimeframe] = useState('30d')
-  const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const { tenant } = useTenant()
+  
+  // Use tenant dashboard data if available, otherwise fall back to mock
+  const dashboardWidgets = tenant?.dashboardWidgets || mockReportingSuite.dashboardWidgets
+  const reportResults = mockReportingSuite.sampleReportResults
 
-  // Mock data for metrics
-  const [metrics, setMetrics] = useState<MetricData[]>([
-    {
-      metric: 'Total Leads',
-      value: '2,651',
-      change: '+4.75%',
-      changePercent: '4.75%',
-      category: 'leads',
-      trend: 'up'
-    },
-    {
-      metric: 'Qualified Leads',
-      value: '892',
-      change: '+12.3%',
-      changePercent: '12.3%',
-      category: 'leads',
-      trend: 'up'
-    },
-    {
-      metric: 'Conversion Rate',
-      value: '24.5%',
-      change: '-1.2%',
-      changePercent: '1.2%',
-      category: 'leads',
-      trend: 'down'
+  const getIconComponent = (type: string) => {
+    switch (type) {
+      case 'bar': return BarChart3
+      case 'line': return LineChart
+      case 'pie': return PieChart
+      case 'numberCard': return TrendingUp
+      default: return BarChart3
+    }
+  }
+
+  const renderWidget = (widget: any) => {
+    const reportData = reportResults[widget.reportId]
+    if (!reportData) return null
+
+    const IconComponent = getIconComponent(widget.type)
+
+    if (widget.type === 'numberCard' && reportData.data) {
+      return (
+        <div className="grid gap-4 md:grid-cols-2">
+          {reportData.data.slice(0, 4).map((item: any, index: number) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {item.label}
+                </CardTitle>
+                <IconComponent className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{item.value}</div>
+                {item.trend && (
+                  <p className={`text-xs ${
+                    item.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {item.trend} from last period
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <IconComponent className="h-5 w-5 mr-2" />
+            {widget.title}
+          </CardTitle>
+          <CardDescription>
+            {reportData.title}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {reportData.data?.slice(0, 3).map((item: any, index: number) => (
+              <div key={index} className="flex items-center justify-between">
+                <span className="text-sm">{item.label}</span>
+                <span className="font-medium">{item.value}</span>
+              </div>
+            ))}
+          </div>
+          {reportData.summary && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {Object.entries(reportData.summary).map(([key, value]) => (
+                  <div key={key}>
+                    <span className="text-muted-foreground capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}:
+                    </span>
+                    <div className="font-medium">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
     },
     {
       metric: 'Avg Response Time',
@@ -163,26 +222,11 @@ export function DashboardReports() {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-primary" />
-                Dashboard Report
-              </CardTitle>
-              <CardDescription>
-                Key performance indicators and business metrics
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Select value={timeframe} onValueChange={handleTimeframeChange}>
-                <SelectTrigger className="w-[150px]">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Last 7 Days</SelectItem>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">Dashboard Overview</h2>
+        <p className="text-muted-foreground">
+          Key performance indicators and metrics for your {tenant?.name || 'business'}
+        </p>
                   <SelectItem value="30d">Last 30 Days</SelectItem>
                   <SelectItem value="90d">Last 90 Days</SelectItem>
                   <SelectItem value="ytd">Year to Date</SelectItem>
@@ -300,63 +344,13 @@ export function DashboardReports() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle>Lead Conversion Funnel</CardTitle>
-                  <CardDescription>Visual representation of lead progression</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for a funnel chart */}
-                  <div className="h-64 flex items-center justify-center bg-muted/20 rounded-md">
-                    <p className="text-muted-foreground">Funnel Chart Placeholder</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="sales" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-4">
-                {metrics.filter(m => m.category === 'sales').map((metric, index) => (
-                  <Card key={index} className="shadow-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">{metric.metric}</p>
-                        {metric.trend === 'up' ? (
-                          <TrendingUp className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                      <div className="mt-2">
-                        <p className="text-2xl font-bold">{metric.value}</p>
-                        <p className={cn(
-                          "text-xs",
-                          metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                        )}>
-                          {metric.change} from last period
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle>Revenue Trend</CardTitle>
-                  <CardDescription>Monthly revenue over the selected timeframe</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for a line chart showing revenue over time */}
-                  <div className="h-64 flex items-center justify-center bg-muted/20 rounded-md">
-                    <p className="text-muted-foreground">Revenue Trend Chart Placeholder</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
+      {/* Dashboard Widgets */}
+      <div className="space-y-6">
+        {dashboardWidgets.map((widget, index) => (
+          <div key={widget.id} className={widget.size === 'large' ? 'col-span-2' : ''}>
+            {renderWidget(widget)}
+          </div>
+        ))}
       </Card>
     </div>
   )

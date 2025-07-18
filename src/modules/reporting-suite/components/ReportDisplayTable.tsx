@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Download, Search, ArrowUp, ArrowDown } from 'lucide-react'
 import { ReportType } from '@/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { Search, Download, Filter, Eye, FileText, Calendar } from 'lucide-react'
+import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
+import { useTenant } from '@/contexts/TenantContext'
 import {
   Table,
   TableHeader,
@@ -37,7 +39,57 @@ export function ReportDisplayTable({
   columns, 
   onExportCSV 
 }: ReportDisplayTableProps) {
+  const { tenant } = useTenant()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  
+  // Use provided data or fall back to mock sample reports
+  const sampleReports = data || [
+    {
+      id: 'rpt-001',
+      name: 'Monthly Sales Summary',
+      type: 'finance-summary',
+      category: 'Finance',
+      generatedAt: '2024-01-20T10:30:00Z',
+      generatedBy: 'John Smith',
+      format: 'PDF',
+      size: '2.4 MB',
+      status: 'Completed'
+    },
+    {
+      id: 'rpt-002', 
+      name: 'Inventory Status Report',
+      type: 'inventory-status',
+      category: 'Inventory',
+      generatedAt: '2024-01-19T14:15:00Z',
+      generatedBy: 'Sarah Johnson',
+      format: 'Excel',
+      size: '1.8 MB',
+      status: 'Completed'
+    },
+    {
+      id: 'rpt-003',
+      name: 'Quote Conversion Analysis',
+      type: 'quote-conversions',
+      category: 'Sales',
+      generatedAt: '2024-01-18T09:45:00Z',
+      generatedBy: 'Mike Davis',
+      format: 'PDF',
+      size: '3.1 MB',
+      status: 'Completed'
+    },
+    {
+      id: 'rpt-004',
+      name: 'Service Performance Review',
+      type: 'service-performance',
+      category: 'Service',
+      generatedAt: '2024-01-17T16:20:00Z',
+      generatedBy: 'Lisa Chen',
+      format: 'CSV',
+      size: '0.9 MB',
+      status: 'Processing'
+    }
+  ]
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -73,41 +125,63 @@ export function ReportDisplayTable({
     // Default string comparison
     const aString = aValue.toString().toLowerCase()
     const bString = bValue.toString().toLowerCase()
-    
-    return sortDirection === 'asc'
-      ? aString.localeCompare(bString)
-      : bString.localeCompare(aString)
+  // Get available categories from mock data
+  const categories = ['All', ...mockReportingSuite.reportCategories.filter(cat => cat !== 'All')]
+        return value.toString()
+  // Filter reports based on search term and category
+  const filteredReports = sampleReports.filter(report => {
+    const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         report.category.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === 'All' || report.category === selectedCategory
+    return matchesSearch && matchesCategory
   })
 
-  // Paginate data
-  const totalPages = Math.ceil(sortedData.length / rowsPerPage)
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  )
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('asc')
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'bg-green-100 text-green-800'
+      case 'processing': return 'bg-yellow-100 text-yellow-800'
+      case 'failed': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const formatCellValue = (value: any, type?: string) => {
-    if (value === null || value === undefined) return '-'
-    
-    switch (type) {
-      case 'currency':
-        return formatCurrency(value)
-      case 'date':
-        return formatDate(value)
-      case 'boolean':
-        return value ? 'Yes' : 'No'
-      default:
-        return value.toString()
+  const getFormatIcon = (format: string) => {
+    switch (format.toLowerCase()) {
+      case 'pdf': return <FileText className="h-4 w-4" />
+      case 'excel': return <FileText className="h-4 w-4" />
+      case 'csv': return <FileText className="h-4 w-4" />
+      default: return <FileText className="h-4 w-4" />
     }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getReportTypeName = (type: string) => {
+    const report = mockReportingSuite.availableReports.find(r => r.id === type)
+    return report?.name || type
+  }
+
+  const handleDownload = (reportId: string) => {
+    // In a real application, this would trigger a download
+    console.log('Downloading report:', reportId)
+  }
+
+  const handleView = (reportId: string) => {
+    // In a real application, this would open the report viewer
+    console.log('Viewing report:', reportId)
+  }
+
+  const handleSchedule = (reportId: string) => {
+    // In a real application, this would open the scheduling modal
+    console.log('Scheduling report:', reportId)
   }
 
   return (
@@ -127,7 +201,7 @@ export function ReportDisplayTable({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -203,18 +277,117 @@ export function ReportDisplayTable({
                   Previous
                 </Button>
                 <Button
-                  variant="outline"
+          
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <div className="flex space-x-2">
+              {categories.map(category => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => setSelectedCategory(category)}
                 >
-                  Next
+                  {category}
                 </Button>
-              </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Generated</TableHead>
+                <TableHead>Generated By</TableHead>
+                <TableHead>Format</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredReports.length > 0 ? (
+                filteredReports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.name}</TableCell>
+                    <TableCell>{getReportTypeName(report.type)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{report.category}</Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(report.generatedAt)}</TableCell>
+                    <TableCell>{report.generatedBy}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {getFormatIcon(report.format)}
+                        <span>{report.format}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{report.size}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(report.status)}>
+                        {report.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleView(report.id)}
+                          disabled={report.status !== 'Completed'}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(report.id)}
+                          disabled={report.status !== 'Completed'}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSchedule(report.id)}
+                        >
+                          <Calendar className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {searchTerm || selectedCategory !== 'All' 
+                      ? 'No reports match your search criteria'
+                      : 'No reports generated yet'
+                    }
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {filteredReports.length > 0 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredReports.length} of {sampleReports.length} reports
+            </p>
+                  size="sm"
+                </Button>
+              Export Selected
             </div>
           )}
-        </div>
       </CardContent>
     </Card>
   )
 }
+        )}
