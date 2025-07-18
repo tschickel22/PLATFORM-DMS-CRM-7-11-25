@@ -7,7 +7,7 @@ import { Play, Pause, RotateCcw, Mail, MessageSquare, Phone } from 'lucide-react
 import { Lead } from '@/types'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
-interface NurtureSequencesProps {
+export const NurtureSequences = () => {
   leads: Lead[]
   onSequenceStart: (leadId: string, sequenceId: string) => void
   onSequencePause: (leadId: string) => void
@@ -128,4 +128,3 @@ export default function NurtureSequences({
       </div>
     </div>
   )
-}
