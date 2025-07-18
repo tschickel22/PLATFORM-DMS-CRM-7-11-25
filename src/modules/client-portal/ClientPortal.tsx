@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils'
 import { PortalUserForm } from './components/PortalUserForm'
 import { PortalUserList } from './components/PortalUserList'
 import { PortalSettings } from './components/PortalSettings'
+import { ClientAgreements } from './components/ClientAgreements'
+import { ClientAgreementSign } from './components/ClientAgreementSign'
 
 function ClientPortalDashboard() {
   const [activeTab, setActiveTab] = useState('users')
@@ -97,6 +99,8 @@ export default function ClientPortal() {
   return (
     <Routes>
       <Route path="/" element={<ClientPortalDashboard />} />
+      <Route path="/agreements" element={<ClientAgreements />} />
+      <Route path="/agreements/:agreementId/sign" element={<ClientAgreementSign />} />
       <Route path="/*" element={<ClientPortalDashboard />} />
     </Routes>
   )
