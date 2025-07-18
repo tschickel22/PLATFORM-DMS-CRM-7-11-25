@@ -3,13 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { TrendingUp, Users, Package, DollarSign, BarChart3, PieChart, LineChart } from 'lucide-react'
 import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
 import { useTenant } from '@/contexts/TenantContext'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { TrendingDown, Download, Calendar, RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
 
 // Define types for metrics data
