@@ -75,14 +75,17 @@ export const mockCompanySettings = {
       'delivery',
       'invoices'
     ],
-    sections: {
-      crm: ['Lead Information', 'Contact Details', 'Preferences', 'Notes'],
-      inventory: ['Vehicle Details', 'Specifications', 'Pricing', 'Features'],
-      quotes: ['Quote Details', 'Terms', 'Pricing'],
-      agreements: ['Agreement Details', 'Terms', 'Conditions'],
-      service: ['Service Details', 'Customer Requirements', 'Technical Notes'],
-      delivery: ['Delivery Details', 'Customer Instructions', 'Logistics'],
-      invoices: ['Invoice Details', 'Payment Terms', 'Additional Charges']
+    customFieldDefaults: {
+      moduleSectionMap: {
+        crm: ['Lead Information', 'Contact Details', 'Preferences', 'Notes'],
+        inventory: ['Vehicle Details', 'Specifications', 'Pricing', 'Features'],
+        quotes: ['Quote Details', 'Terms', 'Pricing'],
+        agreements: ['Agreement Details', 'Terms', 'Conditions'],
+        service: ['Service Details', 'Customer Requirements', 'Technical Notes'],
+        delivery: ['Delivery Details', 'Customer Instructions', 'Logistics'],
+        invoices: ['Invoice Details', 'Payment Terms', 'Additional Charges'],
+        default: ['General', 'Details', 'Other']
+      }
     },
     sampleFields: [
       {

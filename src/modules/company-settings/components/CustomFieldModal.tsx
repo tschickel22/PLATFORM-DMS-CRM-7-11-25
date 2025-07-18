@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { X, Save, Plus, Trash2 } from 'lucide-react'
 import { CustomField, CustomFieldType } from '@/types'
 import { useToast } from '@/hooks/use-toast'
+import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 interface CustomFieldModalProps {
   field?: CustomField
@@ -97,24 +98,8 @@ export function CustomFieldModal({ field, onSave, onCancel, modules }: CustomFie
 
   // Common sections for each module
   const getSections = (module: string) => {
-    switch (module) {
-      case 'crm':
-        return ['Lead Information', 'Contact Details', 'Preferences', 'Notes']
-      case 'inventory':
-        return ['Vehicle Details', 'Specifications', 'Pricing', 'Features']
-      case 'quotes':
-        return ['Quote Details', 'Terms', 'Pricing']
-      case 'agreements':
-        return ['Agreement Details', 'Terms', 'Conditions']
-      case 'service':
-        return ['Service Details', 'Customer Requirements', 'Technical Notes']
-      case 'delivery':
-        return ['Delivery Details', 'Customer Instructions', 'Logistics']
-      case 'invoices':
-        return ['Invoice Details', 'Payment Terms', 'Additional Charges']
-      default:
-        return ['General', 'Details', 'Other']
-    }
+    return mockCompanySettings.customFields.customFieldDefaults.moduleSectionMap[module] 
+      || mockCompanySettings.customFields.customFieldDefaults.moduleSectionMap.default
   }
 
   return (
