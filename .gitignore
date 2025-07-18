@@ -21,7 +21,7 @@ yarn-error.log*
 *.swp
 
 # ================================
-# 🔒 Ignore all unused modules
+# 🔒 Explicitly ignore unwanted modules
 # ================================
 
 apps/agreement-vault/
@@ -36,19 +36,11 @@ apps/quote-builder/
 apps/reporting-suite/
 apps/service-ops/
 
-# ✅ Do NOT ignore this — you're working on it:
-# apps/company-settings/ (left visible)
+# ✅ Do NOT ignore apps/company-settings/ — it will remain visible
 
 # ================================
 # ✅ Include essential project files
 # ================================
 
-index.html
-vite.config.ts
-package.json
-tsconfig.json
-tailwind.config.js
-README.md
-
-# Include shared frontend code
-src/
+# You do not need to explicitly allow files unless you're using `*` globally
+# These will remain tracked by default
