@@ -49,6 +49,16 @@ export function NewLoanForm({
     downPayment: 0,
     term: 60,
     rate: 6.99,
+    paymentAmount: 0,
+    paymentFrequency: 'Monthly',
+    loanType: 'standard',
+    startDate: '',
+    includeInsurance: false,
+    insuranceAmount: 0,
+    includeTax: false,
+    taxRate: 0,
+    notes: ''
+  })
   const [formData, setFormData] = useState(mockFinance.formDefaults)
 
   useEffect(() => {
@@ -159,11 +169,7 @@ export function NewLoanForm({
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Customer & Vehicle</h3>
                 
-                    {mockFinance.sampleLoans.map(loan => (
-                      <SelectItem key={loan.customerId} value={loan.customerId}>
-                        {loan.customerName}
-                      </SelectItem>
-                    ))}
+                <div>
                     <Label htmlFor="customerId">Customer *</Label>
                     <Select
                       value={formData.customerId}
@@ -190,6 +196,11 @@ export function NewLoanForm({
                             {lead.firstName} {lead.lastName}
                           </SelectItem>
                         ))}
+                        {mockFinance.sampleLoans.map(loan => (
+                          <SelectItem key={loan.customerId} value={loan.customerId}>
+                            {loan.customerName}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -209,11 +220,15 @@ export function NewLoanForm({
                             {vehicle.year} {vehicle.make} {vehicle.model}
                           </SelectItem>
                         ))}
+                        {mockFinance.sampleLoans.map(loan => (
+                          <SelectItem key={loan.vehicleId} value={loan.vehicleId}>
+                            {loan.vehicleInfo}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-              </div>
 
               {/* Loan Details */}
               <div className="space-y-4">
@@ -275,12 +290,32 @@ export function NewLoanForm({
                         <SelectItem value="84">84 months (7 years)</SelectItem>
                         <SelectItem value="96">96 months (8 years)</SelectItem>
                         <SelectItem value="120">120 months (10 years)</SelectItem>
+                        {mockFinance.termOptions.map(term => (
+                          <SelectItem key={term} value={term.toString()}>
+                            {term} months
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div>
                     <Label htmlFor="rate">Interest Rate (%) *</Label>
+                    <Select
+                      value={formData.rate.toString()}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, rate: parseFloat(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockFinance.interestRates.map(rate => (
+                          <SelectItem key={rate} value={rate.toString()}>
+                            {rate}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       id="rate"
                       type="number"
@@ -315,11 +350,11 @@ export function NewLoanForm({
                       value={formData.startDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
                     />
-                    {mockFinance.interestRates.map(rate => (
-                      <SelectItem key={rate} value={rate.toString()}>
-                        {rate}%
-                      </SelectItem>
-                    ))}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="loanType">Loan Type *</Label>
+                    <Select
                       value={formData.loanType}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, loanType: value }))}
                     >
@@ -334,11 +369,26 @@ export function NewLoanForm({
                       </SelectContent>
                     </Select>
                   </div>
-                    {mockFinance.termOptions.map(term => (
-                      <SelectItem key={term} value={term.toString()}>
-                        {term} months
-                      </SelectItem>
-                    ))}
+                </div>
+
+                <div>
+                  <Label htmlFor="paymentFrequency">Payment Frequency *</Label>
+                  <Select
+                    value={formData.paymentFrequency}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, paymentFrequency: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockFinance.paymentFrequencies.map(frequency => (
+                        <SelectItem key={frequency} value={frequency}>
+                          {frequency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -353,11 +403,9 @@ export function NewLoanForm({
                   <div>
                     <Label htmlFor="insuranceAmount">Monthly Insurance Amount</Label>
                     <div className="relative">
-                    {mockFinance.paymentFrequencies.map(frequency => (
-                      <SelectItem key={frequency} value={frequency}>
-                        {frequency}
-                      </SelectItem>
-                    ))}
+                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="insuranceAmount"
                         type="number"
                         step="0.01"
                         value={formData.insuranceAmount}
@@ -383,11 +431,8 @@ export function NewLoanForm({
                     <Input
                       id="taxRate"
                       type="number"
-                    {mockFinance.sampleLoans.map(loan => (
-                      <SelectItem key={loan.vehicleId} value={loan.vehicleId}>
-                        {loan.vehicleInfo}
-                      </SelectItem>
-                    ))}
+                      step="0.01"
+                      value={formData.taxRate}
                       onChange={(e) => setFormData(prev => ({ ...prev, taxRate: parseFloat(e.target.value) || 0 }))}
                     />
                   </div>
