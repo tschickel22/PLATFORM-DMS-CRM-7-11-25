@@ -14,62 +14,6 @@ import { sendSignatureRequest, generateSignatureLink } from './utils/sendSignatu
 import { cn } from '@/lib/utils'
 import { toast } from '@/hooks/use-toast'
 
-const mockAgreements: Agreement[] = [
-  {
-    id: '1',
-    type: AgreementType.PURCHASE,
-    customerId: 'cust-1',
-    vehicleId: 'veh-1',
-    quoteId: 'quote-1',
-    status: AgreementStatus.SIGNED,
-    signedDate: new Date('2024-01-18'),
-    effectiveDate: new Date('2024-01-18'),
-    expirationDate: new Date('2025-01-18'),
-    terms: 'Standard purchase agreement with 90-day warranty',
-    documents: [
-      {
-        id: '1',
-        name: 'Purchase Agreement.pdf',
-        type: 'application/pdf',
-        url: '/documents/purchase-agreement-1.pdf',
-        size: 245760,
-        uploadedAt: new Date('2024-01-18')
-      }
-    ],
-    customFields: {},
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-18')
-  },
-  {
-    id: '2',
-    type: AgreementType.SERVICE,
-    customerId: 'cust-2',
-    status: AgreementStatus.ACTIVE,
-    effectiveDate: new Date('2024-01-10'),
-    expirationDate: new Date('2024-07-10'),
-    terms: 'Extended service contract for 6 months',
-    documents: [
-      {
-        id: '2',
-        name: 'Service Contract.pdf',
-        type: 'application/pdf',
-        url: '/documents/service-contract-2.pdf',
-        size: 189440,
-        uploadedAt: new Date('2024-01-10')
-      }
-    ],
-    customFields: {},
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-10')
-  }
-]
-
-function AgreementsList() {
-  const [agreements] = useState<Agreement[]>(mockAgreements)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [showViewer, setShowViewer] = useState(false)
-  const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null)
   const [loading, setLoading] = useState(false)
   const [typeFilter, setTypeFilter] = useState('')
 
