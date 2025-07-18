@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { AgreementTemplatesPage } from './components/AgreementTemplatesPage'
 import { useToast } from '@/hooks/use-toast'
 import { NewAgreementForm } from './components/NewAgreementForm'
 import { AgreementViewer } from './components/AgreementViewer'
@@ -17,6 +18,7 @@ import { useAgreementManagement } from './hooks/useAgreementManagement'
 
 function AgreementVaultPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { toast } = useToast()
   const {
     agreements,
@@ -321,6 +323,8 @@ export default function AgreementVault() {
   return (
     <Routes>
       <Route path="/" element={<AgreementVaultPage />} />
+      <Route path="/templates" element={<AgreementTemplatesPage />} />
+      <Route path="/templates/*" element={<AgreementTemplatesPage />} />
       <Route path="/*" element={<AgreementVaultPage />} />
     </Routes>
   )
