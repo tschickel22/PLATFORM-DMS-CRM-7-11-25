@@ -10,6 +10,7 @@ import { Invoice, InvoiceStatus, Payment, PaymentStatus } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { mockInvoice } from '@/mocks/invoiceMock'
 import { useInvoiceManagement } from './hooks/useInvoiceManagement'
 import { InvoiceForm } from './components/InvoiceForm'
 import { InvoiceDetail } from './components/InvoiceDetail'
@@ -182,7 +183,7 @@ function InvoicesList() {
         />
       )}
       
-      {/* Invoice Detail Modal */}
+  const statusOptions = mockInvoice.statusOptions
       {showInvoiceDetail && selectedInvoice && (
         <InvoiceDetail
           invoice={selectedInvoice}
@@ -197,6 +198,10 @@ function InvoicesList() {
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
+      case 'Draft':
+        return 'bg-gray-100 text-gray-800'
+      case 'Cancelled':
+        return 'bg-gray-100 text-gray-800'
           <div>
             <h1 className="ri-page-title">Invoice & Payments</h1>
             <p className="ri-page-description">
@@ -222,13 +227,14 @@ function InvoicesList() {
             <p className="text-xs text-blue-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
               All invoices
-            </p>
+    const csvHeaders = mockInvoice.csvFields
           </CardContent>
         </Card>
         <Card className="shadow-sm border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      invoice.totalAmount,
             <CardTitle className="text-sm font-medium text-orange-900">Outstanding</CardTitle>
-            <Receipt className="h-4 w-4 text-orange-600" />
+      invoice.dueDate,
+      invoice.recurrence
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-900">
@@ -309,7 +315,7 @@ function InvoicesList() {
           <TabsTrigger value="payments" className="flex items-center">
             <CreditCard className="h-4 w-4 mr-2" />
             Payments
-          </TabsTrigger>
+              {formatCurrency(invoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.totalAmount, 0))}
         </TabsList>
 
         <TabsContent value="invoices">
@@ -324,7 +330,7 @@ function InvoicesList() {
                 className="ri-search-input shadow-sm"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              {formatCurrency(invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + i.totalAmount, 0))}
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -339,7 +345,7 @@ function InvoicesList() {
               </SelectContent>
             </Select>
             <Button variant="outline" className="shadow-sm">
-              <Filter className="h-4 w-4 mr-2" />
+              {formatCurrency(invoices.reduce((sum, i) => sum + i.totalAmount, 0))}
               Filter
             </Button>
           </div>
@@ -354,7 +360,7 @@ function InvoicesList() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredInvoices.map((invoice) => (
+              {formatCurrency(invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.totalAmount, 0))}
                   <div key={invoice.id} className="ri-table-row">
                     <div className="flex items-center space-x-4 flex-1">
                       <div className="flex-1">
@@ -419,7 +425,7 @@ function InvoicesList() {
                         size="sm" 
                         className="shadow-sm"
                       >
-                        <Download className="h-3 w-3 mr-1" />
+                  <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
                         PDF
                       </Button>
                       {invoice.status !== InvoiceStatus.PAID && (
@@ -485,3 +491,5 @@ export default function InvoicePayments() {
     </Routes>
   )
 }
+  // Use mock data - replace with real data from your backend
+  const invoices = mockInvoice.sampleInvoices

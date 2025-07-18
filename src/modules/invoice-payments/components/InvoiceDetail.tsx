@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 import { RecordPaymentForm } from './RecordPaymentForm'
+import { mockInvoice } from '@/mocks/invoiceMock'
 
 interface InvoiceDetailProps {
   invoice: Invoice
