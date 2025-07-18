@@ -21,28 +21,34 @@ yarn-error.log*
 *.swp
 
 # ================================
-# ⚙️ Control app/module visibility (Bolt workaround)
+# 🔒 Ignore all unused modules
 # ================================
 
-# Ignore everything by default
-*
+apps/agreement-vault/
+apps/client-portal/
+apps/commission-engine/
+apps/crm-prospecting/
+apps/delivery-tracker/
+apps/inventory-management/
+apps/invoice-payments/
+apps/platform-admin/
+apps/quote-builder/
+apps/reporting-suite/
+apps/service-ops/
 
-# ✅ Allow this ignore file and Git tracking
-!.gitignore
+# ✅ Do NOT ignore this — you're working on it:
+# apps/company-settings/ (left visible)
 
-# ✅ Allow core project files
-!index.html
-!vite.config.ts
-!package.json
-!tsconfig.json
-!tailwind.config.js
-!README.md
+# ================================
+# ✅ Include essential project files
+# ================================
 
-# ✅ Allow parent folders
-!apps/
-!apps/company-settings/
-!src/
+index.html
+vite.config.ts
+package.json
+tsconfig.json
+tailwind.config.js
+README.md
 
-# ✅ Allow contents of the module you're working on
-!apps/company-settings/**
-!src/**
+# Include shared frontend code
+src/
