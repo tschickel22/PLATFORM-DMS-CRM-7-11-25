@@ -27,8 +27,22 @@ yarn-error.log*
 # Ignore everything by default
 *
 
-# ✅ Allow Git and this ignore file to be visible
+# ✅ Allow this ignore file and Git tracking
 !.gitignore
 
 # ✅ Allow core project files
 !index.html
+!vite.config.ts
+!package.json
+!tsconfig.json
+!tailwind.config.js
+!README.md
+
+# ✅ Allow parent folders
+!apps/
+!apps/company-settings/
+!src/
+
+# ✅ Allow contents of the module you're working on
+!apps/company-settings/**
+!src/**
