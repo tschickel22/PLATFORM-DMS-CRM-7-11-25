@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { User, Building, Key, Settings, Mail, MessageSquare, FileText, Database, Shield, AlertTriangle, CheckCircle, XCircle, Clock, ListFilter, Download, RefreshCw, Search, ScrollText } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { mockPlatformAdmin } from '@/mocks/platformAdminMock'
 import { formatDate } from '@/lib/utils'
 
 // Mock audit logs
@@ -97,54 +98,14 @@ export function AuditLogs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case 'tenant_created':
-      case 'tenant_updated':
-      case 'tenant_deleted':
-        return <Building className="h-4 w-4" />;
-      case 'api_token_generated':
-      case 'api_token_revoked':
-        return <Key className="h-4 w-4" />;
-      case 'module_enabled':
-      case 'module_disabled':
-        return <Settings className="h-4 w-4" />;
-      case 'email_sent':
-      case 'email_failed':
-        return <Mail className="h-4 w-4" />;
-      case 'sms_sent':
-      case 'sms_failed':
-        return <MessageSquare className="h-4 w-4" />;
-      case 'user_login':
-      case 'user_logout':
-      case 'user_role_changed':
-        return <User className="h-4 w-4" />;
-      case 'database_backup':
-      case 'database_restore':
-        return <Database className="h-4 w-4" />;
-      case 'settings_updated':
-        return <Settings className="h-4 w-4" />;
-      case 'permission_changed':
-        return <Shield className="h-4 w-4" />;
-      case 'system_error':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'system_event':
-        return <Clock className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'failure':
-        return 'bg-red-50 text-red-700 border-red-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
+  // Use mock audit log data as fallback - in real app, this would come from API
+  const auditLogs = mockPlatformAdmin.sampleTenants.flatMap(tenant => 
+    tenant.auditTrail.map(log => ({
+      ...log,
+      tenant: tenant.name,
+      timestamp: new Date(log.timestamp)
+    }))
+  )
   };
 
   const getLogTypeColor = (type: string) => {

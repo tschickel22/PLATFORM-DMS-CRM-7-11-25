@@ -1,57 +1,55 @@
 import React, { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { X, Save, Building } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Building, Save, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { mockPlatformAdmin } from '@/mocks/platformAdminMock'
 
 interface AddTenantFormProps {
-  onSave: (tenantData: any) => Promise<void>
-  onCancel: () => void
+  onClose: () => void
 }
 
-export function AddTenantForm({ onSave, onCancel }: AddTenantFormProps) {
+export function AddTenantForm({ onClose }: AddTenantFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    domain: '',
-    settings: {
-      timezone: 'America/New_York',
-      currency: 'USD',
-      dateFormat: 'MM/dd/yyyy',
-      features: {
-        crm: true,
-        inventory: true,
-        quotes: true,
-        agreements: true,
-        service: true,
-        delivery: true,
-        commissions: true,
-        portal: true,
-        invoices: true,
-        reports: true
-      }
-    },
-    branding: {
-      primaryColor: '#3b82f6',
-      secondaryColor: '#64748b',
-      fontFamily: 'Inter'
-    },
-    isActive: true
-  })
+  const [tenantName, setTenantName] = useState('')
+  const [domain, setDomain] = useState('')
+  const [platformType, setPlatformType] = useState(mockPlatformAdmin.platformTypes[0].value)
+  const [adminEmail, setAdminEmail] = useState('')
+  const [adminName, setAdminName] = useState('')
+  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({})
+
+  // Initialize selected features with default permissions
+  React.useEffect(() => {
+    setSelectedFeatures(Object.keys(mockPlatformAdmin.defaultPermissions).reduce((acc, key) => {
+      acc[key] = mockPlatformAdmin.defaultPermissions[key].read
+      return acc
+    }, {} as Record<string, boolean>))
+  }, [])
+
+  const availableFeatures = Object.keys(mockPlatformAdmin.defaultPermissions).map(key => ({
+    key,
+    label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+  }))
+
+  const handleFeatureToggle = (featureKey: string) => {
+    setSelectedFeatures(prev => ({
+      ...prev,
+      [featureKey]: !prev[featureKey]
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.name || !formData.domain) {
+    if (!tenantName || !domain || !adminEmail || !adminName) {
       toast({
         title: 'Validation Error',
-        description: 'Tenant name and domain are required',
+        description: 'All fields are required',
         variant: 'destructive'
       })
       return
@@ -59,11 +57,14 @@ export function AddTenantForm({ onSave, onCancel }: AddTenantFormProps) {
 
     setLoading(true)
     try {
-      await onSave(formData)
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
       toast({
         title: 'Success',
         description: 'Tenant created successfully',
       })
+      onClose()
     } catch (error) {
       toast({
         title: 'Error',
@@ -86,28 +87,29 @@ export function AddTenantForm({ onSave, onCancel }: AddTenantFormProps) {
                 Add New Tenant
               </CardTitle>
               <CardDescription>
-                Create a new tenant organization
+                Create a new tenant organization with admin user
               </CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
+            <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
+            {/* Tenant Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Tenant Information</h3>
               
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="name">Tenant Name *</Label>
+                  <Label htmlFor="tenantName">Tenant Name *</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    id="tenantName"
+                    value={tenantName}
+                    onChange={(e) => setTenantName(e.target.value)}
                     placeholder="e.g., Sunshine RV Dealership"
+                    className="shadow-sm"
                   />
                 </div>
                 
@@ -115,77 +117,60 @@ export function AddTenantForm({ onSave, onCancel }: AddTenantFormProps) {
                   <Label htmlFor="domain">Domain *</Label>
                   <Input
                     id="domain"
-                    value={formData.domain}
-                    onChange={(e) => setFormData(prev => ({ ...prev, domain: e.target.value }))}
-                    placeholder="e.g., sunshine.renterinsight.com"
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    placeholder="e.g., sunshine-rv"
+                    className="shadow-sm"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    This will be used for tenant-specific access
+                    Will create: {domain || 'your-domain'}.renterinsight.com
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <Label htmlFor="platformType">Platform Type *</Label>
+                <Select value={platformType} onValueChange={setPlatformType}>
+                  <SelectTrigger className="shadow-sm">
+                    <SelectValue placeholder="Select platform type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockPlatformAdmin.platformTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Admin User */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Admin User</h3>
+              
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select
-                    value={formData.settings.timezone}
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      settings: { ...prev.settings, timezone: value }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="adminName">Admin Name *</Label>
+                  <Input
+                    id="adminName"
+                    value={adminName}
+                    onChange={(e) => setAdminName(e.target.value)}
+                    placeholder="e.g., John Smith"
+                    className="shadow-sm"
+                  />
                 </div>
                 
                 <div>
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select
-                    value={formData.settings.currency}
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      settings: { ...prev.settings, currency: value }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                      <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
-                      <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                      <SelectItem value="GBP">British Pound (GBP)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="dateFormat">Date Format</Label>
-                  <Select
-                    value={formData.settings.dateFormat}
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      settings: { ...prev.settings, dateFormat: value }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
-                      <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
-                      <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="adminEmail">Admin Email *</Label>
+                  <Input
+                    id="adminEmail"
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="e.g., admin@sunshine-rv.com"
+                    className="shadow-sm"
+                  />
                 </div>
               </div>
             </div>
@@ -194,121 +179,25 @@ export function AddTenantForm({ onSave, onCancel }: AddTenantFormProps) {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Enabled Features</h3>
               
-              <div className="grid gap-4 md:grid-cols-2">
-                {Object.entries(formData.settings.features).map(([feature, enabled]) => (
-                  <div key={feature} className="flex items-center space-x-2">
+              <div className="grid gap-3 md:grid-cols-2">
+                {availableFeatures.map(feature => (
+                  <div key={feature.key} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`feature-${feature}`}
-                      checked={enabled}
-                      onCheckedChange={(checked) => setFormData(prev => ({
-                        ...prev,
-                        settings: {
-                          ...prev.settings,
-                          features: {
-                            ...prev.settings.features,
-                            [feature]: !!checked
-                          }
-                        }
-                      }))}
+                      id={`feature-${feature.key}`}
+                      checked={selectedFeatures[feature.key] || false}
+                      onCheckedChange={() => handleFeatureToggle(feature.key)}
                     />
-                    <Label htmlFor={`feature-${feature}`} className="capitalize">
-                      {feature === 'crm' ? 'CRM & Prospecting' : 
-                       feature === 'invoices' ? 'Invoice & Payments' : 
-                       feature}
+                    <Label htmlFor={`feature-${feature.key}`} className="text-sm">
+                      {feature.label}
                     </Label>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Branding */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Branding</h3>
-              
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label htmlFor="primaryColor">Primary Color</Label>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Input
-                      type="color"
-                      id="primaryColor"
-                      value={formData.branding.primaryColor}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        branding: { ...prev.branding, primaryColor: e.target.value }
-                      }))}
-                      className="w-16 h-10 shadow-sm"
-                    />
-                    <Input 
-                      value={formData.branding.primaryColor} 
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        branding: { ...prev.branding, primaryColor: e.target.value }
-                      }))}
-                      className="shadow-sm" 
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="secondaryColor">Secondary Color</Label>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Input
-                      type="color"
-                      id="secondaryColor"
-                      value={formData.branding.secondaryColor}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        branding: { ...prev.branding, secondaryColor: e.target.value }
-                      }))}
-                      className="w-16 h-10 shadow-sm"
-                    />
-                    <Input 
-                      value={formData.branding.secondaryColor} 
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        branding: { ...prev.branding, secondaryColor: e.target.value }
-                      }))}
-                      className="shadow-sm" 
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="fontFamily">Font Family</Label>
-                  <Select
-                    value={formData.branding.fontFamily}
-                    onValueChange={(value) => setFormData(prev => ({
-                      ...prev,
-                      branding: { ...prev.branding, fontFamily: value }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Inter">Inter</SelectItem>
-                      <SelectItem value="Roboto">Roboto</SelectItem>
-                      <SelectItem value="Open Sans">Open Sans</SelectItem>
-                      <SelectItem value="Montserrat">Montserrat</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: !!checked }))}
-              />
-              <Label htmlFor="isActive">Active tenant</Label>
-            </div>
-
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
