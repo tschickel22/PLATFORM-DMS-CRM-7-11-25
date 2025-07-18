@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,7 @@ import { AgreementViewer } from './components/AgreementViewer'
 import { useAgreementManagement } from './hooks/useAgreementManagement'
 
 function AgreementVaultPage() {
+  const navigate = useNavigate()
   const { toast } = useToast()
   const {
     agreements,
