@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, Users, Package, DollarSign, BarChart3 } from 'lucide-react'
 import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTenant } from '@/contexts/TenantContext'
 import { 
   BarChart, 
