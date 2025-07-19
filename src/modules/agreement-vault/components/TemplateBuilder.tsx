@@ -6,15 +6,53 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-import { ArrowLeft, Save, Eye, EyeOff, Settings, Upload, FileText, Trash2, ChevronDown } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Save, Eye, EyeOff, Settings, Upload, FileText, Trash2, ChevronDown, Play, Pause } from 'lucide-react'
 import { useTemplateManagement } from '../hooks/useTemplateManagement'
 import { TemplateCategory, TemplateStatus, TemplateField } from '../types/template'
 import { PDFBuilderLite } from './PDFBuilderLite'
 import { FileProcessor } from '../utils/fileProcessor'
+
+export default function TemplateEditor({ templateId, onClose }: { templateId: string, onClose: () => void }) {
+  const [template, setTemplate] = useState<LocalTemplate | null>(null)
   const [templates, setTemplates] = useState<LocalTemplate[]>([])
+  const [loading, setLoading] = useState(false)
+  const [previewMode, setPreviewMode] = useState(false)
+  const [activeTab, setActiveTab] = useState('builder')
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0)
+  const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null)
+
+  const { updateTemplate, updateTemplateFields } = useTemplateManagement()
 
   useEffect(() => {
+    // Load templates from localStorage
+    const savedTemplates = localStorage.getItem('agreement-templates')
+    if (savedTemplates) {
+      const parsedTemplates = JSON.parse(savedTemplates)
+      setTemplates(parsedTemplates)
+      
+      if (templateId && templateId !== 'new') {
+        const existingTemplate = parsedTemplates.find((t: LocalTemplate) => t.id === templateId)
+        if (existingTemplate) {
+          setTemplate(existingTemplate)
+        }
+      } else {
+        // Create new template
+        const newTemplate: LocalTemplate = {
+          id: `template-${Date.now()}`,
+          name: 'New Template',
+          category: 'custom',
+          status: 'draft' as TemplateStatus,
+          files: [],
+          fields: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        setTemplate(newTemplate)
+      }
+    }
+  }, [templateId])
+
   const saveTemplate = () => {
     if (!template) return
     
@@ -41,25 +79,59 @@ import { FileProcessor } from '../utils/fileProcessor'
     }
   }
 
-    // Load templates from localStorage
-    const savedTemplates = localStorage.getItem('agreement-templates')
-    if (savedTemplates) {
-      const parsedTemplates = JSON.parse(savedTemplates)
-      setTemplates(parsedTemplates)
+  const loadMergedPdf = async () => {
+    if (!template?.files || template.files.length === 0) {
+      setMergedPdfUrl(null)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const pdfFiles = template.files.filter(file => file.type === 'application/pdf')
       
-      if (templateId && templateId !== 'new') {
-        const existingTemplate = parsedTemplates.find((t: LocalTemplate) => t.id === templateId)
+      if (pdfFiles.length === 0) {
+        setMergedPdfUrl(null)
+        return
+      }
+
+      // For now, just use the first PDF file
+      // In a real implementation, you might want to merge multiple PDFs
+      const firstPdfFile = pdfFiles[0]
+      setMergedPdfUrl(firstPdfFile.url)
+      
+    } catch (error) {
+      console.error('Error loading PDF:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load PDF files for editing.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || !template) return
+
+    setLoading(true)
+    try {
+      const newFiles = []
+      
+      for (const file of Array.from(files)) {
         // Only accept PDF files for now
         if (file.type === 'application/pdf') {
-          setTemplate(existingTemplate)
-        }
-      } else {
-        // Create new template
-        const newTemplate: LocalTemplate = {
-          id: `template-${Date.now()}`,
-          name: 'New Template',
-          category: 'custom',
-          status: 'draft' as TemplateStatus,
+          const fileUrl = URL.createObjectURL(file)
+          const newFile = {
+            id: `file-${Date.now()}-${Math.random()}`,
+            name: file.name,
+            originalName: file.name,
+            type: file.type,
+            size: file.size,
+            url: fileUrl
+          }
+          newFiles.push(newFile)
         } else {
           toast({
             title: 'Unsupported File Type',
@@ -67,21 +139,33 @@ import { FileProcessor } from '../utils/fileProcessor'
             variant: 'destructive'
           })
           continue
-        toast({
-          title: 'Error',
-          description: 'Failed to load PDF files for editing.',
-          variant: 'destructive'
-        })
-      } finally {
-        setLoading(false)
-      
-      // Set the first uploaded file as selected if none selected
-      if (template.files.length === 0 && newFiles.length > 0) {
-        setSelectedFileIndex(0)
+        }
       }
-      }
-    }
 
+      if (newFiles.length > 0) {
+        setTemplate(prev => prev ? {
+          ...prev,
+          files: [...prev.files, ...newFiles]
+        } : null)
+        
+        // Set the first uploaded file as selected if none selected
+        if (template.files.length === 0 && newFiles.length > 0) {
+          setSelectedFileIndex(0)
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to upload files.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     loadMergedPdf()
 
     // Cleanup function
@@ -100,6 +184,14 @@ import { FileProcessor } from '../utils/fileProcessor'
           <Button onClick={onClose}>Go Back</Button>
         </div>
       </div>
+    )
+  }
+
+  const handleSaveTemplate = async () => {
+    try {
+      saveTemplate()
+      toast({
+        title: 'Template Saved',
         description: 'Template has been saved successfully.'
       })
     } catch (error) {
@@ -121,36 +213,56 @@ import { FileProcessor } from '../utils/fileProcessor'
   }
 
   const handlePublishTemplate = async () => {
+    try {
+      await updateTemplate(templateId, { status: TemplateStatus.ACTIVE })
+      setTemplate(prev => prev ? { ...prev, status: TemplateStatus.ACTIVE } : null)
+      
+      toast({
+        title: 'Template Published',
+        description: 'Template is now active and can be used for agreements.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to publish template.',
+        variant: 'destructive'
       })
     }
   }
 
   const handleUnpublishTemplate = async () => {
-      status: prev.status === 'active' ? 'draft' as TemplateStatus : 'active' as TemplateStatus
+    try {
       await updateTemplate(templateId, { status: TemplateStatus.DRAFT })
-    
-    saveTemplate()
       setTemplate(prev => prev ? { ...prev, status: TemplateStatus.DRAFT } : null)
       
       toast({
         title: 'Template Unpublished',
         description: 'Template is now in draft mode.'
-    const fileIndex = template.files.findIndex(f => f.id === fileId)
-    
       })
     } catch (error) {
       toast({
         title: 'Error',
+        description: 'Failed to unpublish template.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleDeleteFile = (fileId: string) => {
+    if (!template) return
+    
+    const fileIndex = template.files.findIndex(f => f.id === fileId)
+    
+    setTemplate(prev => prev ? {
+      ...prev,
+      files: prev.files.filter(f => f.id !== fileId)
+    } : null)
     
     // Adjust selected file index if necessary
     if (fileIndex === selectedFileIndex && template.files.length > 1) {
       setSelectedFileIndex(Math.max(0, selectedFileIndex - 1))
     } else if (template.files.length === 1) {
       setSelectedFileIndex(0)
-    }
-        description: 'Failed to unpublish template.',
-        variant: 'destructive'
-      })
     }
   }
 
@@ -224,9 +336,12 @@ import { FileProcessor } from '../utils/fileProcessor'
               Template Settings
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="builder" className="flex-1 m-0">
+            <div className="h-full flex flex-col">
               {/* File Selector */}
               {template.files.length > 1 && (
-                <div>
+                <div className="p-4 border-b">
                   <Label>Select File</Label>
                   <Select
                     value={selectedFileIndex.toString()}
@@ -245,34 +360,53 @@ import { FileProcessor } from '../utils/fileProcessor'
                   </Select>
                 </div>
               )}
-              
 
-          <TabsContent value="builder" className="flex-1 m-0">
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p>Loading PDF...</p>
-                </div>
+              <div className="flex-1">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p>Loading PDF...</p>
+                    </div>
+                  </div>
+                ) : mergedPdfUrl ? (
+                  <PDFBuilderLite
+                    pdfUrl={mergedPdfUrl}
+                    fields={template.fields}
+                    onFieldsChange={handleFieldsChange}
+                    readonly={previewMode}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No PDF Available</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Upload PDF or DOCX files to start building your template.
+                      </p>
+                      <div>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <label htmlFor="file-upload">
+                          <Button asChild>
+                            <span>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Files
+                            </span>
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : mergedPdfUrl ? (
-              <PDFBuilderLite
-                pdfUrl={mergedPdfUrl}
-                fields={template.fields}
-                onFieldsChange={handleFieldsChange}
-                readonly={previewMode}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No PDF Available</h3>
-                  <p className="text-muted-foreground">
-                    Upload PDF or DOCX files to start building your template.
-                  </p>
-                </div>
-              </div>
-            )}
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="flex-1 m-0 p-6">
@@ -330,7 +464,7 @@ import { FileProcessor } from '../utils/fileProcessor'
               </Card>
 
               <Card>
-                    accept=".pdf"
+                <CardHeader>
                   <CardTitle>Template Status</CardTitle>
                   <CardDescription>
                     Control the availability of this template
@@ -346,7 +480,7 @@ import { FileProcessor } from '../utils/fileProcessor'
                         {template.status === TemplateStatus.ACTIVE 
                           ? 'This template is active and can be used for new agreements.'
                           : 'This template is in draft mode and cannot be used for agreements.'
-                        Click to upload PDF files
+                        }
                       </p>
                     </div>
                     {template.status === TemplateStatus.DRAFT ? (
@@ -384,18 +518,44 @@ import { FileProcessor } from '../utils/fileProcessor'
                         <div className="flex items-center space-x-3">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           <div>
-                          {index === selectedFileIndex && (
-                            <Badge variant="secondary" className="text-xs">Active</Badge>
-                          )}
                             <p className="font-medium">{file.originalName}</p>
                             <p className="text-sm text-muted-foreground">
                               {file.type.toUpperCase()} • {(file.size / 1024).toFixed(1)} KB
                             </p>
                           </div>
-                            e.stopPropagation()
+                          {index === selectedFileIndex && (
+                            <Badge variant="secondary" className="text-xs">Active</Badge>
+                          )}
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteFile(file.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
+                    
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="file-upload-settings"
+                      />
+                      <label htmlFor="file-upload-settings" className="cursor-pointer">
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload PDF files
+                        </p>
+                      </label>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -415,9 +575,9 @@ import { FileProcessor } from '../utils/fileProcessor'
                           <div>
                             <span className="font-medium">{field.label}</span>
                             <span className="text-sm text-muted-foreground ml-2">
-          {currentFile ? (
+                              ({field.type})
                             </span>
-              pdfUrl={currentFile.url}
+                          </div>
                           <div className="text-sm text-muted-foreground">
                             Page {field.page}
                           </div>
@@ -428,7 +588,7 @@ import { FileProcessor } from '../utils/fileProcessor'
                     <p className="text-muted-foreground">
                       No fields configured yet. Use the Document Builder to add fields.
                     </p>
-                  Upload a PDF file to start building your template
+                  )}
                 </CardContent>
               </Card>
             </div>
