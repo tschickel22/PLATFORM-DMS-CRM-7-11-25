@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  ArrowLeft, 
+import { ArrowLeft, Save, Eye, EyeOff, Settings, Upload, FileText, Trash2, ChevronDown } from 'lucide-react'
   Save, 
   Eye, 
   FileText, 
@@ -20,33 +20,61 @@ import { useTemplateManagement } from '../hooks/useTemplateManagement'
 import { TemplateCategory, TemplateStatus, TemplateField } from '../types/template'
 import { PDFBuilderLite } from './PDFBuilderLite'
 import { FileProcessor } from '../utils/fileProcessor'
-import { useToast } from '@/hooks/use-toast'
-
-interface TemplateBuilderProps {
-  templateId: string
-  onClose: () => void
-}
-
-export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
-  const { getTemplate, updateTemplate, updateTemplateFields } = useTemplateManagement()
-  const { toast } = useToast()
-  
-  const [template, setTemplate] = useState(() => getTemplate(templateId))
-  const [activeTab, setActiveTab] = useState('builder')
-  const [previewMode, setPreviewMode] = useState(false)
-  const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [templates, setTemplates] = useState<LocalTemplate[]>([])
 
   useEffect(() => {
-    const loadMergedPdf = async () => {
-      if (!template?.files.length) return
+  const saveTemplate = () => {
+    if (!template) return
+    
+    const updatedTemplate = {
+      ...template,
+      updatedAt: new Date().toISOString()
+    }
+    
+    const updatedTemplates = templateId === 'new' 
+      ? [...templates, updatedTemplate]
+      : templates.map(t => t.id === template.id ? updatedTemplate : t)
+    
+    setTemplates(updatedTemplates)
+    localStorage.setItem('agreement-templates', JSON.stringify(updatedTemplates))
+    setTemplate(updatedTemplate)
+    
+    toast({
+      title: 'Template Saved',
+      description: 'Your template has been saved successfully.',
+    })
+    
+    if (templateId === 'new') {
+      navigate(`/agreements/templates/${updatedTemplate.id}`)
+    }
+  }
 
-      try {
-        setLoading(true)
-        const pdfUrl = await FileProcessor.mergePdfs(template.files)
-        setMergedPdfUrl(pdfUrl)
-      } catch (error) {
-        console.error('Error merging PDFs:', error)
+    // Load templates from localStorage
+    const savedTemplates = localStorage.getItem('agreement-templates')
+    if (savedTemplates) {
+      const parsedTemplates = JSON.parse(savedTemplates)
+      setTemplates(parsedTemplates)
+      
+      if (templateId && templateId !== 'new') {
+        const existingTemplate = parsedTemplates.find((t: LocalTemplate) => t.id === templateId)
+        // Only accept PDF files for now
+        if (file.type === 'application/pdf') {
+          setTemplate(existingTemplate)
+        }
+      } else {
+        // Create new template
+        const newTemplate: LocalTemplate = {
+          id: `template-${Date.now()}`,
+          name: 'New Template',
+          category: 'custom',
+          status: 'draft' as TemplateStatus,
+        } else {
+          toast({
+            title: 'Unsupported File Type',
+            description: 'Only PDF files are currently supported.',
+            variant: 'destructive'
+          })
+          continue
         toast({
           title: 'Error',
           description: 'Failed to load PDF files for editing.',
@@ -54,6 +82,11 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
         })
       } finally {
         setLoading(false)
+      
+      // Set the first uploaded file as selected if none selected
+      if (template.files.length === 0 && newFiles.length > 0) {
+        setSelectedFileIndex(0)
+      }
       }
     }
 
@@ -75,20 +108,6 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
           <Button onClick={onClose}>Go Back</Button>
         </div>
       </div>
-    )
-  }
-
-  const handleSaveTemplate = async () => {
-    try {
-      await updateTemplate(templateId, {
-        name: template.name,
-        category: template.category,
-        description: template.description,
-        status: template.status
-      })
-      
-      toast({
-        title: 'Template Saved',
         description: 'Template has been saved successfully.'
       })
     } catch (error) {
@@ -110,40 +129,40 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
   }
 
   const handlePublishTemplate = async () => {
-    try {
-      await updateTemplate(templateId, { status: TemplateStatus.ACTIVE })
-      setTemplate(prev => prev ? { ...prev, status: TemplateStatus.ACTIVE } : null)
-      
-      toast({
-        title: 'Template Published',
-        description: 'Template is now active and can be used for agreements.'
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to publish template.',
-        variant: 'destructive'
       })
     }
   }
 
   const handleUnpublishTemplate = async () => {
-    try {
+      status: prev.status === 'active' ? 'draft' as TemplateStatus : 'active' as TemplateStatus
       await updateTemplate(templateId, { status: TemplateStatus.DRAFT })
+    
+    saveTemplate()
       setTemplate(prev => prev ? { ...prev, status: TemplateStatus.DRAFT } : null)
       
       toast({
         title: 'Template Unpublished',
         description: 'Template is now in draft mode.'
+    const fileIndex = template.files.findIndex(f => f.id === fileId)
+    
       })
     } catch (error) {
       toast({
         title: 'Error',
+    
+    // Adjust selected file index if necessary
+    if (fileIndex === selectedFileIndex && template.files.length > 1) {
+      setSelectedFileIndex(Math.max(0, selectedFileIndex - 1))
+    } else if (template.files.length === 1) {
+      setSelectedFileIndex(0)
+    }
         description: 'Failed to unpublish template.',
         variant: 'destructive'
       })
     }
   }
+
+  const currentFile = template.files[selectedFileIndex]
 
   return (
     <div className="h-screen flex flex-col">
@@ -213,6 +232,28 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
               Template Settings
             </TabsTrigger>
           </TabsList>
+              {/* File Selector */}
+              {template.files.length > 1 && (
+                <div>
+                  <Label>Select File</Label>
+                  <Select
+                    value={selectedFileIndex.toString()}
+                    onValueChange={(value) => setSelectedFileIndex(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {template.files.map((file, index) => (
+                        <SelectItem key={file.id} value={index.toString()}>
+                          {file.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
 
           <TabsContent value="builder" className="flex-1 m-0">
             {loading ? (
@@ -297,7 +338,7 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
               </Card>
 
               <Card>
-                <CardHeader>
+                    accept=".pdf"
                   <CardTitle>Template Status</CardTitle>
                   <CardDescription>
                     Control the availability of this template
@@ -313,7 +354,7 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
                         {template.status === TemplateStatus.ACTIVE 
                           ? 'This template is active and can be used for new agreements.'
                           : 'This template is in draft mode and cannot be used for agreements.'
-                        }
+                        Click to upload PDF files
                       </p>
                     </div>
                     {template.status === TemplateStatus.DRAFT ? (
@@ -341,15 +382,25 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
                 <CardContent>
                   <div className="space-y-3">
                     {template.files.map((file, index) => (
-                      <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div 
+                        key={file.id} 
+                        className={`flex items-center justify-between p-2 border rounded cursor-pointer transition-colors ${
+                          index === selectedFileIndex ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => setSelectedFileIndex(index)}
+                      >
                         <div className="flex items-center space-x-3">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           <div>
+                          {index === selectedFileIndex && (
+                            <Badge variant="secondary" className="text-xs">Active</Badge>
+                          )}
                             <p className="font-medium">{file.originalName}</p>
                             <p className="text-sm text-muted-foreground">
                               {file.type.toUpperCase()} • {(file.size / 1024).toFixed(1)} KB
                             </p>
                           </div>
+                            e.stopPropagation()
                         </div>
                       </div>
                     ))}
@@ -372,9 +423,9 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
                           <div>
                             <span className="font-medium">{field.label}</span>
                             <span className="text-sm text-muted-foreground ml-2">
-                              ({field.type})
+          {currentFile ? (
                             </span>
-                          </div>
+              pdfUrl={currentFile.url}
                           <div className="text-sm text-muted-foreground">
                             Page {field.page}
                           </div>
@@ -385,7 +436,7 @@ export function TemplateBuilder({ templateId, onClose }: TemplateBuilderProps) {
                     <p className="text-muted-foreground">
                       No fields configured yet. Use the Document Builder to add fields.
                     </p>
-                  )}
+                  Upload a PDF file to start building your template
                 </CardContent>
               </Card>
             </div>

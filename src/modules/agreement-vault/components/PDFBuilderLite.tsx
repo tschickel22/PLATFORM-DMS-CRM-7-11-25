@@ -79,7 +79,7 @@ export function PDFBuilderLite({ pdfUrl, fields, onFieldsChange, readonly = fals
     const loadPDF = async () => {
       try {
         setLoading(true)
-        const loadingTask = pdfjsLib.getDocument(pdfUrl)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@latest/build/pdf.worker.min.js'
         const pdfDoc = await loadingTask.promise
         setPdf(pdfDoc)
         setTotalPages(pdfDoc.numPages)
