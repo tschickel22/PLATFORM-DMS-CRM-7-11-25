@@ -114,7 +114,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   const handleItemClick = () => {
-    // Close sidebar on mobile when item is clicked
     if (window.innerWidth < 768) {
       onClose()
     }
@@ -122,7 +121,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -130,9 +128,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
       <div className={cn(
         "fixed top-0 left-0 z-50 h-full w-64 bg-background border-r border-border transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+        "flex flex-col", // ✅ Fix: enable header + nav separation
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Fixed Header */}
@@ -146,12 +144,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <p className="text-xs text-muted-foreground">CRM/DMS</p>
             </div>
           </div>
-          {/* Mobile close button */}
           <Button
             variant="ghost"
             size="sm"
             className="lg:hidden"
-            onClick={() => setIsOpen(false)}
+            onClick={onClose} // ✅ Fix: use prop instead of setIsOpen
           >
             <X className="h-4 w-4" />
           </Button>
@@ -161,7 +158,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex-1 overflow-y-auto">
           <nav className="p-4">
             <div className="space-y-2">
-              {/* Dashboard - Always visible */}
               <Link
                 to="/"
                 onClick={handleItemClick}
@@ -176,10 +172,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <span>Dashboard</span>
               </Link>
 
-              {/* Grouped Menu Items */}
               {menuGroups.map((group) => (
                 <div key={group.name} className="space-y-1">
-                  {/* Group Header */}
                   <button
                     onClick={() => toggleGroup(group.name)}
                     className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
@@ -195,7 +189,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     )}
                   </button>
 
-                  {/* Group Items */}
                   {isGroupExpanded(group.name) && (
                     <div className="ml-4 space-y-1">
                       {group.items.map((item) => (
