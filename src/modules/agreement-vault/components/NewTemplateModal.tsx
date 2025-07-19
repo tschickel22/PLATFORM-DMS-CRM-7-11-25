@@ -80,37 +80,15 @@ export function NewTemplateModal({ onClose, onSuccess }: NewTemplateModalProps) 
     if (!formData.name.trim()) {
       toast({
         title: 'Validation Error',
-        description: 'Template name is required',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    if (files.length === 0) {
-      toast({
-        title: 'Validation Error',
-        description: 'At least one file is required',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    setProcessingFiles(true)
-    try {
-      // Process all files
-      const processedFiles = await Promise.all(
-        files.map(file => FileProcessor.processFile(file))
-      )
-
-      // Create template
-      const template = await createTemplate({
-        name: formData.name.trim(),
-        category: formData.category,
-        description: formData.description.trim() || undefined,
-        files: processedFiles
-      })
-
-      onSuccess(template)
+      // Instead of saving immediately, pass the template data to the builder
+      const templateData = {
+        name: templateName,
+        type: templateType as any,
+        description: description,
+        files: files
+      }
+      
+      onSuccess(templateData)
     } catch (error) {
       console.error('Error creating template:', error)
       toast({
