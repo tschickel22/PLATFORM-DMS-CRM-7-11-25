@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, FileText, Eye, Download, Send } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Search, Plus, FileText, Eye, Download, Send, Settings } from 'lucide-react'
+import { AgreementForm } from './components/AgreementForm'
+import { TemplateSelectorModal } from './components/TemplateSelectorModal'
+import TemplateList from './templates/TemplateList'
+import TemplateBuilder from './templates/TemplateBuilder'
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatCurrency } from '@/lib/utils'
@@ -14,7 +19,10 @@ import { useToast } from '@/hooks/use-toast'
 function AgreementVaultPage() {
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
-  const [agreements] = useState<Agreement[]>(mockAgreements.sampleAgreements)
+  const [agreements, setAgreements] = useState<Agreement[]>(mockAgreements.sampleAgreements)
+  const [showAgreementForm, setShowAgreementForm] = useState(false)
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false)
+  const [editingAgreement, setEditingAgreement] = useState<any>(null)
   const [selectedType, setSelectedType] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
@@ -46,6 +54,21 @@ function AgreementVaultPage() {
     return typeConfig ? typeConfig.label : type
   }
 
+  const handleCreateAgreement = () => {
+    setShowTemplateSelector(true)
+  }
+
+  const handleSelectTemplate = (templateId: string) => {
+    // In a real implementation, you would load the template and pre-populate the form
+    console.log('Selected template:', templateId)
+    setEditingAgreement(null)
+    setShowAgreementForm(true)
+    toast({
+      title: 'Template Selected',
+      description: 'Creating agreement from template...',
+    })
+  }
+
   const handleViewAgreement = (agreementId: string) => {
     toast({
       title: 'Opening Agreement',
@@ -69,6 +92,25 @@ function AgreementVaultPage() {
 
   return (
     <div className="space-y-6">
+      {/* Agreement Form Modal */}
+      {showAgreementForm && (
+        <AgreementForm
+          agreement={editingAgreement}
+          onClose={() => {
+            setShowAgreementForm(false)
+            setEditingAgreement(null)
+          }}
+          onSuccess={handleAgreementSuccess}
+        />
+      )}
+
+      {/* Template Selector Modal */}
+      <TemplateSelectorModal
+        isOpen={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        onSelectTemplate={handleSelectTemplate}
+      />
+
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
@@ -78,10 +120,19 @@ function AgreementVaultPage() {
               Manage contracts, agreements, and digital signatures
             </p>
           </div>
-          <Button className="shadow-sm">
-            <Plus className="h-4 w-4 mr-2" />
-            New Agreement
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = '/agreements/templates'}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Templates
+            </Button>
+            <Button onClick={handleCreateAgreement} className="shadow-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Agreement
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -234,6 +285,8 @@ export default function AgreementVault() {
   return (
     <Routes>
       <Route path="/" element={<AgreementVaultPage />} />
+      <Route path="/templates" element={<TemplateList />} />
+      <Route path="/templates/:templateId/edit" element={<TemplateBuilder />} />
       <Route path="/*" element={<AgreementVaultPage />} />
     </Routes>
   )
