@@ -8,14 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
 import { ArrowLeft, Save, Eye, EyeOff, Settings, Upload, FileText, Trash2, ChevronDown } from 'lucide-react'
-  Save, 
-  Eye, 
-  FileText, 
-  Settings,
-  Play,
-  Pause,
-  RotateCcw
-} from 'lucide-react'
 import { useTemplateManagement } from '../hooks/useTemplateManagement'
 import { TemplateCategory, TemplateStatus, TemplateField } from '../types/template'
 import { PDFBuilderLite } from './PDFBuilderLite'
