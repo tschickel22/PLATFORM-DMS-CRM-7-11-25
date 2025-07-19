@@ -317,6 +317,53 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
             />
           </div>
 
+          {/* Customer Edit Form - moved outside of actions */}
+          {activeTab === 'existing' && selectedCustomer && (
+            <div className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
+              <h4 className="font-medium">Edit Customer Information</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="editName">Full Name *</Label>
+                  <Input
+                    id="editName"
+                    value={selectedCustomer.name}
+                    onChange={(e) => setSelectedCustomer({
+                      ...selectedCustomer,
+                      name: e.target.value
+                    })}
+                    placeholder="Enter customer name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editEmail">Email Address *</Label>
+                  <Input
+                    id="editEmail"
+                    type="email"
+                    value={selectedCustomer.email}
+                    onChange={(e) => setSelectedCustomer({
+                      ...selectedCustomer,
+                      email: e.target.value
+                    })}
+                    placeholder="Enter email address"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="editPhone">Phone Number</Label>
+                <Input
+                  id="editPhone"
+                  type="tel"
+                  value={selectedCustomer.phone || ''}
+                  onChange={(e) => setSelectedCustomer({
+                    ...selectedCustomer,
+                    phone: e.target.value
+                  })}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={onClose}>
@@ -336,53 +383,6 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
                   <Send className="h-4 w-4 mr-2" />
                   Send Invitation
                 </>
-              )}
-
-              {/* Customer Edit Form */}
-              {selectedCustomer && (
-                <div className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
-                  <h4 className="font-medium">Edit Customer Information</h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label htmlFor="editName">Full Name *</Label>
-                      <Input
-                        id="editName"
-                        value={selectedCustomer.name}
-                        onChange={(e) => setSelectedCustomer({
-                          ...selectedCustomer,
-                          name: e.target.value
-                        })}
-                        placeholder="Enter customer name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="editEmail">Email Address *</Label>
-                      <Input
-                        id="editEmail"
-                        type="email"
-                        value={selectedCustomer.email}
-                        onChange={(e) => setSelectedCustomer({
-                          ...selectedCustomer,
-                          email: e.target.value
-                        })}
-                        placeholder="Enter email address"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="editPhone">Phone Number</Label>
-                    <Input
-                      id="editPhone"
-                      type="tel"
-                      value={selectedCustomer.phone || ''}
-                      onChange={(e) => setSelectedCustomer({
-                        ...selectedCustomer,
-                        phone: e.target.value
-                      })}
-                      placeholder="(555) 123-4567"
-                    />
-                  </div>
-                </div>
               )}
             </Button>
           </div>
