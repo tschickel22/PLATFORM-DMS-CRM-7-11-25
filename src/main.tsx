@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { pdfjs } from 'pdfjs-dist'
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?url'
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.js?url'
 import App from './App.tsx'
 import './index.css'
 
