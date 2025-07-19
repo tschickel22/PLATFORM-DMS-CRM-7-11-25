@@ -95,14 +95,20 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
     }
   }
 
+  const handleAddTag = () => {
+    if (newTag.trim() && !formData.tags?.includes(newTag.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...(prev.tags || []), newTag.trim()]
+      }))
+      setNewTag('')
+    }
+  }
+
   const handleRemoveTag = (tagToRemove: string) => {
-    // Update the uploaded documents state with any new documents from the viewer
-    setUploadedDocuments(documents)
-    
-    // Update form data with the documents and fields
     setFormData(prev => ({
       ...prev,
-      documents: documents,
+      tags: prev.tags?.filter(tag => tag !== tagToRemove) || []
     }))
   }
 
@@ -319,17 +325,19 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                      {tag}
-                      <button
-                        type="button"
+                  {formData.tags?.map((tag, index) => (
+                    <div key={index} className="flex items-center bg-muted/50 px-3 py-1 rounded-md">
+                      <span className="mr-2">{tag}</span>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-5 w-5 p-0" 
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 hover:text-destructive"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   ))}
                 </div>
               </div>
