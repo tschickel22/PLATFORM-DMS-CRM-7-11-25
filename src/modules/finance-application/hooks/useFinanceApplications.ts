@@ -12,27 +12,28 @@ export function useFinanceApplications() {
     const savedApplications = loadFromLocalStorage<FinanceApplication[]>('financeApplications', [])
     const savedTemplates = loadFromLocalStorage<ApplicationTemplate[]>('applicationTemplates', [])
     
-    // Use mock data if no saved data exists
-    if (savedApplications.length === 0 && savedTemplates.length === 0) {
+    // Load mock applications if no saved applications exist
+    if (savedApplications.length === 0) {
       setApplications(mockFinanceApplications.sampleApplications)
-      setTemplates(mockFinanceApplications.defaultTemplates)
     } else {
       setApplications(savedApplications)
-      setTemplates(savedTemplates.length > 0 ? savedTemplates : mockFinanceApplications.defaultTemplates)
+    }
+    
+    // Load mock templates if no saved templates exist
+    if (savedTemplates.length === 0) {
+      setTemplates(mockFinanceApplications.defaultTemplates)
+    } else {
+      setTemplates(savedTemplates)
     }
   }, [])
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    if (applications.length > 0) {
-      saveToLocalStorage('financeApplications', applications)
-    }
+    saveToLocalStorage('financeApplications', applications)
   }, [applications])
 
   useEffect(() => {
-    if (templates.length > 0) {
-      saveToLocalStorage('applicationTemplates', templates)
-    }
+    saveToLocalStorage('applicationTemplates', templates)
   }, [templates])
 
   const createApplication = (data: Partial<FinanceApplication>): FinanceApplication => {
