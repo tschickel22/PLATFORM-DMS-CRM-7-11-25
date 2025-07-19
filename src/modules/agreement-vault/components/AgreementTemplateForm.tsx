@@ -177,6 +177,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
       // In a real app, you would upload the file to a storage service here
       const templateData = {
         ...formData,
+        documents: uploadedDocuments,
         id: template?.id || `template-${Date.now()}`,
         version: template?.version || '1.0',
         documentUrl: uploadedFile ? URL.createObjectURL(uploadedFile) : template?.documentUrl,
@@ -191,10 +192,16 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
 
       await onSave(templateData)
       
+      // If documents were uploaded, navigate to document viewer for field configuration
+      if (uploadedDocuments.length > 0) {
+        setShowDocumentViewer(true)
+      } else {
+        // If no documents, just close the form
+        onCancel()
+      }
+      
       toast({
         title: 'Success',
-        description: `Template ${template ? 'updated' : 'created'} successfully.`,
-      })
     } catch (error) {
       toast({
         title: 'Error',
