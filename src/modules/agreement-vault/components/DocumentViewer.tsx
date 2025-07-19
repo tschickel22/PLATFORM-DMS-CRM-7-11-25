@@ -1,7 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
-import 'react-pdf/dist/Page/AnnotationLayer.css'
-import 'react-pdf/dist/Page/TextLayer.css'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,10 +15,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
 // Set up the worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString()
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
 interface UploadedDocument {
   id: string
@@ -602,10 +597,6 @@ export function DocumentViewer({
                       file={currentViewingDocument.url}
                       onLoadSuccess={onDocumentLoadSuccess}
                       onLoadError={onDocumentLoadError}
-                      options={{
-                        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
-                        cMapPacked: true,
-                      }}
                       loading={
                         <div className="flex items-center justify-center p-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -615,15 +606,20 @@ export function DocumentViewer({
                       error={
                         <div className="flex items-center justify-center p-8 text-red-500">
                           <FileText className="h-8 w-8 mr-2" />
-                          <span>Error loading PDF. Please try uploading again.</span>
+                          <div className="text-center">
+                            <div>Error loading PDF. Please try uploading again.</div>
+                            <div className="text-xs mt-2 text-gray-500">
+                              Make sure the file is a valid PDF document.
+                            </div>
+                          </div>
                         </div>
                       }
                     >
                       <Page
                         pageNumber={pageNumber}
-                        scale={zoom / 100}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
+                        width={600}
                         loading={
                           <div className="flex items-center justify-center p-8">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
