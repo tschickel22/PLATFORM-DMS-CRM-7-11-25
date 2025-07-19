@@ -2,26 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { 
-  LayoutDashboard, 
-  Users, 
-  Package, 
-  FileText, 
-  DollarSign, 
-  Handshake,
-  Wrench,
-  Truck,
-  ClipboardCheck,
-  Calculator,
-  Receipt,
-  Percent,
-  Globe,
-  Settings,
-  Shield,
-  BarChart3,
-  X,
-  ChevronDown
-} from 'lucide-react'
+import { LayoutDashboard, Users, Package, FileText, DollarSign, HeartHandshake as Handshake, Wrench, Truck, ClipboardCheck, Calculator, Receipt, Percent, Globe, Settings, Shield, BarChart3, X, ChevronDown } from 'lucide-react'
 
 interface SidebarProps {
   isOpen: boolean
