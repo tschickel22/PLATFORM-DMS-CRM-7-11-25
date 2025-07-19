@@ -8,8 +8,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { ZoomIn, ZoomOut, MousePointer, Type, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Save, X, Brain, Link2, Settings, Eye, RotateCw, Download, Wand2, SeparatorVertical as Separator, Upload, FileText, File } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+
 // Set up the worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
+
+interface DocumentField {
+  id: string
+  type: 'text' | 'signature' | 'date' | 'checkbox' | 'dropdown'
+  documentId: string
+  page: number
+  x: number
+  y: number
+  width: number
+  height: number
+  label: string
+  required: boolean
+  defaultValue?: string
+  options?: string[]
+  mergeField?: string
+}
 
 interface UploadedDocument {
   id: string
@@ -103,6 +122,9 @@ export function DocumentViewer({
   const [numPages, setNumPages] = useState<number | null>(null)
   const [pageNumber, setPageNumber] = useState(1)
   const [pdfError, setPdfError] = useState<string | null>(null)
+  const [showFieldProperties, setShowFieldProperties] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [showMergeMapper, setShowMergeMapper] = useState(false)
   
   // Document management state
   const [currentViewingDocumentId, setCurrentViewingDocumentId] = useState<string | null>(
@@ -122,6 +144,15 @@ export function DocumentViewer({
   const currentViewingDocument = documents.find(doc => doc.id === currentViewingDocumentId)
   const currentDocumentFields = fields.filter(field => field.documentId === currentViewingDocumentId)
 
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 25, 200))
+  }
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 25, 50))
+  }
+
+  const onDocumentLoadError = () => {
     setPdfError('Failed to load PDF document')
   }
 
@@ -151,6 +182,14 @@ export function DocumentViewer({
         url: documentUrl,
         type: file.type,
         size: file.size
+      }
+      
+      newDocuments.push(newDocument)
+      
+      if (newDocuments.length > 0) {
+        toast({
+          title: 'Document Uploaded',
+          description: `${file.name} uploaded successfully.`,
           variant: 'default'
         })
       }
@@ -218,6 +257,7 @@ export function DocumentViewer({
     const y = ((e.clientY - rect.top) / rect.height) * 100
 
     const newField: DocumentField = {
+      id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       page: currentPage,
       type: selectedTool as DocumentField['type'],
       documentId: currentViewingDocumentId,
@@ -234,7 +274,7 @@ export function DocumentViewer({
     setIsPlacingField(false)
     setSelectedField(newField)
     setShowFieldProperties(true)
-  }, [selectedTool, isPlacingField, fields, onFieldsChange, currentPage, currentViewingDocumentId])
+  }, [selectedTool, isPlacingField, fields, onFieldsChange, currentPage, currentViewingDocumentId, pageNumber])
 
   const handleFieldClick = (field: DocumentField, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -560,7 +600,6 @@ export function DocumentViewer({
                 {currentViewingDocument.type.startsWith('image/') ? (
                   <img src={currentViewingDocument.url} alt={currentViewingDocument.name} className="max-w-full h-auto" />
                 ) : currentViewingDocument.type === 'application/pdf' ? (
-                ) : currentViewingDocument.type === 'application/pdf' ? (
                   <iframe 
                     src={currentViewingDocument.url} 
                     className="w-full h-full border-none min-h-[800px]"
@@ -832,6 +871,8 @@ export function DocumentViewer({
           fields={fields}
           onFieldsUpdate={setFields}
           onClose={() => setShowMergeMapper(false)}
+        />
+      )}
     </div>
   )
 }
