@@ -225,6 +225,156 @@ function FinanceApplicationDashboard() {
     )
   }
 
+  // Add view mode for selected application
+  if (selectedApplication && applicationCreationMode === 'none') {
+    return (
+      <div className="space-y-6">
+        {/* Header with back button */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={handleCloseApplicationForm}>
+              ← Back to Applications
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Application Details</h1>
+              <p className="text-muted-foreground">
+                {selectedApplication.customerName || 'Unnamed Application'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Application Details Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Application #{selectedApplication.id.slice(-6).toUpperCase()}</CardTitle>
+                <CardDescription>
+                  Created {new Date(selectedApplication.createdAt).toLocaleDateString()}
+                  {selectedApplication.submittedAt && (
+                    <span> • Submitted {new Date(selectedApplication.submittedAt).toLocaleDateString()}</span>
+                  )}
+                </CardDescription>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge className={getStatusColor(selectedApplication.status)}>
+                  {selectedApplication.status.replace('_', ' ').toUpperCase()}
+                </Badge>
+                {selectedApplication.fraudCheckStatus && (
+                  <Badge variant="outline">
+                    IDV: {selectedApplication.fraudCheckStatus.charAt(0).toUpperCase() + selectedApplication.fraudCheckStatus.slice(1)}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Customer Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>Name</Label>
+                  <p className="text-sm">{selectedApplication.customerName || 'Not provided'}</p>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <p className="text-sm">{selectedApplication.customerEmail || 'Not provided'}</p>
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <p className="text-sm">{selectedApplication.customerPhone || 'Not provided'}</p>
+                </div>
+                <div>
+                  <Label>Customer ID</Label>
+                  <p className="text-sm">{selectedApplication.customerId || 'Not assigned'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Application Data */}
+            {Object.keys(selectedApplication.data).length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Application Data</h3>
+                <div className="space-y-4">
+                  {Object.entries(selectedApplication.data).map(([sectionId, sectionData]) => (
+                    <div key={sectionId} className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-2 capitalize">{sectionId.replace('-', ' ')}</h4>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {Object.entries(sectionData as Record<string, any>).map(([fieldId, value]) => (
+                          <div key={fieldId}>
+                            <Label className="text-xs text-muted-foreground capitalize">
+                              {fieldId.replace('-', ' ')}
+                            </Label>
+                            <p className="text-sm">{value || 'Not provided'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Uploaded Files */}
+            {selectedApplication.uploadedFiles.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Uploaded Documents</h3>
+                <div className="space-y-2">
+                  {selectedApplication.uploadedFiles.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-4 w-4" />
+                        <div>
+                          <p className="text-sm font-medium">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB • Uploaded {new Date(file.uploadedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {selectedApplication.notes && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Notes</h3>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm">{selectedApplication.notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Review Information */}
+            {selectedApplication.reviewedAt && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Review Information</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label>Reviewed Date</Label>
+                    <p className="text-sm">{new Date(selectedApplication.reviewedAt).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <Label>Reviewed By</Label>
+                    <p className="text-sm">{selectedApplication.reviewedBy || 'Not specified'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Application Type Selection Modal */}
