@@ -75,6 +75,214 @@ export const mockFinanceApplications = {
       notes: ''
     }
   ] as FinanceApplication[],
+    {
+      id: 'app-003',
+      customerId: 'cust-003',
+      customerName: 'Sarah Wilson',
+      customerEmail: 'sarah.wilson@email.com',
+      customerPhone: '(555) 234-5678',
+      templateId: 'template-001',
+      status: 'submitted' as const,
+      data: {
+        'personal-info': {
+          'first-name': 'Sarah',
+          'last-name': 'Wilson',
+          'email': 'sarah.wilson@email.com',
+          'phone': '(555) 234-5678',
+          'ssn': '***-**-5678',
+          'date-of-birth': '1990-03-22'
+        },
+        'employment': {
+          'employer-name': 'Tech Solutions Inc',
+          'job-title': 'Marketing Manager',
+          'employment-length': '2 years',
+          'monthly-income': '7200',
+          'employment-type': 'full-time'
+        }
+      },
+      uploadedFiles: [],
+      fraudCheckStatus: 'pending' as const,
+      createdAt: '2024-01-20T10:15:00Z',
+      updatedAt: '2024-01-22T09:30:00Z',
+      submittedAt: '2024-01-22T09:30:00Z',
+      notes: 'Application submitted, awaiting initial review'
+    },
+    {
+      id: 'app-004',
+      customerId: 'cust-004',
+      customerName: 'Michael Chen',
+      customerEmail: 'michael.chen@email.com',
+      customerPhone: '(555) 345-6789',
+      templateId: 'template-001',
+      status: 'under_review' as const,
+      data: {
+        'personal-info': {
+          'first-name': 'Michael',
+          'last-name': 'Chen',
+          'email': 'michael.chen@email.com',
+          'phone': '(555) 345-6789',
+          'ssn': '***-**-6789',
+          'date-of-birth': '1988-11-10'
+        },
+        'employment': {
+          'employer-name': 'Global Manufacturing',
+          'job-title': 'Operations Supervisor',
+          'employment-length': '5 years',
+          'monthly-income': '9500',
+          'employment-type': 'full-time'
+        }
+      },
+      uploadedFiles: [
+        {
+          id: 'file-002',
+          fieldId: 'pay-stubs',
+          name: 'paystub-january-2024.pdf',
+          type: 'application/pdf',
+          size: 198432,
+          url: '/mock/paystub-chen.pdf',
+          uploadedAt: '2024-01-18T11:45:00Z'
+        }
+      ],
+      fraudCheckStatus: 'verified' as const,
+      createdAt: '2024-01-16T14:20:00Z',
+      updatedAt: '2024-01-23T16:15:00Z',
+      submittedAt: '2024-01-18T12:00:00Z',
+      reviewedAt: '2024-01-23T16:15:00Z',
+      reviewedBy: 'finance@company.com',
+      notes: 'Under review by finance team, credit check in progress'
+    },
+    {
+      id: 'app-005',
+      customerId: 'cust-005',
+      customerName: 'Emily Davis',
+      customerEmail: 'emily.davis@email.com',
+      customerPhone: '(555) 456-7890',
+      templateId: 'template-001',
+      status: 'approved' as const,
+      data: {
+        'personal-info': {
+          'first-name': 'Emily',
+          'last-name': 'Davis',
+          'email': 'emily.davis@email.com',
+          'phone': '(555) 456-7890',
+          'ssn': '***-**-7890',
+          'date-of-birth': '1985-07-14'
+        },
+        'employment': {
+          'employer-name': 'Healthcare Partners',
+          'job-title': 'Registered Nurse',
+          'employment-length': '8 years',
+          'monthly-income': '8800',
+          'employment-type': 'full-time'
+        }
+      },
+      uploadedFiles: [
+        {
+          id: 'file-003',
+          fieldId: 'pay-stubs',
+          name: 'paystub-december-2023.pdf',
+          type: 'application/pdf',
+          size: 223456,
+          url: '/mock/paystub-davis.pdf',
+          uploadedAt: '2024-01-08T15:30:00Z'
+        },
+        {
+          id: 'file-004',
+          fieldId: 'tax-returns',
+          name: 'tax-return-2023.pdf',
+          type: 'application/pdf',
+          size: 445678,
+          url: '/mock/tax-return-davis.pdf',
+          uploadedAt: '2024-01-08T15:35:00Z'
+        }
+      ],
+      fraudCheckStatus: 'verified' as const,
+      createdAt: '2024-01-05T08:45:00Z',
+      updatedAt: '2024-01-25T10:30:00Z',
+      submittedAt: '2024-01-08T16:00:00Z',
+      reviewedAt: '2024-01-25T10:30:00Z',
+      reviewedBy: 'finance@company.com',
+      notes: 'Excellent credit score and stable employment history. Approved for full amount.'
+    },
+    {
+      id: 'app-006',
+      customerId: 'cust-006',
+      customerName: 'Robert Taylor',
+      customerEmail: 'robert.taylor@email.com',
+      customerPhone: '(555) 567-8901',
+      templateId: 'template-001',
+      status: 'denied' as const,
+      data: {
+        'personal-info': {
+          'first-name': 'Robert',
+          'last-name': 'Taylor',
+          'email': 'robert.taylor@email.com',
+          'phone': '(555) 567-8901',
+          'ssn': '***-**-8901',
+          'date-of-birth': '1992-12-05'
+        },
+        'employment': {
+          'employer-name': 'Freelance Consulting',
+          'job-title': 'Independent Contractor',
+          'employment-length': '6 months',
+          'monthly-income': '4500',
+          'employment-type': 'self-employed'
+        }
+      },
+      uploadedFiles: [],
+      fraudCheckStatus: 'flagged' as const,
+      createdAt: '2024-01-12T13:20:00Z',
+      updatedAt: '2024-01-26T14:45:00Z',
+      submittedAt: '2024-01-14T10:15:00Z',
+      reviewedAt: '2024-01-26T14:45:00Z',
+      reviewedBy: 'finance@company.com',
+      notes: 'Insufficient employment history and income verification. Credit score below minimum requirements.'
+    },
+    {
+      id: 'app-007',
+      customerId: 'cust-007',
+      customerName: 'Jennifer Brown',
+      customerEmail: 'jennifer.brown@email.com',
+      customerPhone: '(555) 678-9012',
+      templateId: 'template-001',
+      status: 'completed' as const,
+      data: {
+        'personal-info': {
+          'first-name': 'Jennifer',
+          'last-name': 'Brown',
+          'email': 'jennifer.brown@email.com',
+          'phone': '(555) 678-9012',
+          'ssn': '***-**-9012',
+          'date-of-birth': '1987-04-18'
+        },
+        'employment': {
+          'employer-name': 'City School District',
+          'job-title': 'Elementary Teacher',
+          'employment-length': '12 years',
+          'monthly-income': '6800',
+          'employment-type': 'full-time'
+        }
+      },
+      uploadedFiles: [
+        {
+          id: 'file-005',
+          fieldId: 'pay-stubs',
+          name: 'paystub-november-2023.pdf',
+          type: 'application/pdf',
+          size: 187654,
+          url: '/mock/paystub-brown.pdf',
+          uploadedAt: '2023-12-15T09:20:00Z'
+        }
+      ],
+      fraudCheckStatus: 'verified' as const,
+      createdAt: '2023-12-10T11:30:00Z',
+      updatedAt: '2024-01-15T13:45:00Z',
+      submittedAt: '2023-12-15T10:00:00Z',
+      reviewedAt: '2023-12-20T15:30:00Z',
+      reviewedBy: 'finance@company.com',
+      notes: 'Application approved and loan funded. Customer has received financing.'
+    }
+  ] as FinanceApplication[],
 
   defaultTemplates: [
     {
