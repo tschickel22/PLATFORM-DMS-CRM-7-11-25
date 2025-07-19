@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as pdfjs from 'pdfjs-dist'
+import workerSrc from 'pdfjs-dist/build/pdf.worker.entry'
 import { v4 as uuidv4 } from 'uuid'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +9,7 @@ import { Trash2, Type, PenTool, Calendar, CheckSquare, ChevronDown } from 'lucid
 import { cn } from '@/lib/utils'
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.js'
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
 
 const FIELD_TYPES = [
   { type: 'text', label: 'Text Field', icon: Type, color: 'bg-blue-100 border-blue-300 text-blue-800' },
