@@ -34,22 +34,7 @@ function FinanceApplicationDashboard() {
 
   // Get platform-specific labels
   const getModuleLabel = () => {
-    const platformType = tenant?.settings?.platformType || 'mh'
-    const labelOverrides = tenant?.settings?.labelOverrides || {}
-    
-    if (labelOverrides['finance.application_center']) {
-      return labelOverrides['finance.application_center']
-    }
-    
-    switch (platformType) {
-      case 'rv':
-        return 'RV Loan Center'
-      case 'auto':
-        return 'Auto Finance Center'
-      case 'mh':
-      default:
-        return 'MH Financing Applications'
-    }
+    return 'Applications'
   }
 
   const getApplicationLabel = () => {

@@ -172,7 +172,7 @@ export function PortalApplicationView() {
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="ri-page-title">Finance Applications</h1>
+            <h1 className="ri-page-title">Applications</h1>
             <p className="ri-page-description">
               Manage your {getApplicationLabel().toLowerCase()}s
             </p>
