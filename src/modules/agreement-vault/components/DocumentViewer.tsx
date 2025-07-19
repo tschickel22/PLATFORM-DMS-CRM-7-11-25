@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,8 +30,6 @@ interface DocumentViewerProps {
   onCancel: () => void
   mergeFields: string[]
   initialFields?: DocumentField[]
-  initialDocuments?: UploadedDocument[]
-}
 }
 
 const FIELD_TYPES = [
@@ -96,7 +94,7 @@ export function DocumentViewer({
   templateType,
   initialFields = [],
   initialDocuments = []
-export function DocumentViewer({ initialDocuments = [], onSave, onCancel }: DocumentViewerProps) {
+}: DocumentViewerProps) {
   const { toast } = useToast()
   const [zoom, setZoom] = useState(100)
   const [selectedTool, setSelectedTool] = useState<string | null>(null)
@@ -106,9 +104,9 @@ export function DocumentViewer({ initialDocuments = [], onSave, onCancel }: Docu
   const [showAIDetection, setShowAIDetection] = useState(false)
   const [showMergeMapper, setShowMergeMapper] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showFieldProperties, setShowFieldProperties] = useState(false)
   
   // Document management state
-  const [documents, setDocuments] = useState<UploadedDocument[]>(initialDocuments)
   const [currentViewingDocumentId, setCurrentViewingDocumentId] = useState<string | null>(
     initialDocuments.length > 0 ? initialDocuments[0].id : null
   )
