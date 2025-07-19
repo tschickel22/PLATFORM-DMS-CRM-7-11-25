@@ -30,7 +30,18 @@ const navigation = [
   { name: 'Sales Deals', href: '/deals', icon: Target },
   { name: 'Finance', href: '/finance', icon: DollarSign },
   { name: 'Quote Builder', href: '/quotes', icon: FileText },
-  { name: 'Agreement Vault', href: '/agreements', icon: FileCheck },
+  { 
+    name: 'Agreement Vault', 
+    href: '/agreements', 
+    icon: FileCheck,
+    subItems: [
+      { name: 'All Agreements', href: '/agreements' },
+      { name: 'Templates', href: '/agreements/templates' },
+      { name: 'Pending Signatures', href: '/agreements?status=pending' },
+      { name: 'Signed', href: '/agreements?status=signed' },
+      { name: 'Expired', href: '/agreements?status=expired' }
+    ]
+  },
   { name: 'PDI Checklist', href: '/pdi', icon: ClipboardCheck },
   { name: 'Service Operations', href: '/service', icon: Wrench },
   { name: 'Delivery Tracker', href: '/delivery', icon: Truck },
