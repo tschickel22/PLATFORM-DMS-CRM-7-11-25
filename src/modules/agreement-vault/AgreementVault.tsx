@@ -10,12 +10,17 @@ import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { TemplateManagement } from './components/TemplateManagement'
 
 function AgreementVaultPage() {
   const { toast } = useToast()
-  const [searchTerm, setSearchTerm] = useState('')
+  Send,
+  Template
   const [agreements] = useState<Agreement[]>(mockAgreements.sampleAgreements)
   const [selectedType, setSelectedType] = useState<string>('all')
+  const [activeTab, setActiveTab] = useState(() => {
+    return location.pathname.includes('/templates') ? 'templates' : 'agreements'
+  })
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
   const filteredAgreements = agreements.filter(agreement => {
@@ -75,7 +80,7 @@ function AgreementVaultPage() {
           <div>
             <h1 className="ri-page-title">Agreement Vault</h1>
             <p className="ri-page-description">
-              Manage contracts, agreements, and digital signatures
+              Manage contracts, agreements, templates, and digital signatures
             </p>
           </div>
           <Button className="shadow-sm">
@@ -85,6 +90,20 @@ function AgreementVaultPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="agreements" onClick={() => navigate('/agreements')}>
+            <FileText className="h-4 w-4 mr-2" />
+            Agreements
+          </TabsTrigger>
+          <TabsTrigger value="templates" onClick={() => navigate('/agreements/templates')}>
+            <Template className="h-4 w-4 mr-2" />
+            Templates
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="agreements" className="space-y-6">
       {/* Filters */}
       <Card className="shadow-sm">
         <CardContent className="pt-6">
@@ -129,6 +148,12 @@ function AgreementVaultPage() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-6">
+          <TemplateManagement />
+        </TabsContent>
+      </Tabs>
 
       {/* Agreements Table */}
       <Card className="shadow-sm">
@@ -231,9 +256,17 @@ function AgreementVaultPage() {
 }
 
 export default function AgreementVault() {
+  const location = useLocation()
+  
+  // If we're on the templates route, show template management
+  if (location.pathname.includes('/templates')) {
+    return <TemplateManagement />
+  }
+  
   return (
     <Routes>
       <Route path="/" element={<AgreementVaultPage />} />
+      <Route path="/templates" element={<TemplateManagement />} />
       <Route path="/*" element={<AgreementVaultPage />} />
     </Routes>
   )

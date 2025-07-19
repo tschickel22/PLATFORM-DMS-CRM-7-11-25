@@ -49,6 +49,7 @@ function App() {
                           <Route path="/finance/*" element={<FinanceModule />} />
                           <Route path="/quotes/*" element={<QuoteBuilder />} />
                           <Route path="/agreements/*" element={<AgreementVault />} />
+                          <Route path="/agreement-templates/*" element={<AgreementVault />} />
                           <Route path="/service/*" element={<ServiceOps />} />
                           <Route path="/pdi/*" element={<PDIChecklist />} />
                           <Route path="/delivery/*" element={<DeliveryTracker />} />
