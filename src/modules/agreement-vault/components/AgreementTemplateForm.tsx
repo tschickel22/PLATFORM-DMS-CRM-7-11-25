@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Upload, FileText, X, Save, Plus, Trash2 } from 'lucide-react'
+import { Upload, FileText, X, Save, Plus, Trash2, Settings } from 'lucide-react'
 import { AgreementType } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { mockAgreementTemplates } from '@/mocks/agreementTemplatesMock'
+import { DocumentViewer } from './DocumentViewer'
 
 interface AgreementTemplateFormProps {
   template?: any // For editing existing templates
@@ -37,10 +38,13 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
   const [filePreview, setFilePreview] = useState<string>(template?.documentUrl || '')
   const [newTag, setNewTag] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
+  const [documentFields, setDocumentFields] = useState<any[]>([])
 
   // Available options from mock data
   const agreementTypes = mockAgreements.agreementTypes
   const templateCategories = mockAgreementTemplates.templateCategories
+  const mergeFields = mockAgreementTemplates.commonMergeFields.map(f => f.key)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -94,6 +98,29 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }))
+  }
+
+  const handleConfigureFields = () => {
+    if (!uploadedFile) {
+      toast({
+        title: 'No Document',
+        description: 'Please upload a document first',
+        variant: 'destructive'
+      })
+      return
+    }
+    setShowDocumentViewer(true)
+  }
+
+  const handleSaveTemplate = () => {
+    const templateData = {
+      ...formData,
+      documentFields,
+      mergeFields: documentFields
+        .filter(field => field.mergeField)
+        .map(field => field.mergeField)
+    }
+    onSave(templateData)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,6 +187,32 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
     } finally {
       setLoading(false)
     }
+  }
+
+  if (showDocumentViewer && uploadedFile) {
+    return (
+      <div className="fixed inset-0 bg-white z-50">
+        <DocumentViewer
+          documentUrl={URL.createObjectURL(uploadedFile)}
+          documentName={uploadedFile.name}
+          fields={documentFields}
+          onFieldsChange={setDocumentFields}
+          onSave={() => {
+            setShowDocumentViewer(false)
+            handleSaveTemplate()
+          }}
+          mergeFields={mergeFields}
+        />
+        <Button
+          variant="outline"
+          className="absolute top-4 right-4 z-10"
+          onClick={() => setShowDocumentViewer(false)}
+        >
+          <X className="h-4 w-4 mr-2" />
+          Close Viewer
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -346,6 +399,18 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
               <p className="text-xs text-muted-foreground mt-2">
                 Supported formats: PDF, DOC, DOCX. Maximum file size: 10MB.
               </p>
+              
+              {uploadedFile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleConfigureFields}
+                  className="mt-3"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure Document Fields
+                </Button>
+              )}
             </div>
 
             {/* Template Terms (Optional for now) */}
@@ -369,7 +434,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
               <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" onClick={handleSaveTemplate} disabled={loading}>
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
