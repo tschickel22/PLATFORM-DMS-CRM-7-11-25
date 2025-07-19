@@ -64,7 +64,7 @@ const menuGroups: MenuGroup[] = [
     icon: DollarSign,
     items: [
       { name: 'Finance', href: '/finance', icon: DollarSign },
-      { name: 'Client Applications', href: '/finance-application', icon: FileText },
+      { name: 'Client Applications', href: '/client-applications', icon: FileText },
       { name: 'Agreements', href: '/agreements', icon: FileText },
       { name: 'Invoices', href: '/invoices', icon: Receipt },
     ]
