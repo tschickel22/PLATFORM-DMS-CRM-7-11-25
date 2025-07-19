@@ -23,14 +23,21 @@ export default function TemplateEditor({ templateId, onClose }: { templateId: st
   )
 }
 
-export function TemplateBuilder() {
+interface TemplateBuilderProps {
+  template?: LocalTemplate | null
+  newTemplateData?: any
+  onBack: () => void
+  onSave?: () => void
+}
+
+export function TemplateBuilder({ template, newTemplateData, onBack, onSave }: TemplateBuilderProps) {
   const [templates, setTemplates] = useState<LocalTemplate[]>([])
   const [loading, setLoading] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
   const [activeTab, setActiveTab] = useState('builder')
   const [selectedFileIndex, setSelectedFileIndex] = useState(0)
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null)
-  const [template, setTemplate] = useState<LocalTemplate | null>(null)
+  const [templateState, setTemplateState] = useState<LocalTemplate | null>(null)
   const [templateId, setTemplateId] = useState<string>('')
   const [toast, setToast] = useState<any>(null)
   const [navigate, setNavigate] = useState<any>(null)
@@ -38,6 +45,35 @@ export function TemplateBuilder() {
   const { updateTemplate, updateTemplateFields } = useTemplateManagement()
 
   useEffect(() => {
+    if (newTemplateData) {
+      // Initialize with new template data
+      setTemplateName(newTemplateData.name)
+      setTemplateType(newTemplateData.type)
+      setDescription(newTemplateData.description || '')
+      
+      // Convert files to the expected format
+      const convertedFiles = newTemplateData.files.map((file: File) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        size: file.size,
+        uploadedAt: new Date()
+      }))
+      
+      setFiles(convertedFiles)
+      setMergeFields([])
+      setSelectedFileIndex(0)
+    } else if (template) {
+      // Initialize with existing template
+      setTemplateName(template.name)
+      setTemplateType(template.type)
+      setDescription(template.description || '')
+      setFiles(template.files || [])
+      setMergeFields(template.mergeFields || [])
+      setSelectedFileIndex(0)
+    }
+    
     // Load templates from localStorage
     const savedTemplates = localStorage.getItem('agreement-templates')
     if (savedTemplates) {
@@ -47,7 +83,7 @@ export function TemplateBuilder() {
       if (templateId && templateId !== 'new') {
         const existingTemplate = parsedTemplates.find((t: LocalTemplate) => t.id === templateId)
         if (existingTemplate) {
-          setTemplate(existingTemplate)
+          setTemplateState(existingTemplate)
         }
       } else {
         // Create new template
@@ -61,26 +97,26 @@ export function TemplateBuilder() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
-        setTemplate(newTemplate)
+        setTemplateState(newTemplate)
       }
     }
-  }, [templateId])
+  }, [template, newTemplateData, templateId])
 
   const saveTemplate = () => {
-    if (!template) return
+    if (!templateState) return
     
     const updatedTemplate = {
-      ...template,
+      ...templateState,
       updatedAt: new Date().toISOString()
     }
     
     const updatedTemplates = templateId === 'new' 
       ? [...templates, updatedTemplate]
-      : templates.map(t => t.id === template.id ? updatedTemplate : t)
+      : templates.map(t => t.id === templateState.id ? updatedTemplate : t)
     
     setTemplates(updatedTemplates)
     localStorage.setItem('agreement-templates', JSON.stringify(updatedTemplates))
-    setTemplate(updatedTemplate)
+    setTemplateState(updatedTemplate)
     
     toast({
       title: 'Template Saved',
@@ -93,14 +129,14 @@ export function TemplateBuilder() {
   }
 
   const loadMergedPdf = async () => {
-    if (!template?.files || template.files.length === 0) {
+    if (!templateState?.files || templateState.files.length === 0) {
       setMergedPdfUrl(null)
       return
     }
 
     setLoading(true)
     try {
-      const pdfFiles = template.files.filter(file => file.type === 'application/pdf')
+      const pdfFiles = templateState.files.filter(file => file.type === 'application/pdf')
       
       if (pdfFiles.length === 0) {
         setMergedPdfUrl(null)
@@ -126,7 +162,7 @@ export function TemplateBuilder() {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
-    if (!files || !template) return
+    if (!files || !templateState) return
 
     setLoading(true)
     try {
@@ -156,13 +192,13 @@ export function TemplateBuilder() {
       }
 
       if (newFiles.length > 0) {
-        setTemplate(prev => prev ? {
+        setTemplateState(prev => prev ? {
           ...prev,
           files: [...prev.files, ...newFiles]
         } : null)
         
         // Set the first uploaded file as selected if none selected
-        if (template.files.length === 0 && newFiles.length > 0) {
+        if (templateState.files.length === 0 && newFiles.length > 0) {
           setSelectedFileIndex(0)
         }
       }
@@ -187,9 +223,9 @@ export function TemplateBuilder() {
         URL.revokeObjectURL(mergedPdfUrl)
       }
     }
-  }, [template?.files, toast])
+  }, [templateState?.files, toast])
 
-  if (!template) {
+  if (!templateState) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -198,6 +234,65 @@ export function TemplateBuilder() {
         </div>
       </div>
     )
+  }
+
+  const handleSave = async () => {
+    if (!templateName || files.length === 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please provide a template name and at least one file',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const templateData: LocalTemplate = {
+        id: template?.id || Math.random().toString(36).substr(2, 9),
+        name: templateName,
+        type: templateType,
+        description,
+        files,
+        mergeFields,
+        isActive: true,
+        createdAt: template?.createdAt || new Date(),
+        updatedAt: new Date()
+      }
+
+      const existingTemplates = JSON.parse(localStorage.getItem('agreement_templates') || '[]')
+      
+      if (template?.id) {
+        // Update existing template
+        const index = existingTemplates.findIndex((t: LocalTemplate) => t.id === template.id)
+        if (index !== -1) {
+          existingTemplates[index] = templateData
+        }
+      } else {
+        // Add new template
+        existingTemplates.push(templateData)
+      }
+
+      localStorage.setItem('agreement_templates', JSON.stringify(existingTemplates))
+
+      toast({
+        title: 'Template Saved',
+        description: `Template "${templateName}" has been saved successfully`,
+      })
+      
+      // Call onSave callback to refresh the list and close builder
+      if (onSave) {
+        onSave()
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save template',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSaveTemplate = async () => {
@@ -219,7 +314,7 @@ export function TemplateBuilder() {
   const handleFieldsChange = async (fields: TemplateField[]) => {
     try {
       await updateTemplateFields(templateId, fields)
-      setTemplate(prev => prev ? { ...prev, fields } : null)
+      setTemplateState(prev => prev ? { ...prev, fields } : null)
     } catch (error) {
       console.error('Error updating fields:', error)
     }
@@ -228,7 +323,7 @@ export function TemplateBuilder() {
   const handlePublishTemplate = async () => {
     try {
       await updateTemplate(templateId, { status: TemplateStatus.ACTIVE })
-      setTemplate(prev => prev ? { ...prev, status: TemplateStatus.ACTIVE } : null)
+      setTemplateState(prev => prev ? { ...prev, status: TemplateStatus.ACTIVE } : null)
       
       toast({
         title: 'Template Published',
@@ -246,7 +341,7 @@ export function TemplateBuilder() {
   const handleUnpublishTemplate = async () => {
     try {
       await updateTemplate(templateId, { status: TemplateStatus.DRAFT })
-      setTemplate(prev => prev ? { ...prev, status: TemplateStatus.DRAFT } : null)
+      setTemplateState(prev => prev ? { ...prev, status: TemplateStatus.DRAFT } : null)
       
       toast({
         title: 'Template Unpublished',
@@ -262,24 +357,24 @@ export function TemplateBuilder() {
   }
 
   const handleDeleteFile = (fileId: string) => {
-    if (!template) return
+    if (!templateState) return
     
-    const fileIndex = template.files.findIndex(f => f.id === fileId)
+    const fileIndex = templateState.files.findIndex(f => f.id === fileId)
     
-    setTemplate(prev => prev ? {
+    setTemplateState(prev => prev ? {
       ...prev,
       files: prev.files.filter(f => f.id !== fileId)
     } : null)
     
     // Adjust selected file index if necessary
-    if (fileIndex === selectedFileIndex && template.files.length > 1) {
+    if (fileIndex === selectedFileIndex && templateState.files.length > 1) {
       setSelectedFileIndex(Math.max(0, selectedFileIndex - 1))
-    } else if (template.files.length === 1) {
+    } else if (templateState.files.length === 1) {
       setSelectedFileIndex(0)
     }
   }
 
-  const currentFile = template.files[selectedFileIndex]
+  const currentFile = templateState.files[selectedFileIndex]
 
   return (
     <div className="h-screen flex flex-col">
@@ -291,9 +386,9 @@ export function TemplateBuilder() {
             Back to Templates
           </Button>
           <div>
-            <h1 className="text-xl font-semibold">{template.name}</h1>
+            <h1 className="text-xl font-semibold">{templateState.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {template.category.charAt(0).toUpperCase() + template.category.slice(1)} Template
+              {templateState.category.charAt(0).toUpperCase() + templateState.category.slice(1)} Template
             </p>
           </div>
         </div>
@@ -317,7 +412,7 @@ export function TemplateBuilder() {
             )}
           </Button>
 
-          {template.status === TemplateStatus.DRAFT ? (
+          {templateState.status === TemplateStatus.DRAFT ? (
             <Button size="sm" onClick={handlePublishTemplate}>
               <Play className="h-4 w-4 mr-2" />
               Publish
@@ -353,7 +448,7 @@ export function TemplateBuilder() {
           <TabsContent value="builder" className="flex-1 m-0">
             <div className="h-full flex flex-col">
               {/* File Selector */}
-              {template.files.length > 1 && (
+              {templateState.files.length > 1 && (
                 <div className="p-4 border-b">
                   <Label>Select File</Label>
                   <Select
@@ -364,7 +459,7 @@ export function TemplateBuilder() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {template.files.map((file, index) => (
+                      {templateState.files.map((file, index) => (
                         <SelectItem key={file.id} value={index.toString()}>
                           {file.name}
                         </SelectItem>
@@ -385,7 +480,7 @@ export function TemplateBuilder() {
                 ) : mergedPdfUrl ? (
                   <PDFBuilderLite
                     pdfUrl={mergedPdfUrl}
-                    fields={template.fields}
+                    fields={templateState.fields}
                     onFieldsChange={handleFieldsChange}
                     readonly={previewMode}
                   />
@@ -436,8 +531,8 @@ export function TemplateBuilder() {
                     <Label htmlFor="templateName">Template Name</Label>
                     <Input
                       id="templateName"
-                      value={template.name}
-                      onChange={(e) => setTemplate(prev => prev ? { ...prev, name: e.target.value } : null)}
+                      value={templateState.name}
+                      onChange={(e) => setTemplateState(prev => prev ? { ...prev, name: e.target.value } : null)}
                       className="mt-1"
                     />
                   </div>
@@ -445,9 +540,9 @@ export function TemplateBuilder() {
                   <div>
                     <Label htmlFor="templateCategory">Category</Label>
                     <Select
-                      value={template.category}
+                      value={templateState.category}
                       onValueChange={(value: TemplateCategory) => 
-                        setTemplate(prev => prev ? { ...prev, category: value } : null)
+                        setTemplateState(prev => prev ? { ...prev, category: value } : null)
                       }
                     >
                       <SelectTrigger className="mt-1">
@@ -467,8 +562,8 @@ export function TemplateBuilder() {
                     <Label htmlFor="templateDescription">Description</Label>
                     <Textarea
                       id="templateDescription"
-                      value={template.description || ''}
-                      onChange={(e) => setTemplate(prev => prev ? { ...prev, description: e.target.value } : null)}
+                      value={templateState.description || ''}
+                      onChange={(e) => setTemplateState(prev => prev ? { ...prev, description: e.target.value } : null)}
                       className="mt-1"
                       rows={3}
                     />
@@ -487,16 +582,16 @@ export function TemplateBuilder() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">
-                        Status: {template.status.charAt(0).toUpperCase() + template.status.slice(1)}
+                        Status: {templateState.status.charAt(0).toUpperCase() + templateState.status.slice(1)}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {template.status === TemplateStatus.ACTIVE 
+                        {templateState.status === TemplateStatus.ACTIVE 
                           ? 'This template is active and can be used for new agreements.'
                           : 'This template is in draft mode and cannot be used for agreements.'
                         }
                       </p>
                     </div>
-                    {template.status === TemplateStatus.DRAFT ? (
+                    {templateState.status === TemplateStatus.DRAFT ? (
                       <Button onClick={handlePublishTemplate}>
                         <Play className="h-4 w-4 mr-2" />
                         Publish
@@ -520,7 +615,7 @@ export function TemplateBuilder() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {template.files.map((file, index) => (
+                    {templateState.files.map((file, index) => (
                       <div 
                         key={file.id} 
                         className={`flex items-center justify-between p-2 border rounded cursor-pointer transition-colors ${
@@ -581,9 +676,9 @@ export function TemplateBuilder() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {template.fields.length > 0 ? (
+                  {templateState.fields.length > 0 ? (
                     <div className="space-y-2">
-                      {template.fields.map((field, index) => (
+                      {templateState.fields.map((field, index) => (
                         <div key={field.id} className="flex items-center justify-between p-2 border rounded">
                           <div>
                             <span className="font-medium">{field.label}</span>
