@@ -3,7 +3,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { TrendingUp, Users, Package, DollarSign, BarChart3, PieChart, LineChart } from 'lucide-react'
 import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
 import { useTenant } from '@/contexts/TenantContext'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  BarChart, 
+  Bar, 
+  AreaChart, 
+  Area, 
+  LineChart, 
+  Line, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend,
+  ResponsiveContainer 
+} from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TrendingDown, Download, Calendar, RefreshCw } from 'lucide-react'
