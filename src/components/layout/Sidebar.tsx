@@ -170,6 +170,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 )}
               >
                 <LayoutDashboard className="h-4 w-4" />
+                   end
                 <span>Dashboard</span>
               </Link>
 
