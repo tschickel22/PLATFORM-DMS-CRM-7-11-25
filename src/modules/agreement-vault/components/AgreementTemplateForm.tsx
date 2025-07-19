@@ -202,6 +202,8 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
       
       toast({
         title: 'Success',
+        description: `Template ${template ? 'updated' : 'created'} successfully.`
+      })
     } catch (error) {
       toast({
         title: 'Error',
