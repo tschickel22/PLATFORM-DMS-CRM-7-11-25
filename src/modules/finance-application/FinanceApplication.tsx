@@ -213,11 +213,11 @@ function FinanceApplicationDashboard() {
         return
       }
       
-      // Require internal note for status changes
-      if (!currentAdminNote.trim()) {
+      // Require internal note only when changing FROM denied to another status
+      if (selectedApplication.status === 'denied' && newStatus !== 'denied' && !currentAdminNote.trim()) {
         toast({
           title: 'Internal Note Required',
-          description: 'Please add an internal note explaining the reason for this status change.',
+          description: 'Please add an internal note explaining the reason for changing from denied status.',
           variant: 'destructive'
         })
         return
