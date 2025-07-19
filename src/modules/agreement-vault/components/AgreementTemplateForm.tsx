@@ -39,6 +39,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
   const [newTag, setNewTag] = useState('')
   const [loading, setLoading] = useState(false)
   const [showDocumentViewer, setShowDocumentViewer] = useState(false)
+  const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   const [documentFields, setDocumentFields] = useState<any[]>([])
 
   // Available options from mock data
@@ -75,28 +76,33 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
       // Create preview URL for display
       const previewUrl = URL.createObjectURL(file)
       setFilePreview(previewUrl)
+      const newDocument = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        size: file.size,
+        uploadedAt: new Date().toISOString()
+      }
       
-      toast({
-        title: 'File Uploaded',
-        description: `${file.name} has been uploaded successfully.`,
-      })
-    }
-  }
-
-  const handleAddTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        documents: [...prev.documents, newDocument]
       }))
+      
+      setUploadedDocuments(prev => [...prev, newDocument])
       setNewTag('')
     }
   }
 
   const handleRemoveTag = (tagToRemove: string) => {
+    // Update the uploaded documents state with any new documents from the viewer
+    setUploadedDocuments(documents)
+    
+    // Update form data with the documents and fields
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      documents: documents,
     }))
   }
 
@@ -193,6 +199,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
     return (
       <div className="fixed inset-0 bg-white z-50">
         <DocumentViewer
+          initialDocuments={uploadedDocuments}
           documentUrl={URL.createObjectURL(uploadedFile)}
           documentName={uploadedFile.name}
           fields={documentFields}

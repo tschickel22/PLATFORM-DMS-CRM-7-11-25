@@ -22,6 +22,7 @@ interface UploadedDocument {
 }
 
 interface DocumentViewerProps {
+  initialDocuments?: UploadedDocument[]
   fields: DocumentField[]
   onFieldsChange: (fields: DocumentField[]) => void
   templateType: string
@@ -94,13 +95,13 @@ export function DocumentViewer({
   templateType,
   initialFields = [],
   initialDocuments = []
-}: DocumentViewerProps) {
+export function DocumentViewer({ initialDocuments = [], onSave, onCancel }: DocumentViewerProps) {
   const { toast } = useToast()
   const [zoom, setZoom] = useState(100)
   const [selectedTool, setSelectedTool] = useState<string | null>(null)
   const [selectedField, setSelectedField] = useState<DocumentField | null>(null)
   const [isPlacingField, setIsPlacingField] = useState(false)
-  const [showFieldProperties, setShowFieldProperties] = useState(false)
+  const [documents, setDocuments] = useState<UploadedDocument[]>(initialDocuments)
   const [showAIDetection, setShowAIDetection] = useState(false)
   const [showMergeMapper, setShowMergeMapper] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -113,6 +114,13 @@ export function DocumentViewer({
   
   const documentRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Set initial viewing document when initialDocuments are provided
+  useEffect(() => {
+    if (initialDocuments.length > 0 && !currentViewingDocumentId) {
+      setCurrentViewingDocumentId(initialDocuments[0].id)
+    }
+  }, [initialDocuments, currentViewingDocumentId])
 
   const currentViewingDocument = documents.find(doc => doc.id === currentViewingDocumentId)
   const currentDocumentFields = fields.filter(field => field.documentId === currentViewingDocumentId)
