@@ -60,7 +60,7 @@ function App() {
                           <Route path="/admin/*" element={<PlatformAdmin />} />
                           <Route path="/admin/settings/*" element={<PlatformSettings />} />
                           <Route path="/reports/*" element={<ReportingSuite />} />
-                          <Route path="/finance-application/*" element={<FinanceApplication />} />
+                          <Route path="/client-applications/*" element={<FinanceApplication />} />
                         </Routes>
                       </Layout>
                     </ProtectedRoute>
