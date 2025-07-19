@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Users, Settings, CreditCard, Eye } from 'lucide-react'
+import { Plus, FileText, Settings, CreditCard, Eye } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { FinanceApplicationForm } from './components/FinanceApplicationForm'
 import { AdminApplicationBuilder } from './components/AdminApplicationBuilder'
-import { InviteCustomerModal } from './components/InviteCustomerModal'
+import { ApplicationTypeSelectionModal } from './components/ApplicationTypeSelectionModal'
 import { PortalApplicationView } from './components/PortalApplicationView'
+import { InviteCustomerModal } from './components/InviteCustomerModal'
 import { useFinanceApplications } from './hooks/useFinanceApplications'
 import { FinanceApplication as FinanceApplicationType } from './types'
 
@@ -18,7 +19,8 @@ function FinanceApplicationDashboard() {
   const { tenant } = useTenant()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('applications')
-  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showApplicationTypeSelectionModal, setShowApplicationTypeSelectionModal] = useState(false)
+  const [applicationCreationMode, setApplicationCreationMode] = useState<'none' | 'completeNow' | 'inviteCustomer'>('none')
   const [selectedApplication, setSelectedApplication] = useState<FinanceApplicationType | null>(null)
   
   const {
@@ -56,7 +58,47 @@ function FinanceApplicationDashboard() {
     }
   }
 
-  const handleCreateApplication = () => {
+  const handleOpenApplicationCreationFlow = () => {
+    setShowApplicationTypeSelectionModal(true)
+  }
+
+  const handleSelectApplicationType = (type: 'completeNow' | 'inviteCustomer') => {
+    setShowApplicationTypeSelectionModal(false)
+    setApplicationCreationMode(type)
+    
+    if (type === 'completeNow') {
+      const defaultTemplate = templates.find(t => t.isActive) || templates[0]
+      if (!defaultTemplate) {
+        toast({
+          title: 'No Templates Available',
+          description: 'Please create an application template first.',
+          variant: 'destructive'
+        })
+        setApplicationCreationMode('none')
+        return
+      }
+      
+      const newApp = createApplication({
+        customerId: '',
+        customerName: '',
+        customerEmail: '',
+        templateId: defaultTemplate.id,
+        status: 'draft'
+      })
+      setSelectedApplication(newApp)
+    }
+  }
+
+  const handleCloseApplicationForm = () => {
+    setSelectedApplication(null)
+    setApplicationCreationMode('none')
+  }
+
+  const handleCloseInviteModal = () => {
+    setApplicationCreationMode('none')
+  }
+
+  const handleCreateApplicationFromInvite = () => {
     const newApp = createApplication({
       customerId: '',
       customerName: '',
@@ -90,7 +132,7 @@ function FinanceApplicationDashboard() {
     }
   }
 
-  if (selectedApplication) {
+  if (selectedApplication && applicationCreationMode === 'completeNow') {
     return (
       <FinanceApplicationForm
         application={selectedApplication}
@@ -101,10 +143,10 @@ function FinanceApplicationDashboard() {
             description: 'Finance application has been saved successfully.'
           })
         }}
-        onCancel={() => setSelectedApplication(null)}
+        onCancel={handleCloseApplicationForm}
         onSubmit={(data) => {
           updateApplication(selectedApplication.id, { ...data, status: 'submitted' })
-          setSelectedApplication(null)
+          handleCloseApplicationForm()
           toast({
             title: 'Application Submitted',
             description: 'Finance application has been submitted for review.'
@@ -114,12 +156,11 @@ function FinanceApplicationDashboard() {
     )
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Invite Customer Modal */}
-      {showInviteModal && (
+  if (applicationCreationMode === 'inviteCustomer') {
+    return (
+      <div className="space-y-6">
         <InviteCustomerModal
-          onClose={() => setShowInviteModal(false)}
+          onClose={handleCloseInviteModal}
           onInvite={(customerData, templateId) => {
             const newApp = createApplication({
               customerId: customerData.id || '',
@@ -128,12 +169,24 @@ function FinanceApplicationDashboard() {
               templateId: templateId,
               status: 'draft'
             })
-            setShowInviteModal(false)
+            handleCloseInviteModal()
             toast({
               title: 'Invitation Sent',
               description: `Finance application invitation sent to ${customerData.name}`
             })
           }}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Application Type Selection Modal */}
+      {showApplicationTypeSelectionModal && (
+        <ApplicationTypeSelectionModal
+          onClose={() => setShowApplicationTypeSelectionModal(false)}
+          onSelectType={handleSelectApplicationType}
         />
       )}
 
@@ -146,12 +199,8 @@ function FinanceApplicationDashboard() {
               Manage finance applications and approval workflows
             </p>
           </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={() => setShowInviteModal(true)}>
-              <Users className="h-4 w-4 mr-2" />
-              Invite Customer
-            </Button>
-            <Button onClick={handleCreateApplication}>
+          <div>
+            <Button onClick={handleOpenApplicationCreationFlow}>
               <Plus className="h-4 w-4 mr-2" />
               New Application
             </Button>
