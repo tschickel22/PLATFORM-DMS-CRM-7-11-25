@@ -120,12 +120,12 @@ function FinanceApplicationDashboard() {
       {showInviteModal && (
         <InviteCustomerModal
           onClose={() => setShowInviteModal(false)}
-          onInvite={(customerData) => {
+          onInvite={(customerData, templateId) => {
             const newApp = createApplication({
               customerId: customerData.id || '',
               customerName: customerData.name,
               customerEmail: customerData.email,
-              templateId: templates[0]?.id || '',
+              templateId: templateId,
               status: 'draft'
             })
             setShowInviteModal(false)

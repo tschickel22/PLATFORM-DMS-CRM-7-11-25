@@ -8,17 +8,22 @@ import { Textarea } from '@/components/ui/textarea'
 import { X, Send, Plus, Search } from 'lucide-react'
 import { CustomerInvite } from '../types'
 import { useToast } from '@/hooks/use-toast'
+import { useFinanceApplications } from '../hooks/useFinanceApplications'
 
 interface InviteCustomerModalProps {
   onClose: () => void
-  onInvite: (customer: CustomerInvite) => void
+  onInvite: (customer: CustomerInvite, templateId: string) => void
 }
 
 export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalProps) {
   const { toast } = useToast()
+  const { templates } = useFinanceApplications()
   const [activeTab, setActiveTab] = useState<'existing' | 'new'>('existing')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerInvite | null>(null)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
+    templates.find(t => t.isActive)?.id || templates[0]?.id || ''
+  )
   const [newCustomer, setNewCustomer] = useState<CustomerInvite>({
     name: '',
     email: '',
@@ -68,12 +73,20 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
       return
     }
 
+    if (!selectedTemplateId) {
+      toast({
+        title: 'Template Required',
+        description: 'Please select an application template',
+        variant: 'destructive'
+      })
+      return
+    }
     setIsLoading(true)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    onInvite(selectedCustomer)
+    onInvite(selectedCustomer, selectedTemplateId)
     setIsLoading(false)
   }
 
@@ -96,6 +109,14 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
       return
     }
 
+    if (!selectedTemplateId) {
+      toast({
+        title: 'Template Required',
+        description: 'Please select an application template',
+        variant: 'destructive'
+      })
+      return
+    }
     setIsLoading(true)
     
     // Simulate API call to create customer and send invite
@@ -104,7 +125,7 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
     onInvite({
       ...newCustomer,
       id: `cust-${Date.now()}`
-    })
+    }, selectedTemplateId)
     setIsLoading(false)
   }
 
@@ -125,6 +146,29 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Template Selection */}
+          <div>
+            <Label htmlFor="template">Application Template *</Label>
+            <Select
+              value={selectedTemplateId}
+              onValueChange={setSelectedTemplateId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select application template" />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Choose which application template the customer will complete
+            </p>
+          </div>
+
           {/* Tab Selection */}
           <div className="flex space-x-1 bg-muted p-1 rounded-lg">
             <button
@@ -280,7 +324,7 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
             </Button>
             <Button
               onClick={activeTab === 'existing' ? handleInviteExisting : handleInviteNew}
-              disabled={isLoading || (activeTab === 'existing' && !selectedCustomer)}
+              disabled={isLoading || (activeTab === 'existing' && !selectedCustomer) || !selectedTemplateId}
             >
               {isLoading ? (
                 <>
@@ -292,6 +336,53 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
                   <Send className="h-4 w-4 mr-2" />
                   Send Invitation
                 </>
+              )}
+
+              {/* Customer Edit Form */}
+              {selectedCustomer && (
+                <div className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
+                  <h4 className="font-medium">Edit Customer Information</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="editName">Full Name *</Label>
+                      <Input
+                        id="editName"
+                        value={selectedCustomer.name}
+                        onChange={(e) => setSelectedCustomer({
+                          ...selectedCustomer,
+                          name: e.target.value
+                        })}
+                        placeholder="Enter customer name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="editEmail">Email Address *</Label>
+                      <Input
+                        id="editEmail"
+                        type="email"
+                        value={selectedCustomer.email}
+                        onChange={(e) => setSelectedCustomer({
+                          ...selectedCustomer,
+                          email: e.target.value
+                        })}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="editPhone">Phone Number</Label>
+                    <Input
+                      id="editPhone"
+                      type="tel"
+                      value={selectedCustomer.phone || ''}
+                      onChange={(e) => setSelectedCustomer({
+                        ...selectedCustomer,
+                        phone: e.target.value
+                      })}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                </div>
               )}
             </Button>
           </div>
