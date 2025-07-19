@@ -151,14 +151,14 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
         variant: 'destructive'
       })
       return
-    }
-
-    if (!formData.description.trim()) {
-      toast({
-        title: 'Validation Error',
-        description: 'Template description is required.',
-        variant: 'destructive'
-      })
+      const savedTemplate = await onSave(templateData)
+      
+      // If documents were uploaded, show document viewer for field configuration
+      if (uploadedDocuments.length > 0) {
+        setShowDocumentViewer(true)
+      } else {
+        onClose()
+      }
       return
     }
 
