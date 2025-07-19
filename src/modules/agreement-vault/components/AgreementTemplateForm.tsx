@@ -196,6 +196,8 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
         setShowDocumentViewer(true)
       } else {
         // If no documents, just close the form
+        onClose()
+      }
     } catch (error) {
       toast({
         title: 'Error',
