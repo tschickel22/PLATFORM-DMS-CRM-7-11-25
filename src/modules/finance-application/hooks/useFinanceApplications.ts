@@ -9,22 +9,10 @@ export function useFinanceApplications() {
 
   // Load data from localStorage on mount
   useEffect(() => {
-    const savedApplications = loadFromLocalStorage<FinanceApplication[]>('financeApplications', [])
-    const savedTemplates = loadFromLocalStorage<ApplicationTemplate[]>('applicationTemplates', [])
-    
-    // Load mock applications if no saved applications exist
-    if (savedApplications.length === 0) {
-      setApplications(mockFinanceApplications.sampleApplications)
-    } else {
-      setApplications(savedApplications)
-    }
-    
-    // Load mock templates if no saved templates exist
-    if (savedTemplates.length === 0) {
-      setTemplates(mockFinanceApplications.defaultTemplates)
-    } else {
-      setTemplates(savedTemplates)
-    }
+    // Always load fresh mock data for testing purposes
+    // This ensures the latest mock applications with all statuses are always available
+    setApplications(mockFinanceApplications.sampleApplications)
+    setTemplates(mockFinanceApplications.defaultTemplates)
   }, [])
 
   // Save to localStorage whenever data changes

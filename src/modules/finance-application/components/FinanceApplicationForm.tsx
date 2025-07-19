@@ -198,7 +198,7 @@ export function FinanceApplicationForm({
           </Badge>
           {application.fraudCheckStatus && (
             <Badge variant="secondary">
-              IDV: {application.fraudCheckStatus}
+              IDV: {application.fraudCheckStatus.charAt(0).toUpperCase() + application.fraudCheckStatus.slice(1)}
             </Badge>
           )}
         </div>
