@@ -80,15 +80,33 @@ export function NewTemplateModal({ onClose, onSuccess }: NewTemplateModalProps) 
     if (!formData.name.trim()) {
       toast({
         title: 'Validation Error',
+        description: 'Template name is required.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    if (files.length === 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'At least one file is required.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    try {
+      setProcessingFiles(true)
+      
       // Instead of saving immediately, pass the template data to the builder
       const templateData = {
-        name: templateName,
-        type: templateType as any,
-        description: description,
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
         files: files
       }
       
-      onSuccess(templateData)
+      onSuccess(templateData as AgreementTemplate)
     } catch (error) {
       console.error('Error creating template:', error)
       toast({
