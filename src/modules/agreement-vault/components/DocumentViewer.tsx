@@ -10,24 +10,7 @@ import { ZoomIn, ZoomOut, MousePointer, Type, PenTool, Calendar, CheckSquare, Ch
 import { DocumentField } from '../types'
 import { AIFieldDetection } from './AIFieldDetection'
 import { MergeFieldMapper } from './MergeFieldMapper'
-import { 
-  Type as TypeIcon,
-  PenTool, 
-  Calendar, 
-  CheckSquare, 
-  ChevronDown,
-  Trash2,
-  Settings,
-  Eye,
-  Save,
-  Eye,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
-  Download,
-  Wand2,
-  Separator
-} from 'lucide-react'
+import { Type as TypeIcon, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Settings, Eye, Save, Eye, ZoomIn, ZoomOut, RotateCw, Download, Wand2, SeparatorVertical as Separator } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DocumentViewerProps {
