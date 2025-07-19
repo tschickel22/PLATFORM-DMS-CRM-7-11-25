@@ -30,18 +30,46 @@ export function AdminApplicationBuilder({
   const [editingTemplate, setEditingTemplate] = useState<Partial<ApplicationTemplate> | null>(null)
   const [editingSection, setEditingSection] = useState<ApplicationSection | null>(null)
   const [editingField, setEditingField] = useState<ApplicationField | null>(null)
+  const [showNewTemplateOptions, setShowNewTemplateOptions] = useState(false)
+  const [selectedSourceTemplate, setSelectedSourceTemplate] = useState<string>('')
 
   const fieldTypes = mockFinanceApplications.fieldTypes
 
-  const handleCreateTemplate = () => {
-    const newTemplate = onCreateTemplate({
-      name: 'New Template',
+  const handleCreateTemplate = (sourceTemplateId?: string) => {
+    let templateData: Partial<ApplicationTemplate> = {
+      name: sourceTemplateId ? `Copy of ${templates.find(t => t.id === sourceTemplateId)?.name}` : 'New Template',
       description: '',
       sections: [],
       isActive: true
-    })
+    }
+
+    // If cloning from an existing template
+    if (sourceTemplateId) {
+      const sourceTemplate = templates.find(t => t.id === sourceTemplateId)
+      if (sourceTemplate) {
+        // Deep clone the sections to avoid reference issues
+        const clonedSections = sourceTemplate.sections.map(section => ({
+          ...section,
+          id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          fields: section.fields.map(field => ({
+            ...field,
+            id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          }))
+        }))
+        
+        templateData = {
+          ...templateData,
+          description: sourceTemplate.description,
+          sections: clonedSections
+        }
+      }
+    }
+
+    const newTemplate = onCreateTemplate(templateData)
     setSelectedTemplate(newTemplate)
     setEditingTemplate(newTemplate)
+    setShowNewTemplateOptions(false)
+    setSelectedSourceTemplate('')
   }
 
   const handleSaveTemplate = () => {
@@ -321,13 +349,97 @@ export function AdminApplicationBuilder({
               Create and manage finance application templates
             </CardDescription>
           </div>
-          <Button onClick={handleCreateTemplate}>
+          <Button onClick={() => setShowNewTemplateOptions(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Template
           </Button>
         </div>
       </CardHeader>
       <CardContent>
+        {/* New Template Options Modal */}
+        {showNewTemplateOptions && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Create New Template</CardTitle>
+                    <CardDescription>
+                      Choose how to create your new template
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setShowNewTemplateOptions(false)
+                      setSelectedSourceTemplate('')
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-auto p-4"
+                    onClick={() => handleCreateTemplate()}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">Create Blank Template</div>
+                      <div className="text-sm text-muted-foreground">
+                        Start with an empty template
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <div className="space-y-2">
+                    <div className="font-medium text-sm">Or clone from existing:</div>
+                    <Select
+                      value={selectedSourceTemplate}
+                      onValueChange={setSelectedSourceTemplate}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select template to clone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <Button
+                      className="w-full"
+                      disabled={!selectedSourceTemplate}
+                      onClick={() => handleCreateTemplate(selectedSourceTemplate)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create from Selected Template
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowNewTemplateOptions(false)
+                      setSelectedSourceTemplate('')
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="space-y-4">
           {templates.map((template) => (
             <div
