@@ -131,21 +131,25 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Invite Customer to Complete Application</CardTitle>
-              <CardDescription>
-                Send a finance application invitation to a customer
-              </CardDescription>
+      <Card className="w-full max-w-2xl">
+        <div className="flex flex-col h-[90vh]">
+          {/* Header */}
+          <div className="shrink-0 border-b p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Invite Customer to Complete Application</CardTitle>
+                <CardDescription>
+                  Send a finance application invitation to a customer
+                </CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 px-4 py-2 space-y-4">
           {/* Template Selection */}
           <div>
             <Label htmlFor="template">Application Template *</Label>
@@ -317,76 +321,79 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
             />
           </div>
 
-          {/* Customer Edit Form - moved outside of actions */}
-          {activeTab === 'existing' && selectedCustomer && (
-            <div className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
-              <h4 className="font-medium">Edit Customer Information</h4>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="editName">Full Name *</Label>
-                  <Input
-                    id="editName"
-                    value={selectedCustomer.name}
-                    onChange={(e) => setSelectedCustomer({
-                      ...selectedCustomer,
-                      name: e.target.value
-                    })}
-                    placeholder="Enter customer name"
-                  />
+            {/* Customer Edit Form */}
+            {activeTab === 'existing' && selectedCustomer && (
+              <div className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
+                <h4 className="font-medium">Edit Customer Information</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="editName">Full Name *</Label>
+                    <Input
+                      id="editName"
+                      value={selectedCustomer.name}
+                      onChange={(e) => setSelectedCustomer({
+                        ...selectedCustomer,
+                        name: e.target.value
+                      })}
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="editEmail">Email Address *</Label>
+                    <Input
+                      id="editEmail"
+                      type="email"
+                      value={selectedCustomer.email}
+                      onChange={(e) => setSelectedCustomer({
+                        ...selectedCustomer,
+                        email: e.target.value
+                      })}
+                      placeholder="Enter email address"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <Label htmlFor="editEmail">Email Address *</Label>
+                  <Label htmlFor="editPhone">Phone Number</Label>
                   <Input
-                    id="editEmail"
-                    type="email"
-                    value={selectedCustomer.email}
+                    id="editPhone"
+                    type="tel"
+                    value={selectedCustomer.phone || ''}
                     onChange={(e) => setSelectedCustomer({
                       ...selectedCustomer,
-                      email: e.target.value
+                      phone: e.target.value
                     })}
-                    placeholder="Enter email address"
+                    placeholder="(555) 123-4567"
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="editPhone">Phone Number</Label>
-                <Input
-                  id="editPhone"
-                  type="tel"
-                  value={selectedCustomer.phone || ''}
-                  onChange={(e) => setSelectedCustomer({
-                    ...selectedCustomer,
-                    phone: e.target.value
-                  })}
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={activeTab === 'existing' ? handleInviteExisting : handleInviteNew}
-              disabled={isLoading || (activeTab === 'existing' && !selectedCustomer) || !selectedTemplateId}
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Invitation
-                </>
-              )}
-            </Button>
+            )}
           </div>
-        </CardContent>
+
+          {/* Sticky Footer */}
+          <div className="shrink-0 border-t bg-white p-4 sticky bottom-0 z-10">
+            <div className="flex justify-end space-x-3">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={activeTab === 'existing' ? handleInviteExisting : handleInviteNew}
+                disabled={isLoading || (activeTab === 'existing' && !selectedCustomer) || !selectedTemplateId}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Invitation
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   )
