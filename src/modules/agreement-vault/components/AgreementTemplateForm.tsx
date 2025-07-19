@@ -201,6 +201,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
             setShowDocumentViewer(false)
             handleSaveTemplate()
           }}
+          templateType={formData.type}
           mergeFields={mergeFields}
         />
         <Button

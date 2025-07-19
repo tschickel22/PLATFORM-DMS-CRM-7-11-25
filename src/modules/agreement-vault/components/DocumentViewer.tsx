@@ -6,7 +6,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { ZoomIn, ZoomOut, MousePointer, Type, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Save, X, Brain, Link2 } from 'lucide-react'
+import { DocumentField } from '../types'
+import { AIFieldDetection } from './AIFieldDetection'
+import { MergeFieldMapper } from './MergeFieldMapper'
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -25,31 +28,16 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface DocumentField {
-  id: string
-  type: 'text' | 'signature' | 'date' | 'checkbox' | 'dropdown'
-  x: number
-  y: number
-  width: number
-  height: number
-  page: number
-  label: string
-  required: boolean
-  defaultValue?: string
-  options?: string[] // for dropdown fields
-  mergeField?: string // linked merge field
-}
-
-interface DocumentViewerProps {
   documentUrl: string
   documentName: string
   fields: DocumentField[]
   onFieldsChange: (fields: DocumentField[]) => void
+  templateType: string
   onSave: () => void
   mergeFields: string[]
 }
 
-const FIELD_TYPES = [
+export function DocumentViewer({ documentUrl, onSave, onCancel, templateType, initialFields = [] }: DocumentViewerProps) {
   { type: 'text', label: 'Text Field', icon: Type, color: 'bg-blue-100 border-blue-300 text-blue-800' },
   { type: 'signature', label: 'Signature', icon: PenTool, color: 'bg-purple-100 border-purple-300 text-purple-800' },
   { type: 'date', label: 'Date Field', icon: Calendar, color: 'bg-green-100 border-green-300 text-green-800' },
@@ -70,6 +58,8 @@ export function DocumentViewer({
   const [selectedField, setSelectedField] = useState<DocumentField | null>(null)
   const [isPlacingField, setIsPlacingField] = useState(false)
   const [showFieldProperties, setShowFieldProperties] = useState(false)
+  const [showAIDetection, setShowAIDetection] = useState(false)
+  const [showMergeMapper, setShowMergeMapper] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages] = useState(1) // Will be dynamic when PDF parsing is implemented
   
@@ -356,6 +346,27 @@ export function DocumentViewer({
                 <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAIDetection(true)}
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                AI Detect Fields
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMergeMapper(true)}
+                disabled={fields.length === 0}
+              >
+                <Link2 className="h-4 w-4 mr-2" />
+                Map Merge Fields
+              </Button>
+            </div>
           </div>
 
           <div className="p-4 space-y-4">
@@ -519,6 +530,26 @@ export function DocumentViewer({
             </div>
           </div>
         </div>
+      )}
+      
+      {/* AI Field Detection Modal */}
+      {showAIDetection && (
+        <AIFieldDetection
+          documentUrl={documentUrl}
+          onFieldsDetected={setFields}
+          onClose={() => setShowAIDetection(false)}
+          existingFields={fields}
+        />
+      )}
+      
+      {/* Merge Field Mapper Modal */}
+      {showMergeMapper && (
+        <MergeFieldMapper
+          fields={fields}
+          onFieldsUpdate={setFields}
+          onClose={() => setShowMergeMapper(false)}
+          templateType={templateType}
+        />
       )}
     </div>
   )
