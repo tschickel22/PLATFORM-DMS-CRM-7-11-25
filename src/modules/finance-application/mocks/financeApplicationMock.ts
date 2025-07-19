@@ -73,8 +73,7 @@ export const mockFinanceApplications = {
       createdAt: '2024-01-18T11:15:00Z',
       updatedAt: '2024-01-18T11:15:00Z',
       notes: ''
-    }
-  ] as FinanceApplication[],
+    },
     {
       id: 'app-003',
       customerId: 'cust-003',
