@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
-import 'react-pdf/dist/esm/Page/TextLayer.css'
+import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/Page/TextLayer.css'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,10 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
 // Set up the worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString()
 
 interface UploadedDocument {
   id: string
@@ -599,26 +602,41 @@ export function DocumentViewer({
                       file={currentViewingDocument.url}
                       onLoadSuccess={onDocumentLoadSuccess}
                       onLoadError={onDocumentLoadError}
+                      options={{
+                        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+                        cMapPacked: true,
+                      }}
                       loading={
                         <div className="flex items-center justify-center p-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                           <span className="ml-2">Loading PDF...</span>
                         </div>
                       }
-                    >
-                      {pdfError ? (
+                      error={
                         <div className="flex items-center justify-center p-8 text-red-500">
                           <FileText className="h-8 w-8 mr-2" />
-                          <span>{pdfError}</span>
+                          <span>Error loading PDF. Please try uploading again.</span>
                         </div>
-                      ) : (
-                        <Page
-                          pageNumber={pageNumber}
-                          scale={zoom / 100}
-                          renderTextLayer={false}
-                          renderAnnotationLayer={false}
-                        />
-                      )}
+                      }
+                    >
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={zoom / 100}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        loading={
+                          <div className="flex items-center justify-center p-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                            <span className="ml-2">Loading page...</span>
+                          </div>
+                        }
+                        error={
+                          <div className="flex items-center justify-center p-8 text-red-500">
+                            <FileText className="h-6 w-6 mr-2" />
+                            <span>Error loading page {pageNumber}</span>
+                          </div>
+                        }
+                      />
                     </Document>
                     {numPages && numPages > 1 && (
                       <div className="flex items-center justify-center mt-4 space-x-2">
