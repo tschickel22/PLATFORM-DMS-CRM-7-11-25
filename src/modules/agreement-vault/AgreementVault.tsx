@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Plus, FileText, Eye, Download, Send } from 'lucide-react'
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
+import { TemplateManagement } from './components/TemplateManagement'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { TemplateManagement } from './components/TemplateManagement'
@@ -85,7 +86,7 @@ function AgreementVaultPage() {
           </div>
           <Button className="shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
-            New Agreement
+            <TemplateManagement />
           </Button>
         </div>
       </div>
