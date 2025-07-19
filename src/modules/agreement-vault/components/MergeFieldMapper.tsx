@@ -328,7 +328,7 @@ export function MergeFieldMapper({ fields, onFieldsUpdate, onClose, templateType
                         <div key={field.key} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <div className="font-medium">{field.label}</div>
-                            <div className="text-sm text-muted-foreground">{{field.key}}</div>
+                            <div className="text-sm text-muted-foreground">{field.key}</div>
                             {field.description && (
                               <div className="text-xs text-muted-foreground">{field.description}</div>
                             )}
