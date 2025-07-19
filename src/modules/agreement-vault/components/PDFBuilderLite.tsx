@@ -25,8 +25,8 @@ import {
 import { TemplateField, TemplateFieldType, FieldPosition, FieldSize } from '../types/template'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@latest/build/pdf.worker.min.js'
+// Set up PDF.js worker from local file to avoid CORS issues
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
 
 interface PDFBuilderLiteProps {
   pdfUrl: string
