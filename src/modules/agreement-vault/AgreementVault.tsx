@@ -22,6 +22,7 @@ function AgreementVaultPage() {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [showTemplateSelectorModal, setShowTemplateSelectorModal] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [selectedCustomField, setSelectedCustomField] = useState<any>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
   const filteredAgreements = agreements.filter(agreement => {
@@ -77,12 +78,10 @@ function AgreementVaultPage() {
 
   const handleDownload = (agreementId: string) => {
     toast({
-      title: 'Download Started',
+    // Use template data to create new agreement
       description: `Downloading agreement ${agreementId}`,
     })
   }
-          selectedTemplate={selectedTemplate}
-
   return (
     <div className="space-y-6">
       {/* Template Selector Modal */}
