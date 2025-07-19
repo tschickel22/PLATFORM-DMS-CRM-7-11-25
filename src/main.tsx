@@ -1,12 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { pdfjs } from 'pdfjs-dist'
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.js?url'
+import { pdfjs } from 'pdfjs-dist/legacy/build/pdf'
+import workerSrc from 'pdfjs-dist/legacy/build/pdf.worker.js?url'
 import App from './App.tsx'
 import './index.css'
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <App />
