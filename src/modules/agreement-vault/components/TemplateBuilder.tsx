@@ -598,3 +598,4 @@ export default function TemplateEditor({ templateId, onClose }: { templateId: st
     </div>
   )
 }
+export { TemplateBuilder }
