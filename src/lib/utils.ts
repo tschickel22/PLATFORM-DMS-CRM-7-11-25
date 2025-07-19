@@ -13,21 +13,39 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(date: Date | string): string {
+  if (!date || date === '') {
+    return ''
+  }
+  
+  const dateObj = new Date(date)
+  if (isNaN(dateObj.getTime())) {
+    return ''
+  }
+  
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  }).format(new Date(date))
+  }).format(dateObj)
 }
 
 export function formatDateTime(date: Date | string): string {
+  if (!date || date === '') {
+    return ''
+  }
+  
+  const dateObj = new Date(date)
+  if (isNaN(dateObj.getTime())) {
+    return ''
+  }
+  
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date))
+  }).format(dateObj)
 }
 
 export function generateId(): string {
