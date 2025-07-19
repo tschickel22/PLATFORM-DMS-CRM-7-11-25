@@ -74,11 +74,14 @@ export function TemplateManagement() {
     return colors[status] || 'bg-gray-100 text-gray-800'
   }
 
-  if (editingTemplate) {
+  if (showTemplateBuilder && editingTemplate) {
     return (
       <TemplateBuilder
         templateId={editingTemplate}
-        onClose={() => setEditingTemplate(null)}
+        onClose={() => {
+          setEditingTemplate(null)
+          setShowTemplateBuilder(false)
+        }}
       />
     )
   }
