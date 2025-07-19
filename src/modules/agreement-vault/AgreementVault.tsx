@@ -63,6 +63,11 @@ function AgreementVaultPage() {
     navigate('/agreements/templates/new')
   }
 
+  const getTypeBadge = (type: string) => {
+    const typeConfig = mockAgreements.agreementTypes.find(t => t.value === type)
+    return typeConfig ? typeConfig.label : type
+  }
+
   const handleViewAgreement = (agreementId: string) => {
     toast({
       title: 'Opening Agreement',
