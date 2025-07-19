@@ -60,7 +60,7 @@ function AgreementVaultPage() {
 
   const handleCreateNewTemplate = () => {
     navigate('/agreements/templates/new')
-    return typeConfig ? typeConfig.label : type
+    navigate('/agreements/templates/new')
   }
 
   const handleViewAgreement = (agreementId: string) => {
