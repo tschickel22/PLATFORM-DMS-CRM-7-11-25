@@ -44,8 +44,17 @@ export function useTemplates() {
     setError(null)
     
     try {
+      // Ensure we have a valid template structure
+      const templateToSave = {
+        ...template,
+        metadata: {
+          ...template.metadata,
+          updatedAt: new Date()
+        }
+      }
+      
       // Save the full template data
-      saveToLocalStorage(`${TEMPLATE_KEY_PREFIX}${template.metadata.id}`, template)
+      saveToLocalStorage(`${TEMPLATE_KEY_PREFIX}${template.metadata.id}`, templateToSave)
       
       // Update the templates list
       const updatedTemplates = templates.filter(t => t.id !== template.metadata.id)

@@ -18,7 +18,8 @@ import {
   Mail,
   Trash2,
   Move,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react'
 import { useTemplates } from './useTemplates'
 import { AgreementTemplate, TemplateField, FIELD_TYPES, DEFAULT_MERGE_FIELDS } from './templateTypes'
@@ -204,42 +205,30 @@ function FieldProperties({ field, onUpdateField, onDeleteField }: FieldPropertie
 
 interface PDFViewerProps {
   pdfFile: File | null
+  pdfDataUrl: string | null
+  pdfError: string | null
   fields: TemplateField[]
   selectedField: TemplateField | null
   onFieldSelect: (field: TemplateField) => void
   onFieldMove: (fieldId: string, x: number, y: number) => void
   onAddField: (type: TemplateField['type'], x: number, y: number) => void
+  onPdfUpload: () => void
 }
 
 function PDFViewer({ 
   pdfFile, 
+  pdfDataUrl,
+  pdfError,
   fields, 
   selectedField, 
   onFieldSelect, 
   onFieldMove, 
-  onAddField 
+  onAddField,
+  onPdfUpload
 }: PDFViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-
-  useEffect(() => {
-    if (pdfFile && canvasRef.current) {
-      // In a real implementation, you would use pdfjs-dist here
-      // For now, we'll show a placeholder
-      const canvas = canvasRef.current
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.fillStyle = '#f8f9fa'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.fillStyle = '#6c757d'
-        ctx.font = '16px Arial'
-        ctx.textAlign = 'center'
-        ctx.fillText('PDF Preview', canvas.width / 2, canvas.height / 2)
-        ctx.fillText('(Upload a PDF to see preview)', canvas.width / 2, canvas.height / 2 + 25)
-      }
-    }
-  }, [pdfFile])
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDragging) {
@@ -297,46 +286,80 @@ function PDFViewer({
             {pdfFile ? `Editing: ${pdfFile.name}` : 'Upload a PDF to get started'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="relative">
-          <div className="relative border rounded-lg overflow-hidden bg-white">
-            <canvas
-              ref={canvasRef}
-              width={800}
-              height={600}
-              className="w-full h-auto cursor-crosshair"
-              onClick={handleCanvasClick}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            />
-            
-            {/* Render fields as overlays */}
-            {fields.map((field) => (
-              <div
-                key={field.id}
-                className={`absolute border-2 bg-blue-100/50 cursor-move flex items-center justify-center text-xs font-medium ${
-                  selectedField?.id === field.id 
-                    ? 'border-blue-500 bg-blue-200/50' 
-                    : 'border-blue-300'
-                }`}
-                style={{
-                  left: field.x,
-                  top: field.y,
-                  width: field.width,
-                  height: field.height
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onFieldSelect(field)
-                }}
-                onMouseDown={(e) => handleMouseDown(e, field)}
-              >
-                <span className="text-blue-700 truncate px-1">
-                  {field.label || field.type}
-                  {field.required && '*'}
-                </span>
+        <CardContent className="p-0">
+          <div className="relative bg-gray-50 min-h-[600px] flex items-center justify-center">
+            {pdfDataUrl ? (
+              <div className="relative w-full h-full">
+                {/* PDF Preview using iframe */}
+                <iframe
+                  src={pdfDataUrl}
+                  className="w-full h-[600px] border border-gray-200 bg-white shadow-sm"
+                  title="PDF Preview"
+                  onError={() => {}}
+                />
+                
+                {/* Canvas overlay for field positioning */}
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full pointer-events-auto"
+                  onClick={handleCanvasClick}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  style={{ 
+                    cursor: isDragging ? 'crosshair' : 'default',
+                    background: 'transparent'
+                  }}
+                  width={800}
+                  height={600}
+                />
+                
+                {/* Render fields on top of PDF */}
+                {fields.map((field) => (
+                  <div
+                    key={field.id}
+                    className={`absolute border-2 bg-blue-100/50 cursor-move ${
+                      selectedField?.id === field.id ? 'border-blue-500' : 'border-blue-300'
+                    }`}
+                    style={{
+                      left: `${field.x}px`,
+                      top: `${field.y}px`,
+                      width: `${field.width}px`,
+                      height: `${field.height}px`,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onFieldSelect(field)
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, field)}
+                  >
+                    <div className="text-xs text-blue-700 p-1 truncate">
+                      {field.label || field.type}
+                      {field.required && '*'}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : pdfError ? (
+              <div className="flex flex-col items-center justify-center text-red-600">
+                <FileText className="h-16 w-16 mb-4 text-red-300" />
+                <p className="text-lg font-medium">PDF Error</p>
+                <p className="text-sm text-red-500">{pdfError}</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={onPdfUpload}
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-gray-500">
+                <FileText className="h-16 w-16 mb-4 text-gray-300" />
+                <p className="text-lg font-medium">PDF Preview</p>
+                <p className="text-sm text-gray-400">(Upload a PDF to see preview)</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -353,6 +376,8 @@ export default function TemplateBuilder() {
   const [template, setTemplate] = useState<AgreementTemplate | null>(null)
   const [selectedField, setSelectedField] = useState<TemplateField | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null)
+  const [pdfError, setPdfError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -361,8 +386,12 @@ export default function TemplateBuilder() {
       const loadedTemplate = getTemplateById(templateId)
       if (loadedTemplate) {
         setTemplate(loadedTemplate)
-        // If template has a PDF file, we would load it here
-        // For now, we'll just set it to null
+        if (loadedTemplate.pdfFile) {
+          // If template has a PDF file stored as base64, convert it back
+          if (typeof loadedTemplate.pdfFile === 'string') {
+            setPdfDataUrl(loadedTemplate.pdfFile)
+          }
+        }
       } else {
         toast({
           title: 'Template Not Found',
@@ -373,6 +402,33 @@ export default function TemplateBuilder() {
       }
     }
   }, [templateId, getTemplateById, navigate, toast])
+
+  // Handle PDF file upload
+  const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file && file.type === 'application/pdf') {
+      setPdfFile(file)
+      setPdfError(null)
+      
+      // Convert to data URL for preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setPdfDataUrl(result)
+        setTemplate(prev => ({
+          ...prev!,
+          pdfFile: result,
+          fileName: file.name
+        }))
+      }
+      reader.onerror = () => {
+        setPdfError('Failed to read PDF file')
+      }
+      reader.readAsDataURL(file)
+    } else {
+      setPdfError('Please select a valid PDF file')
+    }
+  }
 
   const handleSaveTemplate = async () => {
     if (!template) return
@@ -385,7 +441,7 @@ export default function TemplateBuilder() {
           ...template.metadata,
           updatedAt: new Date()
         },
-        pdfFile: pdfFile || undefined
+        pdfFile: pdfDataUrl || undefined
       }
 
       const success = await saveTemplate(updatedTemplate)
@@ -471,21 +527,9 @@ export default function TemplateBuilder() {
     }
   }
 
-  const handlePDFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file && file.type === 'application/pdf') {
-      setPdfFile(file)
-      toast({
-        title: 'PDF Uploaded',
-        description: `${file.name} has been uploaded successfully.`,
-      })
-    } else {
-      toast({
-        title: 'Invalid File',
-        description: 'Please upload a valid PDF file.',
-        variant: 'destructive'
-      })
-    }
+  const handlePDFUploadClick = () => {
+    setPdfError(null)
+    fileInputRef.current?.click()
   }
 
   if (!template) {
@@ -530,7 +574,7 @@ export default function TemplateBuilder() {
           <div className="flex items-center space-x-3">
             <Button
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handlePDFUploadClick}
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload PDF
@@ -557,7 +601,7 @@ export default function TemplateBuilder() {
         ref={fileInputRef}
         type="file"
         accept=".pdf"
-        onChange={handlePDFUpload}
+        onChange={handlePdfUpload}
         className="hidden"
       />
 
@@ -569,11 +613,14 @@ export default function TemplateBuilder() {
         {/* Center - PDF Viewer */}
         <PDFViewer
           pdfFile={pdfFile}
+          pdfDataUrl={pdfDataUrl}
+          pdfError={pdfError}
           fields={template.fields}
           selectedField={selectedField}
           onFieldSelect={setSelectedField}
           onFieldMove={handleFieldMove}
           onAddField={handleAddField}
+          onPdfUpload={handlePDFUploadClick}
         />
 
         {/* Right Sidebar - Field Properties */}
