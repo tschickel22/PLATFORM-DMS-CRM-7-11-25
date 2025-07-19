@@ -11,10 +11,6 @@ import { DocumentField } from '../types'
 import { AIFieldDetection } from './AIFieldDetection'
 import { MergeFieldMapper } from './MergeFieldMapper'
 import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCw, 
-  Download, 
   Type, 
   PenTool, 
   Calendar, 
@@ -24,7 +20,11 @@ import {
   Settings,
   Eye,
   Save,
-  Wand2
+  Eye,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Download
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
