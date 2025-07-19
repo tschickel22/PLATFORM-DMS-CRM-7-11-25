@@ -13,14 +13,4 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined,
-      },
-    },
-  },
-  optimizeDeps: {
-    include: ['pdfjs-dist/build/pdf.worker.entry'],
-  },
-  server: {
-    port: 3000,
-    host: true
-  }
 })
