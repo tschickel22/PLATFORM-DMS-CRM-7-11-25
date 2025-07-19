@@ -33,7 +33,8 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
     tags: template?.tags || [],
     isActive: template?.isActive ?? true
   })
-  
+    version: template?.version || '1.0',
+    documents: template?.documents || []
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string>(template?.documentUrl || '')
   const [newTag, setNewTag] = useState('')
@@ -461,12 +462,12 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
                     <Save className="h-4 w-4 mr-2" />
                     {template ? 'Update Template' : 'Create Template'}
                   </>
-                )}
+    template?.documents ? template.documents.map(doc => ({
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
-    </div>
+    })) : []
   )
 }

@@ -197,6 +197,7 @@ export interface AgreementTemplate {
   createdBy: string
   usageCount?: number
   tags?: string[]
+  documents?: Document[]
 }
 
 export interface Document {
