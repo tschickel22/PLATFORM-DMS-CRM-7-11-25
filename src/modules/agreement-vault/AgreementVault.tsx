@@ -1,21 +1,28 @@
 import React, { useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Plus, Search, FileText, Calendar, User, DollarSign, Filter, Settings } from 'lucide-react'
 import { Search, Plus, FileText, Eye, Download, Send } from 'lucide-react'
 import { Agreement, AgreementType, AgreementStatus } from '@/types'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { TemplateSelectorModal } from './components/TemplateSelectorModal'
+import TemplateList from './templates/TemplateList'
+import TemplateBuilder from './templates/TemplateBuilder'
+import { Template } from './templates/templateTypes'
 import { useToast } from '@/hooks/use-toast'
 
 function AgreementVaultPage() {
+  const navigate = useNavigate()
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [agreements] = useState<Agreement[]>(mockAgreements.sampleAgreements)
   const [selectedType, setSelectedType] = useState<string>('all')
+  const [showTemplateSelectorModal, setShowTemplateSelectorModal] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
 
   const filteredAgreements = agreements.filter(agreement => {
@@ -41,8 +48,17 @@ function AgreementVaultPage() {
     )
   }
 
-  const getTypeBadge = (type: string) => {
-    const typeConfig = mockAgreements.agreementTypes.find(t => t.value === type)
+  const handleNewAgreement = () => {
+    setShowTemplateSelectorModal(true)
+  }
+
+  const handleTemplateSelected = (template: Template) => {
+    setSelectedTemplate(template)
+    setShowNewAgreementForm(true)
+  }
+
+  const handleCreateNewTemplate = () => {
+    navigate('/agreements/templates/new')
     return typeConfig ? typeConfig.label : type
   }
 
@@ -66,9 +82,19 @@ function AgreementVaultPage() {
       description: `Downloading agreement ${agreementId}`,
     })
   }
+          selectedTemplate={selectedTemplate}
 
   return (
     <div className="space-y-6">
+      {/* Template Selector Modal */}
+      {showTemplateSelectorModal && (
+        <TemplateSelectorModal
+          onSelect={handleTemplateSelected}
+          onClose={() => setShowTemplateSelectorModal(false)}
+          onCreateNew={handleCreateNewTemplate}
+        />
+      )}
+
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
@@ -81,6 +107,14 @@ function AgreementVaultPage() {
           <Button className="shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
             New Agreement
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/agreements/templates')}
+              className="shadow-sm"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Templates
+            </Button>
           </Button>
         </div>
       </div>
@@ -234,6 +268,9 @@ export default function AgreementVault() {
   return (
     <Routes>
       <Route path="/" element={<AgreementVaultPage />} />
+      <Route path="/templates" element={<TemplateList />} />
+      <Route path="/templates/new" element={<TemplateBuilder />} />
+      <Route path="/templates/edit/:templateId" element={<TemplateBuilder />} />
       <Route path="/*" element={<AgreementVaultPage />} />
     </Routes>
   )

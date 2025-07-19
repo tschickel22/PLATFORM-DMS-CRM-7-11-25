@@ -11,18 +11,20 @@ import { Agreement, AgreementType, AgreementStatus, Document } from '@/types'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreements } from '@/mocks/agreementsMock'
+import { Template } from '../templates/templateTypes'
 import { formatDate } from '@/lib/utils'
 
 interface AgreementFormProps {
   agreement?: Agreement
   onSave: (agreement: Partial<Agreement>) => Promise<void>
+  selectedTemplate?: Template | null
   onCancel: () => void
   customers?: Array<{ id: string; name: string; email: string }>
   vehicles?: Array<{ id: string; info: string }>
   quotes?: Array<{ id: string; number: string }>
 }
 
-export function AgreementForm({ 
+export function AgreementForm({ onClose, onSuccess, selectedTemplate }: AgreementFormProps) {
   agreement, 
   onSave, 
   onCancel, 
@@ -35,7 +37,9 @@ export function AgreementForm({
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<Agreement>>({
     ...mockAgreements.defaultAgreement,
-    ...agreement
+    documents: [],
+    templateId: selectedTemplate?.id || '',
+    templateName: selectedTemplate?.name || ''
   })
   const [documents, setDocuments] = useState<Document[]>(agreement?.documents || [])
 
@@ -107,12 +111,14 @@ export function AgreementForm({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center">
+              <CardTitle>
+                {selectedTemplate ? `Create Agreement from "${selectedTemplate.name}"` : 'Create New Agreement'}
+              </CardTitle>
                 <FileText className="h-5 w-5 mr-2 text-primary" />
                 {agreement ? 'Edit Agreement' : 'New Agreement'}
               </CardTitle>
               <CardDescription>
-                {agreement ? 'Update agreement details' : 'Create a new agreement'}
+                {selectedTemplate ? 'Agreement will be based on the selected template' : 'Fill in the agreement details'}
               </CardDescription>
             </div>
             {formData.status && (
@@ -124,6 +130,23 @@ export function AgreementForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Template Info */}
+            {selectedTemplate && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-900">Based on Template:</span>
+                  <span className="text-blue-800">{selectedTemplate.name}</span>
+                </div>
+                {selectedTemplate.description && (
+                  <p className="text-sm text-blue-700 mt-1">{selectedTemplate.description}</p>
+                )}
+                <p className="text-xs text-blue-600 mt-2">
+                  This agreement will include {selectedTemplate.fields.length} pre-configured fields
+                </p>
+              </div>
+            )}
+
             {/* Basic Information */}
             <div className="grid gap-4 md:grid-cols-2">
               <div>
