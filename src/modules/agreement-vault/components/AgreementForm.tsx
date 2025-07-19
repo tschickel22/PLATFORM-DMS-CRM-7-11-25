@@ -24,9 +24,10 @@ interface AgreementFormProps {
   quotes?: Array<{ id: string; number: string }>
 }
 
-export function AgreementForm({ onClose, onSuccess, selectedTemplate }: AgreementFormProps) {
+export function AgreementForm({ 
   agreement, 
   onSave, 
+  selectedTemplate,
   onCancel, 
   customers = [], 
   vehicles = [], 
@@ -112,10 +113,10 @@ export function AgreementForm({ onClose, onSuccess, selectedTemplate }: Agreemen
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>
-                {selectedTemplate ? `Create Agreement from "${selectedTemplate.name}"` : 'Create New Agreement'}
-              </CardTitle>
-                <FileText className="h-5 w-5 mr-2 text-primary" />
-                {agreement ? 'Edit Agreement' : 'New Agreement'}
+                <div className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2 text-primary" />
+                  {agreement ? 'Edit Agreement' : 'New Agreement'}
+                </div>
               </CardTitle>
               <CardDescription>
                 {selectedTemplate ? 'Agreement will be based on the selected template' : 'Fill in the agreement details'}
