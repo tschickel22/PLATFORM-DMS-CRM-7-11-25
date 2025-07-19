@@ -24,20 +24,25 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  Download
+  Download,
+  Wand2,
+  Separator
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+interface DocumentViewerProps {
   documentUrl: string
   documentName: string
   fields: DocumentField[]
   onFieldsChange: (fields: DocumentField[]) => void
   templateType: string
   onSave: () => void
+  onCancel: () => void
   mergeFields: string[]
+  initialFields?: DocumentField[]
 }
 
-export function DocumentViewer({ documentUrl, onSave, onCancel, templateType, initialFields = [] }: DocumentViewerProps) {
+const FIELD_TYPES = [
   { type: 'text', label: 'Text Field', icon: Type, color: 'bg-blue-100 border-blue-300 text-blue-800' },
   { type: 'signature', label: 'Signature', icon: PenTool, color: 'bg-purple-100 border-purple-300 text-purple-800' },
   { type: 'date', label: 'Date Field', icon: Calendar, color: 'bg-green-100 border-green-300 text-green-800' },
@@ -51,7 +56,10 @@ export function DocumentViewer({
   fields, 
   onFieldsChange, 
   onSave,
-  mergeFields 
+  onCancel,
+  mergeFields,
+  templateType,
+  initialFields = []
 }: DocumentViewerProps) {
   const [zoom, setZoom] = useState(100)
   const [selectedTool, setSelectedTool] = useState<string | null>(null)
@@ -128,6 +136,10 @@ export function DocumentViewer({
     // Placeholder for AI field detection
     console.log('AI field detection triggered')
     // This will integrate with OpenAI in the next phase
+  }
+
+  const setFields = (newFields: DocumentField[]) => {
+    onFieldsChange(newFields)
   }
 
   return (
