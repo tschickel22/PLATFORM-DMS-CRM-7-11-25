@@ -214,8 +214,8 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {filteredCustomers.map((customer) => (
+              <div className="space-y-2 max-h-36 overflow-y-auto">
+                {filteredCustomers.slice(0, 3).map((customer) => (
                   <div
                     key={customer.id}
                     onClick={() => setSelectedCustomer(customer)}
@@ -240,10 +240,16 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
                   </div>
                 ))}
                 
-                {filteredCustomers.length === 0 && (
+                {filteredCustomers.slice(0, 3).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No customers found</p>
                     <p className="text-sm">Try adjusting your search or add a new customer</p>
+                  </div>
+                )}
+                
+                {filteredCustomers.length > 3 && (
+                  <div className="text-center py-2 text-sm text-muted-foreground">
+                    Showing top 3 results. Use search to find specific customers.
                   </div>
                 )}
               </div>
@@ -323,7 +329,7 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
 
             {/* Customer Edit Form */}
             {activeTab === 'existing' && selectedCustomer && (
-              <div className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
+              <div key={selectedCustomer.id} className="space-y-4 mt-6 p-4 border rounded-lg bg-muted/20">
                 <h4 className="font-medium">Edit Customer Information</h4>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
