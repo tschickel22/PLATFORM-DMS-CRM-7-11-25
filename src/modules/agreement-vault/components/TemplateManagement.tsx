@@ -33,6 +33,7 @@ export function TemplateManagement() {
   const [selectedStatus, setSelectedStatus] = useState<TemplateStatus | 'all'>('all')
   const [showNewTemplateModal, setShowNewTemplateModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null)
+  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false)
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,6 +92,7 @@ export function TemplateManagement() {
           onSuccess={(template) => {
             setShowNewTemplateModal(false)
             setEditingTemplate(template.id)
+            setShowTemplateBuilder(true)
           }}
         />
       )}
@@ -172,7 +174,10 @@ export function TemplateManagement() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingTemplate(template.id)}
+                    onClick={() => {
+                      setEditingTemplate(template.id)
+                      setShowTemplateBuilder(true)
+                    }}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -221,7 +226,10 @@ export function TemplateManagement() {
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => setEditingTemplate(template.id)}
+                  onClick={() => {
+                    setEditingTemplate(template.id)
+                    setShowTemplateBuilder(true)
+                  }}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
