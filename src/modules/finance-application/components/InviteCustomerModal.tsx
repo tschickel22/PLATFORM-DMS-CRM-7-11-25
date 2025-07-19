@@ -131,8 +131,8 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl">
-        <div className="flex flex-col h-[90vh]">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="flex flex-col h-full">
           {/* Header */}
           <div className="shrink-0 border-b p-4">
             <div className="flex items-center justify-between">
