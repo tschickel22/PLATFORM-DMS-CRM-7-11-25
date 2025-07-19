@@ -21,26 +21,16 @@ import {
   FileText, 
   File,
   Eye,
-  Brain
+  Brain,
+  Play,
+  Edit
 } from 'lucide-react'
+import { PDFBuilder, Field } from '@/components/pdf/PDFBuilder'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
-interface DocumentField {
-  id: string
-  type: 'text' | 'signature' | 'date' | 'checkbox' | 'dropdown'
-  documentId: string
-  page: number
-  x: number
-  y: number
-  width: number
-  height: number
-  label: string
-  required: boolean
-  defaultValue?: string
-  options?: string[]
-  mergeField?: string
-}
+// Type alias for compatibility
+type DocumentField = Field
 
 interface UploadedDocument {
   id: string
@@ -61,13 +51,29 @@ interface DocumentViewerProps {
   initialFields?: DocumentField[]
 }
 
-const FIELD_TYPES = [
-  { type: 'text', label: 'Text Field', icon: Type, color: 'bg-blue-100 border-blue-300 text-blue-800' },
-  { type: 'signature', label: 'Signature', icon: PenTool, color: 'bg-purple-100 border-purple-300 text-purple-800' },
-  { type: 'date', label: 'Date Field', icon: Calendar, color: 'bg-green-100 border-green-300 text-green-800' },
-  { type: 'checkbox', label: 'Checkbox', icon: CheckSquare, color: 'bg-orange-100 border-orange-300 text-orange-800' },
-  { type: 'dropdown', label: 'Dropdown', icon: ChevronDown, color: 'bg-pink-100 border-pink-300 text-pink-800' }
-]
+/*
+ * BACKEND DEVELOPER NOTE: Document Merging for Signing
+ * 
+ * When multiple documents are uploaded to a template, they should be merged into a single PDF
+ * for the signing process. This ensures:
+ * 
+ * 1. Consistent field positioning across all documents
+ * 2. Single signature session for all documents
+ * 3. Proper field mapping and validation
+ * 
+ * Implementation suggestions:
+ * - Use a PDF library like PDFtk, PyPDF2, or similar to merge documents
+ * - Maintain field coordinates relative to their original document pages
+ * - Adjust field page numbers after merging (e.g., if doc1 has 2 pages and doc2 starts on page 3)
+ * - Store original document boundaries for field validation
+ * 
+ * Example merge process:
+ * 1. Convert all uploaded documents to PDF if needed
+ * 2. Merge PDFs in upload order
+ * 3. Update field page numbers: field.page += previousDocumentPageCount
+ * 4. Store merged PDF for signing session
+ * 5. Map completed fields back to original documents if needed
+ */
 
 export function DocumentViewer({ 
   fields, 
@@ -80,13 +86,10 @@ export function DocumentViewer({
   initialDocuments = []
 }: DocumentViewerProps) {
   const { toast } = useToast()
-  const [zoom, setZoom] = useState(100)
-  const [selectedTool, setSelectedTool] = useState<string | null>(null)
   const [selectedField, setSelectedField] = useState<DocumentField | null>(null)
-  const [isPlacingField, setIsPlacingField] = useState(false)
   const [documents, setDocuments] = useState<UploadedDocument[]>(initialDocuments)
-  const [currentPage, setCurrentPage] = useState(1)
   const [showFieldProperties, setShowFieldProperties] = useState(false)
+  const [previewMode, setPreviewMode] = useState(false)
   
   // Document management state
   const [currentViewingDocumentId, setCurrentViewingDocumentId] = useState<string | null>(
@@ -106,8 +109,10 @@ export function DocumentViewer({
   const currentViewingDocument = documents.find(doc => doc.id === currentViewingDocumentId)
   const currentDocumentFields = fields.filter(field => field.documentId === currentViewingDocumentId)
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 200))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 50))
+  const handleFieldClick = (field: DocumentField) => {
+    setSelectedField(field)
+    setShowFieldProperties(true)
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -201,40 +206,6 @@ export function DocumentViewer({
     })
   }
 
-  const handleDocumentClick = useCallback((e: React.MouseEvent) => {
-    if (!selectedTool || !isPlacingField || !currentViewingDocumentId) return
-
-    const rect = documentRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
-
-    const newField: DocumentField = {
-      id: `field-${Date.now()}`,
-      type: selectedTool as DocumentField['type'],
-      documentId: currentViewingDocumentId,
-      page: currentPage,
-      x,
-      y,
-      width: selectedTool === 'checkbox' ? 3 : 15,
-      height: selectedTool === 'checkbox' ? 3 : 4,
-      label: `${selectedTool.charAt(0).toUpperCase() + selectedTool.slice(1)} Field`,
-      required: false
-    }
-
-    onFieldsChange([...fields, newField])
-    setIsPlacingField(false)
-    setSelectedField(newField)
-    setShowFieldProperties(true)
-  }, [selectedTool, isPlacingField, fields, onFieldsChange, currentPage, currentViewingDocumentId])
-
-  const handleFieldClick = (field: DocumentField, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedField(field)
-    setShowFieldProperties(true)
-  }
-
   const handleFieldUpdate = (updatedField: DocumentField) => {
     const updatedFields = fields.map(f => f.id === updatedField.id ? updatedField : f)
     onFieldsChange(updatedFields)
@@ -246,25 +217,6 @@ export function DocumentViewer({
     onFieldsChange(updatedFields)
     setSelectedField(null)
     setShowFieldProperties(false)
-  }
-
-  const handleToolSelect = (toolType: string) => {
-    if (!currentViewingDocumentId) {
-      toast({
-        title: 'No Document Selected',
-        description: 'Please upload and select a document before placing fields.',
-        variant: 'destructive'
-      })
-      return
-    }
-    
-    setSelectedTool(toolType)
-    setIsPlacingField(true)
-    setShowFieldProperties(false)
-  }
-
-  const getFieldTypeConfig = (type: string) => {
-    return FIELD_TYPES.find(ft => ft.type === type) || FIELD_TYPES[0]
   }
 
   const handleSaveTemplate = () => {
@@ -384,32 +336,6 @@ export function DocumentViewer({
               </div>
             </div>
 
-            {/* Field Tools */}
-            <div className="p-4 border-b">
-              <h4 className="font-medium mb-3">Field Types</h4>
-              <div className="space-y-2">
-                {FIELD_TYPES.map((fieldType) => (
-                  <Button
-                    key={fieldType.type}
-                    variant={selectedTool === fieldType.type ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => handleToolSelect(fieldType.type)}
-                    disabled={!currentViewingDocumentId}
-                  >
-                    <fieldType.icon className="h-4 w-4 mr-2" />
-                    {fieldType.label}
-                  </Button>
-                ))}
-              </div>
-              {isPlacingField && currentViewingDocumentId && (
-                <div className="mt-3 p-2 bg-blue-50 rounded-md">
-                  <p className="text-xs text-blue-700">
-                    Click on the document to place the {selectedTool} field
-                  </p>
-                </div>
-              )}
-            </div>
-
             {/* Field List */}
             <div className="flex-1 p-4 overflow-y-auto">
               <h4 className="font-medium mb-3">
@@ -422,7 +348,6 @@ export function DocumentViewer({
               </h4>
               <div className="space-y-2">
                 {currentDocumentFields.map((field) => {
-                  const config = getFieldTypeConfig(field.type)
                   return (
                     <div
                       key={field.id}
@@ -439,7 +364,6 @@ export function DocumentViewer({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <config.icon className="h-3 w-3" />
                           <span className="text-sm font-medium">{field.label}</span>
                         </div>
                         <Badge variant="outline" className="text-xs">
@@ -490,95 +414,64 @@ export function DocumentViewer({
                   <h2 className="font-semibold">
                     {currentViewingDocument ? currentViewingDocument.name : 'No Document Selected'}
                   </h2>
-                  {currentViewingDocument && (
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={handleZoomOut}>
-                        <ZoomOut className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium min-w-[60px] text-center">
-                        {zoom}%
-                      </span>
-                      <Button variant="outline" size="sm" onClick={handleZoomIn}>
-                        <ZoomIn className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
+                {currentViewingDocument && (
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant={previewMode ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => setPreviewMode(!previewMode)}
+                    >
+                      {previewMode ? (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Mode
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Preview Mode
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Document Viewer */}
             <div className="flex-1 overflow-auto bg-gray-100 p-8">
-              <div className="max-w-4xl mx-auto">
-                {currentViewingDocument ? (
-                  <div
-                    ref={documentRef}
-                    className="relative bg-white shadow-lg cursor-crosshair"
-                    style={{ 
-                      transform: `scale(${zoom / 100})`,
-                      transformOrigin: 'top center',
-                      minHeight: '800px',
-                      aspectRatio: '8.5 / 11' // Standard letter size
-                    }}
-                    onClick={handleDocumentClick}
-                  >
-                    {/* Document Content */}
-                    {currentViewingDocument.type.startsWith('image/') ? (
-                      <img 
-                        src={currentViewingDocument.url} 
-                        alt={currentViewingDocument.name} 
-                        className="w-full h-auto" 
-                      />
-                    ) : currentViewingDocument.type === 'application/pdf' ? (
-                      <iframe 
-                        src={currentViewingDocument.url} 
-                        className="w-full h-full border-none" 
-                        title={currentViewingDocument.name}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center p-8 text-muted-foreground">
-                        <FileText className="h-8 w-8 mr-2" />
-                        <span>Preview not available for this file type</span>
-                      </div>
-                    )}
-
-                    {/* Render Fields */}
-                    {currentDocumentFields.filter(f => f.page === currentPage).map((field) => {
-                      const config = getFieldTypeConfig(field.type)
-                      return (
-                        <div
-                          key={field.id}
-                          className={cn(
-                            "absolute border-2 border-dashed cursor-pointer transition-all",
-                            config.color,
-                            selectedField?.id === field.id 
-                              ? "border-solid shadow-md" 
-                              : "hover:border-solid"
-                          )}
-                          style={{
-                            left: `${field.x}%`,
-                            top: `${field.y}%`,
-                            width: `${field.width}%`,
-                            height: `${field.height}%`
-                          }}
-                          onClick={(e) => handleFieldClick(field, e)}
-                        >
-                          <div className="absolute -top-6 left-0 bg-white px-1 rounded text-xs font-medium border">
-                            {field.label}
-                          </div>
-                          <div className="w-full h-full flex items-center justify-center">
-                            <config.icon className="h-4 w-4 opacity-50" />
-                          </div>
-                        </div>
-                      )
-                    })}
+              {currentViewingDocument && currentViewingDocument.type === 'application/pdf' ? (
+                <PDFBuilder
+                  url={currentViewingDocument.url}
+                  fields={currentDocumentFields}
+                  mergeFields={mergeFields}
+                  onFieldsChange={onFieldsChange}
+                  currentDocumentId={currentViewingDocumentId || ''}
+                  previewMode={previewMode}
+                  onFieldClick={handleFieldClick}
+                  selectedField={selectedField}
+                />
+              ) : currentViewingDocument ? (
+                <div className="max-w-4xl mx-auto">
+                  <div className="bg-white shadow-lg rounded-lg p-8 text-center">
+                    <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">PDF Required</h3>
+                    <p className="text-gray-500 mb-6">
+                      The PDF Builder only supports PDF files. Please upload a PDF document to use the field placement features.
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Current file: {currentViewingDocument.name} ({currentViewingDocument.type})
+                    </p>
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <div className="max-w-4xl mx-auto">
                   <div className="bg-white shadow-lg rounded-lg p-12 text-center">
                     <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Document Selected</h3>
                     <p className="text-gray-500 mb-6">
-                      Upload documents to start creating your template. You can upload multiple files 
+                      Upload PDF documents to start creating your template. You can upload multiple files 
                       and they will be merged into a single document for signing.
                     </p>
                     <Button onClick={() => fileInputRef.current?.click()}>
@@ -586,16 +479,16 @@ export function DocumentViewer({
                       Upload Documents
                     </Button>
                     <div className="mt-4 text-xs text-gray-400">
-                      Supported formats: PDF, Word (.doc, .docx), Text (.txt, .rtf), Images
+                      Supported formats: PDF files only
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right Sidebar - Field Properties */}
-          {showFieldProperties && selectedField && (
+          {showFieldProperties && selectedField && !previewMode && (
             <div className="w-80 bg-white border-l border-gray-200">
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
@@ -636,11 +529,11 @@ export function DocumentViewer({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {FIELD_TYPES.map((type) => (
-                        <SelectItem key={type.type} value={type.type}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="text">Text Field</SelectItem>
+                      <SelectItem value="signature">Signature</SelectItem>
+                      <SelectItem value="date">Date Field</SelectItem>
+                      <SelectItem value="checkbox">Checkbox</SelectItem>
+                      <SelectItem value="dropdown">Dropdown</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -719,6 +612,8 @@ export function DocumentViewer({
                     </div>
                   </div>
                 )}
+
+                <div className="border-t my-4" />
 
                 <div>
                   <Label htmlFor="mergeField">Link to Merge Field</Label>
