@@ -226,7 +226,7 @@ export function MergeFieldMapper({ fields, onFieldsUpdate, onClose, templateType
                           {group.fields.map(field => (
                             <div key={field.key} className="text-xs p-2 bg-muted/50 rounded">
                               <div className="font-medium">{field.label}</div>
-                              <div className="text-muted-foreground">{{field.key}}</div>
+                              <div className="text-muted-foreground">{`{{${field.key}}}`}</div>
                             </div>
                           ))}
                         </div>
