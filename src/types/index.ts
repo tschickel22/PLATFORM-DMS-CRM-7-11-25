@@ -337,11 +337,12 @@ export interface Report {
 export interface ReportFilter {
   field: string
   operator: FilterOperator
+  documentId: string
+  page: number
   value: any
 }
 
 export interface ReportColumn {
-  field: string
   label: string
   type: ColumnType
   width?: number
