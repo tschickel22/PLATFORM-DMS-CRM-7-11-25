@@ -173,7 +173,6 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
 
     setLoading(true)
     
-    try {
       // In a real app, you would upload the file to a storage service here
       const templateData = {
         ...formData,
@@ -197,13 +196,6 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
         setShowDocumentViewer(true)
       } else {
         // If no documents, just close the form
-        onCancel()
-      }
-      
-      toast({
-        title: 'Success',
-        description: `Template ${template ? 'updated' : 'created'} successfully.`
-      })
     } catch (error) {
       toast({
         title: 'Error',

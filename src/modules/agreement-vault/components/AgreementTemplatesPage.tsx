@@ -9,15 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreementTemplates } from '@/mocks/agreementTemplatesMock'
 import { AgreementTemplateForm } from './AgreementTemplateForm'
+import { DocumentViewer } from './DocumentViewer'
 import { formatDate } from '@/lib/utils'
 
 export function AgreementTemplatesPage() {
   const { toast } = useToast()
   
   // State management
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
   const [templates, setTemplates] = useState(mockAgreementTemplates.sampleTemplates)
   const [showTemplateForm, setShowTemplateForm] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<any>(null)
+  const [templateToConfigure, setTemplateToConfigure] = useState<AgreementTemplate | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
@@ -57,6 +60,12 @@ export function AgreementTemplatesPage() {
           title: 'Template Updated',
           description: 'The agreement template has been updated successfully.',
         })
+        
+        // Check if template has documents and should open document viewer
+        if (updatedTemplate.documents && updatedTemplate.documents.length > 0) {
+          setTemplateToConfigure(updatedTemplate)
+          setShowDocumentViewer(true)
+        }
       } else {
         // Add new template
         setTemplates(prev => [...prev, templateData])
@@ -64,6 +73,12 @@ export function AgreementTemplatesPage() {
           title: 'Template Created',
           description: 'The new agreement template has been created successfully.',
         })
+        
+        // Check if template has documents and should open document viewer
+        if (newTemplate.documents && newTemplate.documents.length > 0) {
+          setTemplateToConfigure(newTemplate)
+          setShowDocumentViewer(true)
+        }
       }
       setShowTemplateForm(false)
       setEditingTemplate(null)
@@ -74,6 +89,41 @@ export function AgreementTemplatesPage() {
         variant: 'destructive'
       })
     }
+  }
+
+  const handleSaveDocumentFields = async (fields: any[], documents: any[]) => {
+    if (!templateToConfigure) return
+    
+    try {
+      // Update the template with the configured merge fields
+      const updatedTemplate = {
+        ...templateToConfigure,
+        mergeFields: fields.map(field => field.key),
+        documents: documents,
+        updatedAt: new Date().toISOString()
+      }
+      
+      setTemplates(templates.map(t => t.id === templateToConfigure.id ? updatedTemplate : t))
+      
+      toast({
+        title: 'Document Configuration Saved',
+        description: 'Merge fields have been configured successfully.',
+      })
+      
+      setShowDocumentViewer(false)
+      setTemplateToConfigure(null)
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save document configuration.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleCancelDocumentViewer = () => {
+    setShowDocumentViewer(false)
+    setTemplateToConfigure(null)
   }
 
   const handleCancelForm = () => {
@@ -109,6 +159,16 @@ export function AgreementTemplatesPage() {
 
   return (
     <>
+      {/* Document Viewer Modal */}
+      {showDocumentViewer && templateToConfigure && (
+        <DocumentViewer
+          initialDocuments={templateToConfigure.documents || []}
+          initialFields={templateToConfigure.mergeFields?.map(field => ({ key: field, label: field, type: 'text' })) || []}
+          onSave={handleSaveDocumentFields}
+          onCancel={handleCancelDocumentViewer}
+        />
+      )}
+
       {/* Template Form Modal */}
       {showTemplateForm && (
         <AgreementTemplateForm
