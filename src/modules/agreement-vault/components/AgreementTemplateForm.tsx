@@ -151,15 +151,6 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
         variant: 'destructive'
       })
       return
-      const savedTemplate = await onSave(templateData)
-      
-      // If documents were uploaded, show document viewer for field configuration
-      if (uploadedDocuments.length > 0) {
-        setShowDocumentViewer(true)
-      } else {
-        onClose()
-      }
-      return
     }
 
     if (!template && !uploadedFile) {
@@ -173,6 +164,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
 
     setLoading(true)
     
+    try {
       // In a real app, you would upload the file to a storage service here
       const templateData = {
         ...formData,
@@ -196,7 +188,7 @@ export function AgreementTemplateForm({ template, onSave, onCancel }: AgreementT
         setShowDocumentViewer(true)
       } else {
         // If no documents, just close the form
-        onClose()
+        onCancel()
       }
     } catch (error) {
       toast({
