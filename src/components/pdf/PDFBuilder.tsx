@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as pdfjs from 'pdfjs-dist'
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.js?url'
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url'
 import { v4 as uuidv4 } from 'uuid'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
