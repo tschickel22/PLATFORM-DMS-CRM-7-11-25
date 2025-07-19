@@ -153,19 +153,9 @@ function FinanceApplicationDashboard() {
     setApplicationCreationMode('none')
   }
 
-  const handleCreateApplicationFromInvite = () => {
-    const newApp = createApplication({
-      customerId: '',
-      customerName: '',
-      customerEmail: '',
-      templateId: templates[0]?.id || '',
-      status: 'draft'
-    })
-    setSelectedApplication(newApp)
-  }
-
   const handleViewApplication = (application: FinanceApplicationType) => {
     setSelectedApplication(application)
+    setApplicationCreationMode('none') // Reset creation mode when viewing
   }
 
   const getStatusColor = (status: string) => {
