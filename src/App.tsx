@@ -26,6 +26,7 @@ import InvoicePayments from '@/modules/invoice-payments/InvoicePayments'
 import CompanySettings from '@/modules/company-settings/CompanySettings'
 import PlatformAdmin from '@/modules/platform-admin/PlatformAdmin'
 import ReportingSuite from '@/modules/reporting-suite/ReportingSuite'
+import FinanceApplication from '@/modules/finance-application/FinanceApplication'
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
                           <Route path="/admin/*" element={<PlatformAdmin />} />
                           <Route path="/admin/settings/*" element={<PlatformSettings />} />
                           <Route path="/reports/*" element={<ReportingSuite />} />
+                          <Route path="/finance-application/*" element={<FinanceApplication />} />
                         </Routes>
                       </Layout>
                     </ProtectedRoute>
