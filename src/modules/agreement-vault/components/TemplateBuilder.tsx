@@ -14,7 +14,7 @@ import { PDFBuilderLite } from './PDFBuilderLite'
 import { FileProcessor } from '../utils/fileProcessor'
 
 export default function TemplateEditor({ templateId, onClose }: { templateId: string, onClose: () => void }) {
-  const [template, setTemplate] = useState<LocalTemplate | null>(null)
+export function TemplateBuilder() {
   const [templates, setTemplates] = useState<LocalTemplate[]>([])
   const [loading, setLoading] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
@@ -598,4 +598,3 @@ export default function TemplateEditor({ templateId, onClose }: { templateId: st
     </div>
   )
 }
-export { TemplateBuilder }
