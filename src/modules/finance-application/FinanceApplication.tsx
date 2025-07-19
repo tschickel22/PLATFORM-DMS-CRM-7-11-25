@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Settings, CreditCard, Eye, Users, Search, Save, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Plus, FileText, Settings, CreditCard, Eye, Users, Search, Save } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { FinanceApplicationForm } from './components/FinanceApplicationForm'
@@ -191,6 +191,14 @@ function FinanceApplicationDashboard() {
       updateApplication(selectedApplication.id, {
         adminNotes: currentAdminNote
       })
+      
+      // Update the selected application state to reflect changes immediately
+      setSelectedApplication({
+        ...selectedApplication,
+        adminNotes: currentAdminNote,
+        updatedAt: new Date().toISOString()
+      })
+      
       toast({
         title: 'Admin Notes Saved',
         description: 'Internal notes have been saved successfully.'
@@ -198,27 +206,48 @@ function FinanceApplicationDashboard() {
     }
   }
 
-  const handleApprovalAction = (newStatus: 'approved' | 'denied' | 'conditionally_approved') => {
+  const handleStatusChange = (newStatus: string) => {
     if (selectedApplication) {
-      const statusLabels = {
-        approved: 'Approved',
-        denied: 'Denied',
-        conditionally_approved: 'Conditionally Approved'
+      // Check if status is actually changing
+      if (newStatus === selectedApplication.status) {
+        return
+      }
+      
+      // Require internal note for status changes
+      if (!currentAdminNote.trim()) {
+        toast({
+          title: 'Internal Note Required',
+          description: 'Please add an internal note explaining the reason for this status change.',
+          variant: 'destructive'
+        })
+        return
+      }
+      
+      // Update the application
+      const updatedApplication = {
+        ...selectedApplication,
+        status: newStatus as any,
+        reviewedBy: 'Admin User', // In real app, get from auth context
+        reviewedAt: new Date().toISOString(),
+        adminNotes: currentAdminNote,
+        updatedAt: new Date().toISOString()
       }
       
       updateApplication(selectedApplication.id, {
-        status: newStatus,
-        reviewedBy: 'Admin User', // In real app, get from auth context
+        status: newStatus as any,
+        reviewedBy: 'Admin User',
         reviewedAt: new Date().toISOString(),
         adminNotes: currentAdminNote
       })
       
-      toast({
-        title: `Application ${statusLabels[newStatus]}`,
-        description: `The application has been ${statusLabels[newStatus].toLowerCase()}.`
-      })
+      // Update the selected application state immediately
+      setSelectedApplication(updatedApplication)
       
-      handleCloseApplicationForm()
+      const statusLabel = mockFinanceApplications.statusOptions.find(s => s.value === newStatus)?.label || newStatus
+      toast({
+        title: 'Status Updated',
+        description: `Application status changed to ${statusLabel}.`
+      })
     }
   }
 
@@ -303,9 +332,27 @@ function FinanceApplicationDashboard() {
                 </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
-                <Badge className={getStatusColor(selectedApplication.status)}>
-                  {selectedApplication.status.replace('_', ' ').toUpperCase()}
-                </Badge>
+                <div className="flex items-center space-x-2">
+                  <Label className="text-sm font-medium">Status:</Label>
+                  <Select
+                    value={selectedApplication.status}
+                    onValueChange={handleStatusChange}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockFinanceApplications.statusOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-2 h-2 rounded-full ${option.color.split(' ')[0]}`}></div>
+                            <span>{option.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {selectedApplication.fraudCheckStatus && (
                   <Badge variant="outline">
                     IDV: {selectedApplication.fraudCheckStatus.charAt(0).toUpperCase() + selectedApplication.fraudCheckStatus.slice(1)}
@@ -439,42 +486,6 @@ function FinanceApplicationDashboard() {
                 These notes are for internal use only and will not be visible to the customer.
               </p>
             </div>
-
-            {/* Approval Actions */}
-            {selectedApplication.status !== 'approved' && 
-             selectedApplication.status !== 'denied' && 
-             selectedApplication.status !== 'completed' && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Approval Actions</h3>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    onClick={() => handleApprovalAction('approved')}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleApprovalAction('conditionally_approved')}
-                    variant="outline"
-                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                  >
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Conditionally Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleApprovalAction('denied')}
-                    variant="destructive"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Deny
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  These actions will update the application status and notify the customer.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
