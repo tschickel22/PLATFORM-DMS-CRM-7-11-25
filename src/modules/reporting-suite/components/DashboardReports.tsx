@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, Users, Package, DollarSign, BarChart3, PieChart, LineChart } from 'lucide-react'
+import { TrendingUp, Users, Package, DollarSign, BarChart3 } from 'lucide-react'
 import { mockReportingSuite } from '@/mocks/reportingSuiteMock'
 import { useTenant } from '@/contexts/TenantContext'
 import { 
