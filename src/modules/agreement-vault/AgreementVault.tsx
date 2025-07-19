@@ -11,7 +11,6 @@ import { mockAgreements } from '@/mocks/agreementsMock'
 import { TemplateManagement } from './components/TemplateManagement'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
-import { TemplateManagement } from './components/TemplateManagement'
 
 function AgreementVaultPage() {
   const { toast } = useToast()
