@@ -32,6 +32,7 @@ interface DocumentViewerProps {
   initialFields?: DocumentField[]
   initialDocuments?: UploadedDocument[]
 }
+}
 
 const FIELD_TYPES = [
   { type: 'text', label: 'Text Field', icon: Type, color: 'bg-blue-100 border-blue-300 text-blue-800' },
