@@ -140,7 +140,7 @@ export function DocumentViewer({
             className="w-full"
             variant="outline"
           >
-            <TypeIcon className="h-4 w-4 mr-2" />
+            <Type className="h-4 w-4 mr-2" />
             AI Detect Fields
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
