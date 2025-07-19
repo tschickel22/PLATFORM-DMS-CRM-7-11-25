@@ -1,4 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { Document, Page, pdfjs } from 'react-pdf'
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
+import 'react-pdf/dist/esm/Page/TextLayer.css'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +15,9 @@ import { AIFieldDetection } from './AIFieldDetection'
 import { MergeFieldMapper } from './MergeFieldMapper'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+
+// Set up the worker for react-pdf
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
 interface UploadedDocument {
   id: string
@@ -105,6 +111,9 @@ export function DocumentViewer({
   const [showMergeMapper, setShowMergeMapper] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [showFieldProperties, setShowFieldProperties] = useState(false)
+  const [numPages, setNumPages] = useState<number | null>(null)
+  const [pageNumber, setPageNumber] = useState(1)
+  const [pdfError, setPdfError] = useState<string | null>(null)
   
   // Document management state
   const [currentViewingDocumentId, setCurrentViewingDocumentId] = useState<string | null>(
@@ -126,6 +135,16 @@ export function DocumentViewer({
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 200))
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 50))
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages)
+    setPdfError(null)
+  }
+
+  const onDocumentLoadError = (error: Error) => {
+    console.error('Error loading PDF:', error)
+    setPdfError('Failed to load PDF document')
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -232,7 +251,7 @@ export function DocumentViewer({
       id: `field-${Date.now()}`,
       type: selectedTool as DocumentField['type'],
       documentId: currentViewingDocumentId,
-      page: currentPage,
+      page: pageNumber,
       x,
       y,
       width: selectedTool === 'checkbox' ? 3 : 15,
@@ -245,7 +264,7 @@ export function DocumentViewer({
     setIsPlacingField(false)
     setSelectedField(newField)
     setShowFieldProperties(true)
-  }, [selectedTool, isPlacingField, fields, onFieldsChange, currentPage, currentViewingDocumentId])
+  }, [selectedTool, isPlacingField, fields, onFieldsChange, pageNumber, currentViewingDocumentId])
 
   const handleFieldClick = (field: DocumentField, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -546,7 +565,7 @@ export function DocumentViewer({
             {currentViewingDocument && (
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of 1
+                  Page {pageNumber} of {numPages || 1}
                 </span>
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4" />
@@ -572,11 +591,65 @@ export function DocumentViewer({
                 onClick={handleDocumentClick}
               >
                 {/* Document Content */}
-                <iframe
-                  src={currentViewingDocument.url}
-                  className="w-full h-full border-0"
-                  title={currentViewingDocument.name}
-                />
+                {currentViewingDocument.type.startsWith('image/') ? (
+                  <img src={currentViewingDocument.url} alt={currentViewingDocument.name} className="max-w-full h-auto" />
+                ) : currentViewingDocument.type === 'application/pdf' ? (
+                  <div className="pdf-container">
+                    <Document
+                      file={currentViewingDocument.url}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                      loading={
+                        <div className="flex items-center justify-center p-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          <span className="ml-2">Loading PDF...</span>
+                        </div>
+                      }
+                    >
+                      {pdfError ? (
+                        <div className="flex items-center justify-center p-8 text-red-500">
+                          <FileText className="h-8 w-8 mr-2" />
+                          <span>{pdfError}</span>
+                        </div>
+                      ) : (
+                        <Page
+                          pageNumber={pageNumber}
+                          scale={zoom / 100}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                      )}
+                    </Document>
+                    {numPages && numPages > 1 && (
+                      <div className="flex items-center justify-center mt-4 space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                          disabled={pageNumber <= 1}
+                        >
+                          Previous
+                        </Button>
+                        <span className="text-sm">
+                          Page {pageNumber} of {numPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPageNumber(prev => Math.min(numPages, prev + 1))}
+                          disabled={pageNumber >= numPages}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center p-8 text-muted-foreground">
+                    <FileText className="h-8 w-8 mr-2" />
+                    <span>Unsupported file type: {currentViewingDocument.type}</span>
+                  </div>
+                )}
 
                 {/* Warning for non-PDF files */}
                 {!currentViewingDocument.type.includes('pdf') && (
@@ -589,7 +662,7 @@ export function DocumentViewer({
                 )}
 
                 {/* Render Fields */}
-                {currentDocumentFields.map((field) => {
+                {currentDocumentFields.filter(f => f.page === pageNumber).map((field) => {
                   const config = getFieldTypeConfig(field.type)
                   return (
                     <div
