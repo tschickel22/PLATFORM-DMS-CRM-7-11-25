@@ -6,11 +6,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { ZoomIn, ZoomOut, MousePointer, Type, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Save, X, Brain, Link2 } from 'lucide-react'
+import { ZoomIn, ZoomOut, MousePointer, Type, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Save, X, Brain, Link2, Settings, Eye, RotateCw, Download, Wand2, SeparatorVertical as Separator } from 'lucide-react'
 import { DocumentField } from '../types'
 import { AIFieldDetection } from './AIFieldDetection'
 import { MergeFieldMapper } from './MergeFieldMapper'
-import { Type as TypeIcon, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Settings, Eye, Save, ZoomIn, ZoomOut, RotateCw, Download, Wand2, SeparatorVertical as Separator } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DocumentViewerProps {
