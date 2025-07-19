@@ -2,9 +2,11 @@ import React, { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Settings, CreditCard, Eye, Users } from 'lucide-react'
+import { Plus, FileText, Settings, CreditCard, Eye, Users, Search } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { FinanceApplicationForm } from './components/FinanceApplicationForm'
@@ -14,6 +16,7 @@ import { PortalApplicationView } from './components/PortalApplicationView'
 import { InviteCustomerModal } from './components/InviteCustomerModal'
 import { useFinanceApplications } from './hooks/useFinanceApplications'
 import { FinanceApplication as FinanceApplicationType } from './types'
+import { mockFinanceApplications } from './mocks/financeApplicationMock'
 
 function FinanceApplicationDashboard() {
   const { tenant } = useTenant()
@@ -22,6 +25,12 @@ function FinanceApplicationDashboard() {
   const [showApplicationTypeSelectionModal, setShowApplicationTypeSelectionModal] = useState(false)
   const [applicationCreationMode, setApplicationCreationMode] = useState<'none' | 'completeNow' | 'inviteCustomer'>('none')
   const [selectedApplication, setSelectedApplication] = useState<FinanceApplicationType | null>(null)
+  
+  // Search and filter states
+  const [applicationSearchQuery, setApplicationSearchQuery] = useState('')
+  const [applicationStatusFilter, setApplicationStatusFilter] = useState('all')
+  const [applicationDateFilter, setApplicationDateFilter] = useState('')
+  const [templateSearchQuery, setTemplateSearchQuery] = useState('')
   
   const {
     applications,
@@ -33,6 +42,52 @@ function FinanceApplicationDashboard() {
     updateTemplate,
     deleteTemplate
   } = useFinanceApplications()
+
+  // Filter applications based on search and filters
+  const filteredApplications = React.useMemo(() => {
+    let currentApplications = applications
+
+    // Search filter (name, email, phone)
+    if (applicationSearchQuery) {
+      const lowerCaseQuery = applicationSearchQuery.toLowerCase()
+      currentApplications = currentApplications.filter(app =>
+        (app.customerName && app.customerName.toLowerCase().includes(lowerCaseQuery)) ||
+        (app.customerEmail && app.customerEmail.toLowerCase().includes(lowerCaseQuery)) ||
+        (app.customerPhone && app.customerPhone.toLowerCase().includes(lowerCaseQuery))
+      )
+    }
+
+    // Status filter
+    if (applicationStatusFilter !== 'all') {
+      currentApplications = currentApplications.filter(app => app.status === applicationStatusFilter)
+    }
+
+    // Date filter (created on or after)
+    if (applicationDateFilter) {
+      const filterDate = new Date(applicationDateFilter)
+      currentApplications = currentApplications.filter(app => {
+        const appCreationDate = new Date(app.createdAt)
+        return appCreationDate.setHours(0,0,0,0) >= filterDate.setHours(0,0,0,0)
+      })
+    }
+
+    return currentApplications
+  }, [applications, applicationSearchQuery, applicationStatusFilter, applicationDateFilter])
+
+  // Filter templates based on search
+  const filteredTemplates = React.useMemo(() => {
+    let currentTemplates = templates
+
+    if (templateSearchQuery) {
+      const lowerCaseQuery = templateSearchQuery.toLowerCase()
+      currentTemplates = currentTemplates.filter(template =>
+        template.name.toLowerCase().includes(lowerCaseQuery) ||
+        template.description.toLowerCase().includes(lowerCaseQuery)
+      )
+    }
+
+    return currentTemplates
+  }, [templates, templateSearchQuery])
 
   // Get platform-specific labels
   const getModuleLabel = () => {
@@ -281,8 +336,44 @@ function FinanceApplicationDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, email, or phone"
+                    value={applicationSearchQuery}
+                    onChange={(e) => setApplicationSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select
+                  value={applicationStatusFilter}
+                  onValueChange={setApplicationStatusFilter}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {mockFinanceApplications.statusOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={applicationDateFilter}
+                  onChange={(e) => setApplicationDateFilter(e.target.value)}
+                  className="w-[180px]"
+                  title="Filter by creation date (on or after)"
+                />
+              </div>
+
               <div className="space-y-4">
-                {applications.map((application) => (
+                {filteredApplications.map((application) => (
                   <div
                     key={application.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -322,11 +413,20 @@ function FinanceApplicationDashboard() {
                   </div>
                 ))}
                 
-                {applications.length === 0 && (
+                {filteredApplications.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    <p>No finance applications yet</p>
-                    <p className="text-sm">Create your first application to get started</p>
+                    {applications.length === 0 ? (
+                      <>
+                        <p>No finance applications yet</p>
+                        <p className="text-sm">Create your first application to get started</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>No applications found matching your criteria</p>
+                        <p className="text-sm">Try adjusting your search or filters</p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -335,8 +435,19 @@ function FinanceApplicationDashboard() {
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
+          {/* Template Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search templates by name or description"
+              value={templateSearchQuery}
+              onChange={(e) => setTemplateSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
           <AdminApplicationBuilder
-            templates={templates}
+            templates={filteredTemplates}
             onCreateTemplate={createTemplate}
             onUpdateTemplate={updateTemplate}
             onDeleteTemplate={deleteTemplate}
