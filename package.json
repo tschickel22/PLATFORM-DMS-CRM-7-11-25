@@ -31,6 +31,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
+    "react-pdf": "^10.0.1",
     "react-router-dom": "^6.8.1",
     "recharts": "^2.8.0",
     "tailwind-merge": "^1.12.0"
