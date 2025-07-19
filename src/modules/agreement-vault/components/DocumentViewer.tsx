@@ -11,7 +11,7 @@ import { DocumentField } from '../types'
 import { AIFieldDetection } from './AIFieldDetection'
 import { MergeFieldMapper } from './MergeFieldMapper'
 import { 
-  Type, 
+  Type as TypeIcon,
   PenTool, 
   Calendar, 
   CheckSquare, 
@@ -158,7 +158,7 @@ export function DocumentViewer({
             className="w-full"
             variant="outline"
           >
-            <Wand2 className="h-4 w-4 mr-2" />
+            <TypeIcon className="h-4 w-4 mr-2" />
             AI Detect Fields
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
