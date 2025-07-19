@@ -8,12 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { ZoomIn, ZoomOut, MousePointer, Type, PenTool, Calendar, CheckSquare, ChevronDown, Trash2, Save, X, Brain, Link2, Settings, Eye, RotateCw, Download, Wand2, SeparatorVertical as Separator, Upload, FileText, File } from 'lucide-react'
-import { DocumentField } from '../types'
-import { AIFieldDetection } from './AIFieldDetection'
-import { MergeFieldMapper } from './MergeFieldMapper'
-import { cn } from '@/lib/utils'
-import { useToast } from '@/hooks/use-toast'
-
 // Set up the worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
@@ -106,9 +100,6 @@ export function DocumentViewer({
   const [isPlacingField, setIsPlacingField] = useState(false)
   const [documents, setDocuments] = useState<UploadedDocument[]>(initialDocuments)
   const [showAIDetection, setShowAIDetection] = useState(false)
-  const [showMergeMapper, setShowMergeMapper] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [showFieldProperties, setShowFieldProperties] = useState(false)
   const [numPages, setNumPages] = useState<number | null>(null)
   const [pageNumber, setPageNumber] = useState(1)
   const [pdfError, setPdfError] = useState<string | null>(null)
@@ -131,16 +122,6 @@ export function DocumentViewer({
   const currentViewingDocument = documents.find(doc => doc.id === currentViewingDocumentId)
   const currentDocumentFields = fields.filter(field => field.documentId === currentViewingDocumentId)
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 200))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 50))
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages)
-    setPdfError(null)
-  }
-
-  const onDocumentLoadError = (error: Error) => {
-    console.error('Error loading PDF:', error)
     setPdfError('Failed to load PDF document')
   }
 
@@ -170,15 +151,6 @@ export function DocumentViewer({
         url: documentUrl,
         type: file.type,
         size: file.size
-      }
-      
-      newDocuments.push(newDocument)
-
-      // Show warning for non-PDF files
-      if (file.type !== 'application/pdf') {
-        toast({
-          title: 'Non-PDF Document',
-          description: `${file.name} may have limited preview capabilities. PDF files provide the best experience.`,
           variant: 'default'
         })
       }
@@ -246,7 +218,7 @@ export function DocumentViewer({
     const y = ((e.clientY - rect.top) / rect.height) * 100
 
     const newField: DocumentField = {
-      id: `field-${Date.now()}`,
+      page: currentPage,
       type: selectedTool as DocumentField['type'],
       documentId: currentViewingDocumentId,
       page: pageNumber,
@@ -262,7 +234,7 @@ export function DocumentViewer({
     setIsPlacingField(false)
     setSelectedField(newField)
     setShowFieldProperties(true)
-  }, [selectedTool, isPlacingField, fields, onFieldsChange, pageNumber, currentViewingDocumentId])
+  }, [selectedTool, isPlacingField, fields, onFieldsChange, currentPage, currentViewingDocumentId])
 
   const handleFieldClick = (field: DocumentField, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -560,16 +532,12 @@ export function DocumentViewer({
                 </div>
               )}
             </div>
-            {currentViewingDocument && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">
-                  Page {pageNumber} of {numPages || 1}
-                </span>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={onCancel}>
+                <X className="h-4 w-4 mr-2" />
+                Close
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -592,91 +560,25 @@ export function DocumentViewer({
                 {currentViewingDocument.type.startsWith('image/') ? (
                   <img src={currentViewingDocument.url} alt={currentViewingDocument.name} className="max-w-full h-auto" />
                 ) : currentViewingDocument.type === 'application/pdf' ? (
-                  <div className="pdf-container">
-                    <Document
-                      file={currentViewingDocument.url}
-                      onLoadSuccess={onDocumentLoadSuccess}
-                      onLoadError={onDocumentLoadError}
-                      loading={
-                        <div className="flex items-center justify-center p-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                          <span className="ml-2">Loading PDF...</span>
-                        </div>
-                      }
-                      error={
-                        <div className="flex items-center justify-center p-8 text-red-500">
-                          <FileText className="h-8 w-8 mr-2" />
-                          <div className="text-center">
-                            <div>Error loading PDF. Please try uploading again.</div>
-                            <div className="text-xs mt-2 text-gray-500">
-                              Make sure the file is a valid PDF document.
-                            </div>
-                          </div>
-                        </div>
-                      }
-                    >
-                      <Page
-                        pageNumber={pageNumber}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                        width={600}
-                        loading={
-                          <div className="flex items-center justify-center p-8">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                            <span className="ml-2">Loading page...</span>
-                          </div>
-                        }
-                        error={
-                          <div className="flex items-center justify-center p-8 text-red-500">
-                            <FileText className="h-6 w-6 mr-2" />
-                            <span>Error loading page {pageNumber}</span>
-                          </div>
-                        }
-                      />
-                    </Document>
-                    {numPages && numPages > 1 && (
-                      <div className="flex items-center justify-center mt-4 space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
-                          disabled={pageNumber <= 1}
-                        >
-                          Previous
-                        </Button>
-                        <span className="text-sm">
-                          Page {pageNumber} of {numPages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPageNumber(prev => Math.min(numPages, prev + 1))}
-                          disabled={pageNumber >= numPages}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                ) : currentViewingDocument.type === 'application/pdf' ? (
+                  <iframe 
+                    src={currentViewingDocument.url} 
+                    className="w-full h-full border-none min-h-[800px]"
+                    title={currentViewingDocument.name}
+                  />
                 ) : (
                   <div className="flex items-center justify-center p-8 text-muted-foreground">
                     <FileText className="h-8 w-8 mr-2" />
-                    <span>Unsupported file type: {currentViewingDocument.type}</span>
-                  </div>
-                )}
-
-                {/* Warning for non-PDF files */}
-                {!currentViewingDocument.type.includes('pdf') && (
-                  <div className="absolute top-4 left-4 right-4 bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Preview Limitation:</strong> This file type may not display perfectly. 
-                      For best results, convert to PDF before uploading.
-                    </p>
+                    <div className="text-center">
+                      <p className="font-medium">Preview not available</p>
+                      <p className="text-sm">File type: {currentViewingDocument.type}</p>
+                      <p className="text-xs mt-2">You can still add fields and save the template</p>
+                    </div>
                   </div>
                 )}
 
                 {/* Render Fields */}
-                {currentDocumentFields.filter(f => f.page === pageNumber).map((field) => {
+                {currentDocumentFields.filter(f => f.page === currentPage).map((field) => {
                   const config = getFieldTypeConfig(field.type)
                   return (
                     <div
@@ -930,9 +832,6 @@ export function DocumentViewer({
           fields={fields}
           onFieldsUpdate={setFields}
           onClose={() => setShowMergeMapper(false)}
-          templateType={templateType}
-        />
-      )}
     </div>
   )
 }
