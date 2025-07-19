@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Settings, CreditCard, Eye, Users, Search } from 'lucide-react'
+import { Plus, FileText, Settings, CreditCard, Eye, Users, Search, Save, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { FinanceApplicationForm } from './components/FinanceApplicationForm'
@@ -32,6 +33,9 @@ function FinanceApplicationDashboard() {
   const [applicationStatusFilter, setApplicationStatusFilter] = useState('all')
   const [applicationDateFilter, setApplicationDateFilter] = useState('')
   const [templateSearchQuery, setTemplateSearchQuery] = useState('')
+  
+  // Admin notes state
+  const [currentAdminNote, setCurrentAdminNote] = useState('')
   
   const {
     applications,
@@ -147,6 +151,7 @@ function FinanceApplicationDashboard() {
 
   const handleCloseApplicationForm = () => {
     setSelectedApplication(null)
+    setCurrentAdminNote('')
     setApplicationCreationMode('none')
   }
 
@@ -156,6 +161,7 @@ function FinanceApplicationDashboard() {
 
   const handleViewApplication = (application: FinanceApplicationType) => {
     setSelectedApplication(application)
+    setCurrentAdminNote(application.adminNotes || '')
     setApplicationCreationMode('none') // Reset creation mode when viewing
   }
 
@@ -169,12 +175,50 @@ function FinanceApplicationDashboard() {
         return 'bg-yellow-100 text-yellow-800'
       case 'approved':
         return 'bg-green-100 text-green-800'
+      case 'conditionally_approved':
+        return 'bg-orange-100 text-orange-800'
       case 'denied':
         return 'bg-red-100 text-red-800'
       case 'completed':
         return 'bg-emerald-100 text-emerald-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleSaveAdminNotes = () => {
+    if (selectedApplication) {
+      updateApplication(selectedApplication.id, {
+        adminNotes: currentAdminNote
+      })
+      toast({
+        title: 'Admin Notes Saved',
+        description: 'Internal notes have been saved successfully.'
+      })
+    }
+  }
+
+  const handleApprovalAction = (newStatus: 'approved' | 'denied' | 'conditionally_approved') => {
+    if (selectedApplication) {
+      const statusLabels = {
+        approved: 'Approved',
+        denied: 'Denied',
+        conditionally_approved: 'Conditionally Approved'
+      }
+      
+      updateApplication(selectedApplication.id, {
+        status: newStatus,
+        reviewedBy: 'Admin User', // In real app, get from auth context
+        reviewedAt: new Date().toISOString(),
+        adminNotes: currentAdminNote
+      })
+      
+      toast({
+        title: `Application ${statusLabels[newStatus]}`,
+        description: `The application has been ${statusLabels[newStatus].toLowerCase()}.`
+      })
+      
+      handleCloseApplicationForm()
     }
   }
 
@@ -368,6 +412,67 @@ function FinanceApplicationDashboard() {
                     <p className="text-sm">{selectedApplication.reviewedBy || 'Not specified'}</p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Admin Notes Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">Admin Notes (Internal Only)</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveAdminNotes}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Notes
+                </Button>
+              </div>
+              <Textarea
+                value={currentAdminNote}
+                onChange={(e) => setCurrentAdminNote(e.target.value)}
+                placeholder="Add internal notes about this application (not visible to customer)..."
+                rows={4}
+                className="mb-4"
+              />
+              <p className="text-xs text-muted-foreground">
+                These notes are for internal use only and will not be visible to the customer.
+              </p>
+            </div>
+
+            {/* Approval Actions */}
+            {selectedApplication.status !== 'approved' && 
+             selectedApplication.status !== 'denied' && 
+             selectedApplication.status !== 'completed' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Approval Actions</h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={() => handleApprovalAction('approved')}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                  <Button
+                    onClick={() => handleApprovalAction('conditionally_approved')}
+                    variant="outline"
+                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Conditionally Approve
+                  </Button>
+                  <Button
+                    onClick={() => handleApprovalAction('denied')}
+                    variant="destructive"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Deny
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  These actions will update the application status and notify the customer.
+                </p>
               </div>
             )}
           </CardContent>

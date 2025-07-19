@@ -15,6 +15,7 @@ export interface FinanceApplication {
   reviewedAt?: string
   reviewedBy?: string
   notes?: string
+  adminNotes?: string
 }
 
 export interface ApplicationTemplate {
@@ -92,6 +93,7 @@ export type ApplicationStatus =
   | 'submitted' 
   | 'under_review' 
   | 'approved' 
+  | 'conditionally_approved'
   | 'denied' 
   | 'completed'
 

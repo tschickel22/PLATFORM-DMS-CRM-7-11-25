@@ -148,7 +148,8 @@ export const mockFinanceApplications = {
       submittedAt: '2024-01-18T12:00:00Z',
       reviewedAt: '2024-01-23T16:15:00Z',
       reviewedBy: 'finance@company.com',
-      notes: 'Under review by finance team, credit check in progress'
+      notes: 'Under review by finance team, credit check in progress',
+      adminNotes: 'Credit score: 720. Employment verified. Waiting for final bank statements.'
     },
     {
       id: 'app-005',
@@ -201,7 +202,8 @@ export const mockFinanceApplications = {
       submittedAt: '2024-01-08T16:00:00Z',
       reviewedAt: '2024-01-25T10:30:00Z',
       reviewedBy: 'finance@company.com',
-      notes: 'Excellent credit score and stable employment history. Approved for full amount.'
+      notes: 'Excellent credit score and stable employment history. Approved for full amount.',
+      adminNotes: 'Credit score: 785. 8 years stable employment. Debt-to-income ratio: 28%. Approved for $65,000 at 6.5% APR.'
     },
     {
       id: 'app-006',
@@ -235,7 +237,8 @@ export const mockFinanceApplications = {
       submittedAt: '2024-01-14T10:15:00Z',
       reviewedAt: '2024-01-26T14:45:00Z',
       reviewedBy: 'finance@company.com',
-      notes: 'Insufficient employment history and income verification. Credit score below minimum requirements.'
+      notes: 'Insufficient employment history and income verification. Credit score below minimum requirements.',
+      adminNotes: 'Credit score: 580 (below 620 minimum). Only 6 months employment history. Self-employed income not verifiable. Recommend denial.'
     },
     {
       id: 'app-007',
@@ -279,7 +282,53 @@ export const mockFinanceApplications = {
       submittedAt: '2023-12-15T10:00:00Z',
       reviewedAt: '2023-12-20T15:30:00Z',
       reviewedBy: 'finance@company.com',
-      notes: 'Application approved and loan funded. Customer has received financing.'
+      notes: 'Application approved and loan funded. Customer has received financing.',
+      adminNotes: 'Credit score: 742. 12 years stable employment in education. Loan funded at $45,000 at 7.25% APR for 15 years.'
+    },
+    {
+      id: 'app-008',
+      customerId: 'cust-008',
+      customerName: 'David Wilson',
+      customerEmail: 'david.wilson@email.com',
+      customerPhone: '(555) 789-0123',
+      templateId: 'template-001',
+      status: 'conditionally_approved' as const,
+      data: {
+        'personal-info': {
+          'first-name': 'David',
+          'last-name': 'Wilson',
+          'email': 'david.wilson@email.com',
+          'phone': '(555) 789-0123',
+          'ssn': '***-**-0123',
+          'date-of-birth': '1983-09-25'
+        },
+        'employment': {
+          'employer-name': 'Regional Bank',
+          'job-title': 'Loan Officer',
+          'employment-length': '4 years',
+          'monthly-income': '7800',
+          'employment-type': 'full-time'
+        }
+      },
+      uploadedFiles: [
+        {
+          id: 'file-006',
+          fieldId: 'pay-stubs',
+          name: 'paystub-february-2024.pdf',
+          type: 'application/pdf',
+          size: 201234,
+          url: '/mock/paystub-wilson.pdf',
+          uploadedAt: '2024-01-22T14:20:00Z'
+        }
+      ],
+      fraudCheckStatus: 'verified' as const,
+      createdAt: '2024-01-20T13:45:00Z',
+      updatedAt: '2024-01-27T11:30:00Z',
+      submittedAt: '2024-01-22T15:00:00Z',
+      reviewedAt: '2024-01-27T11:30:00Z',
+      reviewedBy: 'finance@company.com',
+      notes: 'Conditionally approved pending additional documentation.',
+      adminNotes: 'Credit score: 695. Good employment history but needs co-signer due to recent credit inquiry. Approved for $40,000 with co-signer requirement.'
     }
   ] as FinanceApplication[],
 
@@ -687,6 +736,7 @@ export const mockFinanceApplications = {
     { value: 'submitted', label: 'Submitted', color: 'bg-blue-100 text-blue-800' },
     { value: 'under_review', label: 'Under Review', color: 'bg-yellow-100 text-yellow-800' },
     { value: 'approved', label: 'Approved', color: 'bg-green-100 text-green-800' },
+    { value: 'conditionally_approved', label: 'Conditionally Approved', color: 'bg-orange-100 text-orange-800' },
     { value: 'denied', label: 'Denied', color: 'bg-red-100 text-red-800' },
     { value: 'completed', label: 'Completed', color: 'bg-emerald-100 text-emerald-800' }
   ],
