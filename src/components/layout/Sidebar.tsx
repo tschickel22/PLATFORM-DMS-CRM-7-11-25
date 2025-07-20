@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTenant } from '@/contexts/TenantContext'
+import { isColorLight } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { 
   Users, 
@@ -94,6 +95,18 @@ export default function Sidebar() {
   const location = useLocation()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
+  // Determine sidebar colors
+  const useDefaultColor = tenant?.branding?.sideMenuColor === null || !tenant?.branding?.sideMenuColor
+  const backgroundColor = useDefaultColor 
+    ? 'var(--background)' 
+    : tenant?.branding?.sideMenuColor
+  
+  const textColor = useDefaultColor
+    ? 'var(--foreground)'
+    : tenant?.branding?.sideMenuColor && isColorLight(tenant.branding.sideMenuColor)
+      ? 'var(--foreground)'
+      : 'white'
+
   const toggleSection = (sectionId: string) => {
     // If the clicked section is already expanded, collapse it
     // Otherwise, expand the clicked section (this automatically collapses any other expanded section)
@@ -122,12 +135,11 @@ export default function Sidebar() {
 
   return (
     <div 
-      className="flex h-full w-64 flex-col bg-slate-900 text-white"
-      style={getSidebarStyle()}
-    >
-      {/* Logo/Brand */}
-      <div className="flex h-16 items-center justify-center border-b border-slate-700 px-4">
-        <Link to="/" className="flex items-center space-x-2">
+      className="w-64 h-full border-r flex flex-col" 
+      style={{ 
+        backgroundColor,
+        color: textColor
+      }}
           <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
             <Building className="h-5 w-5 text-white" />
           </div>
@@ -137,7 +149,11 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-2 py-4">
-        {/* Dashboard - Always visible */}
+                    isActive(child.path) 
+                      ? "bg-primary/10 text-primary" 
+                      : useDefaultColor 
+                        ? "hover:bg-accent" 
+                        : "hover:bg-black/10"
         <Link
           to="/"
           className={cn(

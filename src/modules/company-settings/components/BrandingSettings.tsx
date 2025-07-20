@@ -9,6 +9,7 @@ import { Palette, Upload, Image as ImageIcon, Save } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
+import { isColorLight } from '@/lib/utils'
 
 export function BrandingSettings() {
   const { tenant, updateTenant } = useTenant()
@@ -282,10 +283,14 @@ export function BrandingSettings() {
             <div className="space-y-2">
               <h4 className="font-semibold">Side Menu Preview</h4>
               <div 
-                className="w-full h-20 rounded-md flex items-center justify-center text-white text-sm"
+                className="w-full h-20 rounded-md flex items-center justify-center text-sm"
                 style={{ 
                   backgroundColor: useDefaultSideMenuColor ? 'var(--background)' : sideMenuColor,
-                  color: useDefaultSideMenuColor ? 'var(--foreground)' : 'white', // Adjust text color for contrast
+                  color: useDefaultSideMenuColor 
+                    ? 'var(--foreground)' 
+                    : sideMenuColor && isColorLight(sideMenuColor)
+                      ? 'var(--foreground)'
+                      : 'white',
                   border: useDefaultSideMenuColor ? '1px dashed var(--border)' : 'none'
                 }}
               >
