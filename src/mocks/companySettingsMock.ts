@@ -1,9 +1,10 @@
 export const mockCompanySettings = {
   branding: {
-    logoUrl: '/mock/logo.png',
+    logoUrl: 'https://ajwaujikksxupqwatpfa.supabase.co/storage/v1/object/public/website-assets/11111111-1111-1111-1111-111111111111/branding/logoUrl-1752730074646.png',
     primaryColor: '#3b82f6',
     secondaryColor: '#64748b',
     fontFamily: 'Inter',
+    sideMenuColor: '#1e293b', // Default dark color for side menu
     fontOptions: [
       { value: 'Inter', label: 'Inter' },
       { value: 'Roboto', label: 'Roboto' },

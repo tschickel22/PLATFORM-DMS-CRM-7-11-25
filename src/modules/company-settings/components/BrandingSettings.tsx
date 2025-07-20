@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,6 +18,10 @@ export function BrandingSettings() {
   const [secondaryColor, setSecondaryColor] = useState(tenant?.branding.secondaryColor || mockCompanySettings.branding.secondaryColor)
   const [fontFamily, setFontFamily] = useState(tenant?.branding.fontFamily || mockCompanySettings.branding.fontFamily)
   const [logoUrl, setLogoUrl] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
+  const [sideMenuColor, setSideMenuColor] = useState(tenant?.branding.sideMenuColor || mockCompanySettings.branding.sideMenuColor || '')
+  const [useDefaultSideMenuColor, setUseDefaultSideMenuColor] = useState(
+    tenant?.branding.sideMenuColor === null || !tenant?.branding.sideMenuColor
+  )
   const [logoPreview, setLogoPreview] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -45,7 +50,8 @@ export function BrandingSettings() {
           primaryColor,
           secondaryColor,
           fontFamily,
-          logo: logoUrl
+          logo: logoUrl,
+          sideMenuColor: useDefaultSideMenuColor ? null : sideMenuColor
         }
       })
       
@@ -183,6 +189,46 @@ export function BrandingSettings() {
           </p>
         </div>
 
+        {/* Side Menu Color Settings */}
+        <div>
+          <Label htmlFor="sideMenuColor">Side Menu Color</Label>
+          <div className="flex items-center space-x-2 mt-1">
+            <Input
+              type="color"
+              id="sideMenuColor"
+              value={sideMenuColor}
+              onChange={(e) => {
+                setSideMenuColor(e.target.value)
+                setUseDefaultSideMenuColor(false)
+              }}
+              className="w-16 h-10 shadow-sm"
+              disabled={useDefaultSideMenuColor}
+            />
+            <Input 
+              value={sideMenuColor} 
+              onChange={(e) => {
+                setSideMenuColor(e.target.value)
+                setUseDefaultSideMenuColor(false)
+              }}
+              className="shadow-sm" 
+              disabled={useDefaultSideMenuColor}
+            />
+          </div>
+          <div className="flex items-center space-x-2 mt-2">
+            <Checkbox
+              id="useDefaultSideMenuColor"
+              checked={useDefaultSideMenuColor}
+              onCheckedChange={(checked) => setUseDefaultSideMenuColor(!!checked)}
+            />
+            <Label htmlFor="useDefaultSideMenuColor" className="font-normal">
+              Use default theme color (matches primary site background)
+            </Label>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            The background color for your application's side navigation menu
+          </p>
+        </div>
+
         {/* Preview */}
         <div className="border rounded-lg p-6 mt-6">
           <h3 className="text-lg font-semibold mb-4">Preview</h3>
@@ -230,6 +276,20 @@ export function BrandingSettings() {
                 >
                   Secondary Button
                 </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold">Side Menu Preview</h4>
+              <div 
+                className="w-full h-20 rounded-md flex items-center justify-center text-white text-sm"
+                style={{ 
+                  backgroundColor: useDefaultSideMenuColor ? 'var(--background)' : sideMenuColor,
+                  color: useDefaultSideMenuColor ? 'var(--foreground)' : 'white', // Adjust text color for contrast
+                  border: useDefaultSideMenuColor ? '1px dashed var(--border)' : 'none'
+                }}
+              >
+                Side Menu Background
               </div>
             </div>
           </div>
