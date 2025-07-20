@@ -37,12 +37,12 @@ interface PortalProviderProps {
 export function PortalProvider({ children, fallbackUser }: PortalProviderProps) {
   const [searchParams] = useSearchParams()
   
-  // Extract customer ID from URL parameters
-  const customerId = searchParams.get('customerId')
+  // Extract impersonate client ID from URL parameters
+  const impersonateIdParam = searchParams.get('impersonateClientId')
   
   // Find the proxied client from mock data
-  const proxiedClient = customerId 
-    ? mockAgreements.sampleCustomers.find(customer => customer.id === customerId) || null
+  const proxiedClient = impersonateIdParam 
+    ? mockAgreements.sampleCustomers.find(customer => customer.id === impersonateIdParam) || null
     : null
 
   const isProxying = !!proxiedClient
