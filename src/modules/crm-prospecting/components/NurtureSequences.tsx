@@ -9,16 +9,16 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 interface NurtureSequencesProps {
   leads: Lead[]
-  onSequenceStart: (leadId: string, sequenceId: string) => void
-  onSequencePause: (leadId: string) => void
-  onSequenceReset: (leadId: string) => void
+  onSequenceStart?: (leadId: string, sequenceId: string) => void
+  onSequencePause?: (leadId: string) => void
+  onSequenceReset?: (leadId: string) => void
 }
 
 export const NurtureSequences = ({
   leads,
-  onSequenceStart, 
-  onSequencePause, 
-  onSequenceReset
+  onSequenceStart = () => {}, 
+  onSequencePause = () => {}, 
+  onSequenceReset = () => {}
 }: NurtureSequencesProps) => {
   // Use mock data as fallback for sequence options and safe leads array
   const sequences = mockCrmProspecting.nurtureSequences
