@@ -8,6 +8,7 @@ export interface FinanceApplication {
   status: ApplicationStatus
   data: ApplicationData
   uploadedFiles: UploadedFile[]
+  history: ApplicationHistoryEntry[]
   fraudCheckStatus?: FraudCheckStatus
   createdAt: string
   updatedAt: string
@@ -16,6 +17,17 @@ export interface FinanceApplication {
   reviewedBy?: string
   notes?: string
   adminNotes?: string
+}
+
+export interface ApplicationHistoryEntry {
+  id: string
+  timestamp: string
+  action: string
+  userId: string
+  userName: string
+  details?: string
+  oldValue?: string
+  newValue?: string
 }
 
 export interface ApplicationTemplate {

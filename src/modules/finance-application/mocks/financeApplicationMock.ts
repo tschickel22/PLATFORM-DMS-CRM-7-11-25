@@ -46,6 +46,42 @@ export const mockFinanceApplications = {
           uploadedAt: '2024-01-15T10:30:00Z'
         }
       ],
+      history: [
+        {
+          id: 'hist-001',
+          timestamp: '2024-01-10T09:30:00Z',
+          action: 'Application Created',
+          userId: 'system',
+          userName: 'System',
+          details: 'Application created with status: draft'
+        },
+        {
+          id: 'hist-002',
+          timestamp: '2024-01-12T16:45:00Z',
+          action: 'Application Submitted',
+          userId: 'cust-001',
+          userName: 'John Smith',
+          details: 'Application submitted for review'
+        },
+        {
+          id: 'hist-003',
+          timestamp: '2024-01-15T10:30:00Z',
+          action: 'Document Uploaded',
+          userId: 'cust-001',
+          userName: 'John Smith',
+          details: '1 document(s) uploaded'
+        },
+        {
+          id: 'hist-004',
+          timestamp: '2024-01-15T14:22:00Z',
+          action: 'Status Changed',
+          userId: 'admin-001',
+          userName: 'Finance Admin',
+          details: 'Status changed from submitted to under_review',
+          oldValue: 'submitted',
+          newValue: 'under_review'
+        }
+      ],
       fraudCheckStatus: 'verified' as const,
       createdAt: '2024-01-10T09:30:00Z',
       updatedAt: '2024-01-15T14:22:00Z',

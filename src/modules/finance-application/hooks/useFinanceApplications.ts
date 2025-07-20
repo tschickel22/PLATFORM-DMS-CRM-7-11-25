@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FinanceApplication, ApplicationTemplate, ApplicationData, UploadedFile } from '../types'
+import { FinanceApplication, ApplicationTemplate, ApplicationData, UploadedFile, ApplicationHistoryEntry } from '../types'
 import { mockFinanceApplications } from '../mocks/financeApplicationMock'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
 
@@ -35,6 +35,14 @@ export function useFinanceApplications() {
       status: data.status || 'draft',
       data: data.data || {},
       uploadedFiles: data.uploadedFiles || [],
+      history: [{
+        id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        action: 'Application Created',
+        userId: 'current-user', // In real app, get from auth context
+        userName: 'Current User', // In real app, get from auth context
+        details: `Application created with status: ${data.status || 'draft'}`
+      }],
       fraudCheckStatus: 'pending',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -54,7 +62,11 @@ export function useFinanceApplications() {
             updatedAt: new Date().toISOString(),
             submittedAt: updates.status === 'submitted' && !app.submittedAt 
               ? new Date().toISOString() 
-              : app.submittedAt
+              : app.submittedAt,
+            history: [
+              ...app.history,
+              ...createHistoryEntries(app, updates)
+            ]
           }
         : app
     ))
@@ -134,6 +146,81 @@ export function useFinanceApplications() {
       const updatedFiles = application.uploadedFiles.filter(file => file.id !== fileId)
       updateApplication(applicationId, { uploadedFiles: updatedFiles })
     }
+  }
+
+  const createHistoryEntries = (oldApp: FinanceApplication, updates: Partial<FinanceApplication>): ApplicationHistoryEntry[] => {
+    const entries: ApplicationHistoryEntry[] = []
+    const timestamp = new Date().toISOString()
+    const userId = 'current-user' // In real app, get from auth context
+    const userName = 'Current User' // In real app, get from auth context
+
+    // Track status changes
+    if (updates.status && updates.status !== oldApp.status) {
+      entries.push({
+        id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp,
+        action: 'Status Changed',
+        userId,
+        userName,
+        details: `Status changed from ${oldApp.status} to ${updates.status}`,
+        oldValue: oldApp.status,
+        newValue: updates.status
+      })
+    }
+
+    // Track admin notes changes
+    if (updates.adminNotes !== undefined && updates.adminNotes !== oldApp.adminNotes) {
+      entries.push({
+        id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp,
+        action: 'Admin Notes Updated',
+        userId,
+        userName,
+        details: updates.adminNotes ? 'Admin notes added/updated' : 'Admin notes cleared',
+        oldValue: oldApp.adminNotes || '',
+        newValue: updates.adminNotes || ''
+      })
+    }
+
+    // Track submission
+    if (updates.status === 'submitted' && !oldApp.submittedAt) {
+      entries.push({
+        id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp,
+        action: 'Application Submitted',
+        userId,
+        userName,
+        details: 'Application submitted for review'
+      })
+    }
+
+    // Track file uploads/removals
+    if (updates.uploadedFiles) {
+      const oldFileCount = oldApp.uploadedFiles.length
+      const newFileCount = updates.uploadedFiles.length
+      
+      if (newFileCount > oldFileCount) {
+        entries.push({
+          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp,
+          action: 'Document Uploaded',
+          userId,
+          userName,
+          details: `${newFileCount - oldFileCount} document(s) uploaded`
+        })
+      } else if (newFileCount < oldFileCount) {
+        entries.push({
+          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp,
+          action: 'Document Removed',
+          userId,
+          userName,
+          details: `${oldFileCount - newFileCount} document(s) removed`
+        })
+      }
+    }
+
+    return entries
   }
 
   return {
