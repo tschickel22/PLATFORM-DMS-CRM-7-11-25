@@ -88,7 +88,11 @@ const navigationItems = [
   }
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  sideMenuColor?: string | null
+}
+
+export default function Sidebar({ sideMenuColor }: SidebarProps) {
   const location = useLocation()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
@@ -103,7 +107,13 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="flex h-full w-64 flex-col bg-slate-900 text-white">
+    <div 
+      className={cn(
+        "w-64 text-white flex flex-col",
+        !sideMenuColor && "bg-slate-900"
+      )}
+      style={sideMenuColor ? { backgroundColor: sideMenuColor } : undefined}
+    >
       {/* Logo/Brand */}
       <div className="flex h-16 items-center justify-center border-b border-slate-700 px-4">
         <Link to="/" className="flex items-center space-x-2">

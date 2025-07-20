@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Palette, Upload, Image as ImageIcon, Save } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
@@ -18,6 +19,8 @@ export function BrandingSettings() {
   const [fontFamily, setFontFamily] = useState(tenant?.branding.fontFamily || mockCompanySettings.branding.fontFamily)
   const [logoUrl, setLogoUrl] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
   const [logoPreview, setLogoPreview] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
+  const [sideMenuColor, setSideMenuColor] = useState(tenant?.branding.sideMenuColor || mockCompanySettings.branding.sideMenuColor || '#1e293b')
+  const [useDefaultSideMenuColor, setUseDefaultSideMenuColor] = useState(!tenant?.branding.sideMenuColor)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const fontOptions = mockCompanySettings.branding.fontOptions
@@ -45,7 +48,8 @@ export function BrandingSettings() {
           primaryColor,
           secondaryColor,
           fontFamily,
-          logo: logoUrl
+          logo: logoUrl,
+          sideMenuColor: useDefaultSideMenuColor ? null : sideMenuColor
         }
       })
       
@@ -183,6 +187,40 @@ export function BrandingSettings() {
           </p>
         </div>
 
+        {/* Side Menu Color */}
+        <div>
+          <Label>Side Menu Color</Label>
+          <div className="space-y-3 mt-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="useDefaultSideMenuColor"
+                checked={useDefaultSideMenuColor}
+                onCheckedChange={(checked) => setUseDefaultSideMenuColor(!!checked)}
+              />
+              <Label htmlFor="useDefaultSideMenuColor">Use default theme color</Label>
+            </div>
+            
+            {!useDefaultSideMenuColor && (
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="color"
+                  value={sideMenuColor}
+                  onChange={(e) => setSideMenuColor(e.target.value)}
+                  className="w-16 h-10 shadow-sm"
+                />
+                <Input 
+                  value={sideMenuColor} 
+                  onChange={(e) => setSideMenuColor(e.target.value)}
+                  className="shadow-sm" 
+                />
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Customize the sidebar background color or use the default theme
+          </p>
+        </div>
+
         {/* Preview */}
         <div className="border rounded-lg p-6 mt-6">
           <h3 className="text-lg font-semibold mb-4">Preview</h3>
@@ -212,6 +250,12 @@ export function BrandingSettings() {
                 >
                   Secondary
                 </div>
+                <div 
+                  className="w-20 h-10 rounded-md flex items-center justify-center text-white text-xs"
+                  style={{ backgroundColor: useDefaultSideMenuColor ? '#1e293b' : sideMenuColor }}
+                >
+                  Sidebar
+                </div>
               </div>
             </div>
             
@@ -230,6 +274,23 @@ export function BrandingSettings() {
                 >
                   Secondary Button
                 </button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold">Sidebar Preview</h4>
+              <div className="flex">
+                <div 
+                  className="w-48 h-32 rounded-md p-3 text-white text-sm"
+                  style={{ backgroundColor: useDefaultSideMenuColor ? '#1e293b' : sideMenuColor }}
+                >
+                  <div className="space-y-2">
+                    <div className="font-medium">Dashboard</div>
+                    <div className="text-sm opacity-80">CRM & Sales</div>
+                    <div className="text-sm opacity-80">Inventory</div>
+                    <div className="text-sm opacity-80">Finance</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

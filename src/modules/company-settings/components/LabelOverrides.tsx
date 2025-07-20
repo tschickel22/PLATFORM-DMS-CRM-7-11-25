@@ -59,6 +59,7 @@ export function LabelOverrides() {
     try {
       await updateTenant({
         settings: {
+          ...tenant?.settings,
           labelOverrides,
           platformType
         }

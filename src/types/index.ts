@@ -49,6 +49,7 @@ export interface TenantBranding {
   primaryColor: string
   secondaryColor: string
   fontFamily: string
+  sideMenuColor?: string | null
 }
 
 export interface BusinessHours {
