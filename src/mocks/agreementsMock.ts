@@ -131,6 +131,7 @@ export const mockAgreements = {
   sampleCustomers: [
     { id: 'user-1', name: 'John Smith', email: 'john.smith@example.com' },
     { id: 'user-2', name: 'Maria Rodriguez', email: 'maria.rodriguez@example.com' },
+    { id: 'user-1', name: 'John Smith', email: 'john.smith@example.com' },
     { id: 'user-2', name: 'Maria Rodriguez', email: 'maria.rodriguez@example.com' },
     { id: 'user-3', name: 'David Johnson', email: 'david.johnson@example.com' }
   ],
@@ -194,10 +195,9 @@ Best regards,
       id: 'template-lease',
       name: 'Standard Lease Agreement',
       type: 'LEASE',
-      description: 'Standard vehicle lease agreement template'
+      description: 'Standard vehicle lease agreement template',
     },
     {
-      id: 'template-service',
       name: 'Service Agreement',
       type: 'SERVICE',
       description: 'Annual service agreement template'
