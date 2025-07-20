@@ -295,22 +295,6 @@ export function BrandingSettings() {
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Branding
-              </>
-            )}
-          </Button>
-        </div>
       </CardContent>
     </Card>
   )

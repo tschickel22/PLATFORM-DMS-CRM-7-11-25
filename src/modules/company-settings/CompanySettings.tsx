@@ -344,19 +344,6 @@ function CompanySettingsPage() {
               Configure your dealership settings and preferences
             </p>
           </div>
-          <Button onClick={handleSaveSettings} className="shadow-sm" disabled={loading}>
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
