@@ -1,32 +1,31 @@
-import React, { ReactNode, useState } from 'react'
-import Sidebar from './Sidebar'
-import Header from './Header'
+import React from 'react'
 import { useTenant } from '@/contexts/TenantContext'
+import Header from './Header'
+import Sidebar from './Sidebar'
 
 interface LayoutProps {
-  children: ReactNode
+  children: React.ReactNode
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
   const { tenant } = useTenant()
-  const sideMenuColor = tenant?.branding?.sideMenuColor
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Sidebar sideMenuColor={sideMenuColor} />
-
-        <main className="flex-1 overflow-y-auto bg-background py-6">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background">
+      <div className="flex h-screen">
+        {/* Sidebar */}
+        <Sidebar sideMenuColor={tenant?.branding?.sideMenuColor} />
+        
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <Header />
+          
+          {/* Page Content */}
+          <main className="flex-1 overflow-y-auto p-6">
             {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </div>
   )
