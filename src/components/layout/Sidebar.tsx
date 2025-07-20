@@ -146,12 +146,22 @@ export default function Sidebar() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center px-4 py-4 border-b">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-            <Building className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-lg font-semibold">Renter Insight</span>
+      <div className="flex items-center justify-center px-4 py-4 border-b">
+        <Link to="/" className="flex items-center">
+          {tenant?.branding?.logo ? (
+            <img 
+              src={tenant.branding.logo} 
+              alt={`${tenant.name} Logo`}
+              className="h-8 w-auto object-contain max-w-full"
+            />
+          ) : (
+            <div className="flex items-center space-x-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
+                <Building className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-semibold">{tenant?.name || 'CRM/DMS'}</span>
+            </div>
+          )}
         </Link>
       </div>
 
