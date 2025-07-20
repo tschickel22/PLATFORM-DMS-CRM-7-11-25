@@ -140,6 +140,10 @@ export default function Sidebar() {
         backgroundColor,
         color: textColor
       }}
+    >
+      {/* Header */}
+      <div className="flex items-center px-4 py-4 border-b">
+        <Link to="/" className="flex items-center space-x-2">
           <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
             <Building className="h-5 w-5 text-white" />
           </div>
@@ -149,11 +153,6 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-2 py-4">
-                    isActive(child.path) 
-                      ? "bg-primary/10 text-primary" 
-                      : useDefaultColor 
-                        ? "hover:bg-accent" 
-                        : "hover:bg-black/10"
         <Link
           to="/"
           className={cn(
