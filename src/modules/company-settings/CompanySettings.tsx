@@ -326,7 +326,7 @@ function CompanySettingsPage() {
   )
 
   return (
-    <div className="space-y-8">
+    <div key={tenant?.updatedAt?.toISOString()} className="space-y-8">
        {/* Custom Field Modal */}
        {showCustomFieldModal && (
          <CustomFieldModal
