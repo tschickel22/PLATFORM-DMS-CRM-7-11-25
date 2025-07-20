@@ -14,29 +14,30 @@ interface PipelineDashboardProps {
 }
 
 export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps) {
-  // Use mock data as fallback for pipeline stages
+  // Use mock data as fallback for pipeline stages and leads
   const pipelineStages = mockCrmProspecting.pipelines
   
   // Ensure leads is always an array to prevent errors
-  const safeLeads = leads || []
+  const safeLeads = leads || mockCrmProspecting.pipelineLeads || []
   
   const [stageData, setStageData] = useState<Array<{
     stage: string
+    count: number
     value: number
     conversionRate: number
   }>>([])
 
   useEffect(() => {
     // Calculate stage metrics
-    const data = mockCrmProspecting.pipelines.map(stage => {
-      const stageLeads = safeLeads.filter(lead => mockCrmProspecting.pipelines.includes(lead.customFields?.pipelineStage))
+    const data = pipelineStages.map(stage => {
+      const stageLeads = safeLeads.filter(lead => lead.customFields?.pipelineStage === stage)
       const value = stageLeads.reduce((sum, lead) => sum + (lead.customFields?.estimatedValue || 0), 0)
       
       return {
         stage,
         count: stageLeads.length,
         value,
-        conversionRate: Math.random() * 100 // Mock conversion rate
+        conversionRate: stageLeads.length > 0 ? (stageLeads.length / safeLeads.length) * 100 : 0
       }
     })
     
@@ -117,9 +118,9 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-5">
-            {mockCrmProspecting.pipelines.map((stage, index) => {
+            {pipelineStages.map((stage, index) => {
               const data = stageData.find(s => s.stage === stage)
-              const isLast = index === mockCrmProspecting.pipelines.length - 1
+              const isLast = index === pipelineStages.length - 1
               
               return (
                 <div key={stage} className="flex items-center">
@@ -169,7 +170,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
                 <div className="flex items-center space-x-3">
                   <div>
                     <p className="font-medium">{lead.name}</p>
-                    <p className="text-sm text-muted-foreground">{lead.email}</p>
+                      <p className="font-medium">{lead.firstName} {lead.lastName}</p>
                   </div>
                   <Badge variant="secondary">
                     {lead.customFields?.pipelineStage || 'New Inquiry'}
