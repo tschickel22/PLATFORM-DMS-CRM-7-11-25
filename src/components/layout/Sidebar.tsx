@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTenant } from '@/contexts/TenantContext'
 import { isColorLight } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useTenant } from '@/contexts/TenantContext'
 import { 
   Users, 
   Package, 
@@ -91,6 +92,7 @@ const navigationItems = [
 ]
 
 export default function Sidebar() {
+  const { tenant } = useTenant()
   const { tenant } = useTenant()
   const location = useLocation()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
@@ -229,8 +231,18 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="border-t border-slate-700 p-4">
         <div className="text-xs text-slate-400">
-          <div>CRM/DMS</div>
-          <div>Version 1.0.0</div>
+          {tenant?.branding?.logo ? (
+            <img 
+              src={tenant.branding.logo} 
+              alt={tenant.name || 'Company Logo'} 
+              className="h-10 max-w-full object-contain"
+            />
+          ) : (
+            <>
+              <Building className="h-8 w-8 text-primary mr-3" />
+              <span className="text-xl font-bold text-foreground">Renter Insight</span>
+            </>
+          )}
         </div>
       </div>
     </div>
