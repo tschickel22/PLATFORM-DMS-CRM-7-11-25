@@ -1,243 +1,250 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { isColorLight } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import {
-  Users,
-  Package,
-  FileText,
-  DollarSign,
-  Settings,
-  Building,
+import { useTenant } from '@/contexts/TenantContext'
+import { 
+  Users, 
+  Package, 
+  FileText, 
+  DollarSign, 
+  Settings, 
+  ChevronDown, 
+  ChevronRight,
+  BarChart3,
   Wrench,
   Truck,
   ClipboardCheck,
   Percent,
   Globe,
+  FileCheck,
   Receipt,
-  BarChart3,
-  CreditCard,
-  ChevronDown,
-  ChevronRight,
-  Menu,
-  X
+  Building,
+  Shield
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: BarChart3 },
-  { name: 'CRM Prospecting', href: '/crm', icon: Users },
-  { name: 'Inventory Management', href: '/inventory', icon: Package },
-  { name: 'CRM Sales Deal', href: '/deals', icon: DollarSign },
-  { name: 'Finance', href: '/finance', icon: CreditCard },
-  { name: 'Quote Builder', href: '/quotes', icon: FileText },
-  { name: 'Agreement Vault', href: '/agreements', icon: FileText },
-  { name: 'Service Ops', href: '/service', icon: Wrench },
-  { name: 'PDI Checklist', href: '/pdi', icon: ClipboardCheck },
-  { name: 'Delivery Tracker', href: '/delivery', icon: Truck },
-  { name: 'Commission Engine', href: '/commissions', icon: Percent },
-  { name: 'Client Portal', href: '/portal', icon: Globe },
-  { name: 'Invoice & Payments', href: '/invoices', icon: Receipt },
-  { name: 'Client Applications', href: '/client-applications', icon: CreditCard },
-  { name: 'Reporting Suite', href: '/reports', icon: BarChart3 },
-]
-
-const adminNavigation = [
-  { name: 'Company Settings', href: '/settings', icon: Settings },
-  { name: 'Platform Admin', href: '/admin', icon: Building },
+const navigationItems = [
+  {
+    id: 'crm-sales',
+    title: 'CRM & Sales',
+    icon: Users,
+    hasSubmenu: true,
+    items: [
+      { title: 'Prospecting', href: '/crm', icon: Users },
+      { title: 'Sales Deals', href: '/deals', icon: FileText },
+      { title: 'Quote Builder', href: '/quotes', icon: FileText }
+    ]
+  },
+  {
+    id: 'inventory-operations',
+    title: 'Inventory & Operations',
+    icon: Package,
+    hasSubmenu: true,
+    items: [
+      { title: 'Inventory', href: '/inventory', icon: Package },
+      { title: 'PDI Checklist', href: '/pdi', icon: ClipboardCheck },
+      { title: 'Delivery Tracker', href: '/delivery', icon: Truck }
+    ]
+  },
+  {
+    id: 'finance-agreements',
+    title: 'Finance & Agreements',
+    icon: DollarSign,
+    hasSubmenu: true,
+    items: [
+      { title: 'Finance', href: '/finance', icon: DollarSign },
+      { title: 'Client Applications', href: '/client-applications', icon: FileCheck },
+      { title: 'Agreements', href: '/agreements', icon: FileCheck },
+      { title: 'Invoices', href: '/invoices', icon: Receipt }
+    ]
+  },
+  {
+    id: 'service-support',
+    title: 'Service & Support',
+    icon: Wrench,
+    hasSubmenu: true,
+    items: [
+      { title: 'Service Ops', href: '/service', icon: Wrench },
+      { title: 'Client Portal', href: '/portal', icon: Globe }
+    ]
+  },
+  {
+    id: 'management',
+    title: 'Management',
+    icon: BarChart3,
+    hasSubmenu: true,
+    items: [
+      { title: 'Commission Engine', href: '/commissions', icon: Percent },
+      { title: 'Reporting Suite', href: '/reports', icon: BarChart3 }
+    ]
+  },
+  {
+    id: 'administration',
+    title: 'Administration',
+    icon: Settings,
+    hasSubmenu: true,
+    items: [
+      { title: 'Company Settings', href: '/settings', icon: Building },
+      { title: 'Platform Admin', href: '/admin', icon: Shield }
+    ]
+  }
 ]
 
 export default function Sidebar() {
-  const { user, logout } = useAuth()
+  const { tenant } = useTenant()
   const { tenant } = useTenant()
   const location = useLocation()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }))
+  // Determine sidebar colors
+  const useDefaultColor = tenant?.branding?.sideMenuColor === null || !tenant?.branding?.sideMenuColor
+  const backgroundColor = useDefaultColor 
+    ? 'var(--background)' 
+    : tenant?.branding?.sideMenuColor
+  
+  const textColor = useDefaultColor
+    ? 'var(--foreground)'
+    : tenant?.branding?.sideMenuColor && isColorLight(tenant.branding.sideMenuColor)
+      ? 'var(--foreground)'
+      : 'white'
+
+  // Determine if we're using a light background for menu item text colors
+  const isLightBackground = useDefaultColor || 
+    (tenant?.branding.sideMenuColor && isColorLight(tenant.branding.sideMenuColor))
+
+  const toggleSection = (sectionId: string) => {
+    // If the clicked section is already expanded, collapse it
+    // Otherwise, expand the clicked section (this automatically collapses any other expanded section)
+    setExpandedSection(expandedSection === sectionId ? null : sectionId)
+  }
+
+  // Get sidebar background color from tenant branding
+  const getSidebarStyle = () => {
+    const branding = tenant?.branding
+    if (!branding) return {}
+
+    // If useDefaultSideMenuColor is true or sideMenuColor is null, use default
+    if (branding.sideMenuColor === null || branding.sideMenuColor === undefined) {
+      return {} // Use default CSS classes
+    }
+
+    // Use custom side menu color
+    return {
+      backgroundColor: branding.sideMenuColor
+    }
   }
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return location.pathname === '/'
-    }
-    return location.pathname.startsWith(href)
+    return location.pathname === href || location.pathname.startsWith(href + '/')
   }
 
-  // Get the side menu color from tenant branding
-  const sideMenuColor = tenant?.branding?.sideMenuColor
-  const useDefaultColor = !sideMenuColor
-  
-  // Determine text color based on background
-  const textColor = useDefaultColor 
-    ? 'text-foreground' 
-    : sideMenuColor && isColorLight(sideMenuColor)
-      ? 'text-gray-900'
-      : 'text-white'
-
-  const sidebarStyle = useDefaultColor 
-    ? {} 
-    : { backgroundColor: sideMenuColor }
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="flex items-center px-4 py-4 border-b" style={sidebarStyle}>
-        {tenant?.branding?.logo ? (
-          <img 
-            src={tenant.branding.logo} 
-            alt={tenant.name || 'Company Logo'} 
-            className="h-10 max-w-full object-contain"
-          />
-        ) : (
-          <>
-            <Building className={`h-8 w-8 ${textColor}`} />
-            <span className={`ml-2 text-xl font-bold ${textColor}`}>
-              Renter Insight
-            </span>
-          </>
-        )}
+  return (
+    <div 
+      className="w-64 h-full border-r flex flex-col" 
+      style={{ 
+        backgroundColor,
+        color: textColor
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center px-4 py-4 border-b">
+        <Link to="/" className="flex items-center space-x-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
+            <Building className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-lg font-semibold">Renter Insight</span>
+        </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto" style={sidebarStyle}>
-        {navigation.map((item) => {
-          const Icon = item.icon
-          const active = isActive(item.href)
-          
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                active
-                  ? useDefaultColor
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-white/20 text-white'
-                  : useDefaultColor
-                    ? 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    : `${textColor} hover:bg-white/10`
-              )}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-              {item.name}
-            </Link>
-          )
-        })}
-
-        {/* Admin Section */}
-        <div className="pt-4">
-          <button
-            onClick={() => toggleSection('admin')}
-            className={cn(
-              'group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors',
-              useDefaultColor
-                ? 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                : `${textColor} hover:bg-white/10`
-            )}
-          >
-            {expandedSections.admin ? (
-              <ChevronDown className="mr-3 h-5 w-5 flex-shrink-0" />
-            ) : (
-              <ChevronRight className="mr-3 h-5 w-5 flex-shrink-0" />
-            )}
-            Administration
-          </button>
-          
-          {expandedSections.admin && (
-            <div className="ml-6 space-y-1">
-              {adminNavigation.map((item) => {
-                const Icon = item.icon
-                const active = isActive(item.href)
-                
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                      active
-                        ? useDefaultColor
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-white/20 text-white'
-                        : useDefaultColor
-                          ? 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                          : `${textColor} hover:bg-white/10`
-                    )}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    {item.name}
-                  </Link>
-                )
-              })}
-            </div>
+      <nav className="flex-1 space-y-1 px-2 py-4">
+        <Link
+          to="/"
+          className={cn(
+            'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+            isActive('/') && location.pathname === '/'
+              ? 'bg-slate-800 text-white'
+              : isLightBackground 
+                ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
           )}
-        </div>
+        >
+          <BarChart3 className="mr-3 h-5 w-5" />
+          Dashboard
+        </Link>
+
+        {/* Navigation Items with Accordion Behavior */}
+        {navigationItems.map((item) => (
+          <div key={item.id}>
+            {/* Main Section Header */}
+            <button
+              onClick={() => toggleSection(item.id)}
+              className={cn(
+                'group flex w-full items-center justify-between px-2 py-2 text-left text-sm font-medium rounded-md transition-colors',
+                expandedSection === item.id
+                  ? 'bg-slate-800 text-white'
+                  : isLightBackground 
+                    ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+              )}
+            >
+              <div className="flex items-center">
+                <item.icon className="mr-3 h-5 w-5" />
+                {item.title}
+              </div>
+              {item.hasSubmenu && (
+                expandedSection === item.id ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )
+              )}
+            </button>
+
+            {/* Submenu Items - Only show if this section is expanded */}
+            {item.hasSubmenu && expandedSection === item.id && (
+              <div className="ml-4 mt-1 space-y-1">
+                {item.items?.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    to={subItem.href}
+                    className={cn(
+                      'group flex items-center px-2 py-2 text-sm rounded-md transition-colors',
+                      isActive(subItem.href)
+                        ? 'bg-slate-700 text-white'
+                        : isLightBackground 
+                          ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                          : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    )}
+                  >
+                    <subItem.icon className="mr-3 h-4 w-4" />
+                    {subItem.title}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </nav>
 
-      {/* User Info */}
-      <div className="border-t p-4" style={sidebarStyle}>
-        <div className="flex items-center">
-          <div className={`flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center ${textColor}`}>
-            {user?.name?.charAt(0) || 'U'}
-          </div>
-          <div className="ml-3 flex-1 min-w-0">
-            <p className={`text-sm font-medium truncate ${textColor}`}>
-              {user?.name || 'User'}
-            </p>
-            <p className={`text-xs truncate ${useDefaultColor ? 'text-muted-foreground' : 'text-white/70'}`}>
-              {user?.email}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className={useDefaultColor ? '' : 'text-white hover:bg-white/10'}
-          >
-            Sign out
-          </Button>
+      {/* Footer */}
+      <div className="border-t border-slate-700 p-4">
+        <div className="text-xs text-slate-400">
+          {tenant?.branding?.logo ? (
+            <img 
+              src={tenant.branding.logo} 
+              alt={tenant.name || 'Company Logo'} 
+              className="h-10 max-w-full object-contain"
+            />
+          ) : (
+            <>
+              <Building className="h-8 w-8 text-primary mr-3" />
+              <span className="text-xl font-bold text-foreground">Renter Insight</span>
+            </>
+          )}
         </div>
       </div>
     </div>
-  )
-
-  return (
-    <>
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-      </div>
-
-      {/* Mobile sidebar */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="fixed inset-y-0 left-0 w-64 bg-background border-r shadow-lg">
-            <SidebarContent />
-          </div>
-        </div>
-      )}
-
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-background border-r">
-        <SidebarContent />
-      </div>
-    </>
   )
 }
