@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 export function BrandingSettings() {
-  const { tenant, updateTenantSettings } = useTenant()
+  const { tenant, updateTenantInfo } = useTenant()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [primaryColor, setPrimaryColor] = useState(tenant?.branding.primaryColor || mockCompanySettings.branding.primaryColor)
@@ -39,8 +39,9 @@ export function BrandingSettings() {
   const handleSave = async () => {
     setLoading(true)
     try {
-      await updateTenantSettings({
+      await updateTenantInfo({
         branding: {
+          ...tenant?.branding,
           primaryColor,
           secondaryColor,
           fontFamily,

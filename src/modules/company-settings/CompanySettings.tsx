@@ -17,7 +17,7 @@ import { IntegrationSettings } from './components/IntegrationSettings'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 function CompanySettingsPage() {
-  const { tenant, customFields, updateTenantSettings, addCustomField, updateCustomField, deleteCustomField } = useTenant()
+  const { tenant, customFields, updateTenantSettings, updateTenantInfo, addCustomField, updateCustomField, deleteCustomField } = useTenant()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('general')
   const [showCustomFieldModal, setShowCustomFieldModal] = useState(false)
@@ -55,30 +55,18 @@ function CompanySettingsPage() {
   const handleSaveSettings = async () => {
     setLoading(true)
     try {
-      // Update tenant name and domain
-      const updatedTenant = {
-        ...tenant,
+      // Update tenant info (name and domain)
+      await updateTenantInfo({
         name: companyName,
-        domain: companyDomain,
-        updatedAt: new Date()
-      }
+        domain: companyDomain
+      })
       
-      // Update tenant settings
+      // Update tenant settings (timezone and currency)
       await updateTenantSettings({
         timezone,
         currency
       })
-      
-      // Update the tenant object directly for name and domain
-      // Note: In a real app, this would be handled by a more comprehensive update function
-      if (tenant) {
-        Object.assign(tenant, {
-          name: companyName,
-          domain: companyDomain,
-          updatedAt: new Date()
-        })
-      }
-      
+
       toast({
         title: 'Settings Saved',
         description: 'Company settings have been updated successfully.',

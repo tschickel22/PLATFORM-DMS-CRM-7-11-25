@@ -7,6 +7,7 @@ interface TenantContextType {
   customFields: CustomField[]
   getCustomFields: (module: string, section?: string) => CustomField[]
   updateTenantSettings: (settings: Partial<Tenant['settings']>) => Promise<void>
+  updateTenantInfo: (info: Partial<Pick<Tenant, 'name' | 'domain' | 'branding'>>) => Promise<void>
   addCustomField: (field: Omit<CustomField, 'id'>) => Promise<void>
   updateCustomField: (id: string, field: Partial<CustomField>) => Promise<void>
   deleteCustomField: (id: string) => Promise<void>
@@ -126,6 +127,17 @@ export function TenantProvider({ children }: TenantProviderProps) {
     setTenant(updatedTenant)
   }
 
+  const updateTenantInfo = async (info: Partial<Pick<Tenant, 'name' | 'domain' | 'branding'>>) => {
+    if (!tenant) return
+    
+    const updatedTenant = {
+      ...tenant,
+      ...info,
+      updatedAt: new Date()
+    }
+    
+    setTenant(updatedTenant)
+  }
   const addCustomField = async (field: Omit<CustomField, 'id'>) => {
     const newField: CustomField = {
       ...field,
@@ -150,6 +162,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     customFields,
     getCustomFields,
     updateTenantSettings,
+    updateTenantInfo,
     addCustomField,
     updateCustomField,
     deleteCustomField
