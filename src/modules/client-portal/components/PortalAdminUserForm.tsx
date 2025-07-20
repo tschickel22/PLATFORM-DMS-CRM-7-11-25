@@ -9,13 +9,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { X, Save, Mail, User, Phone } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
-interface PortalUserFormProps {
+interface PortalAdminUserFormProps {
   user?: any
   onSave: (userData: any) => void
   onCancel: () => void
 }
 
-export function PortalAdminUserForm({ user, onSave, onCancel }: PortalUserFormProps) {
+export function PortalAdminUserForm({ user, onSave, onCancel }: PortalAdminUserFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
