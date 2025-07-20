@@ -352,6 +352,7 @@ export default function ClientPortal() {
             <Route path="/applications/*" element={
               <div className="text-center py-12">
                 <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          </Routes>
                 <h3 className="text-lg font-semibold mb-2">Finance Applications</h3>
                 <p className="text-muted-foreground">
                   Manage your finance applications (Coming in Phase 4)
