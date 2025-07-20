@@ -45,6 +45,7 @@ export function PortalProvider({ children, fallbackUser }: PortalProviderProps) 
 
   const isProxying = !!proxiedClient
 
+  const getDisplayName = (): string => {
     if (proxiedClient) {
       return proxiedClient.name
     }
