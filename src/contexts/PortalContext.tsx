@@ -36,8 +36,6 @@ interface PortalProviderProps {
 
 export function PortalProvider({ children, fallbackUser }: PortalProviderProps) {
   const [searchParams] = useSearchParams()
-  
-  // Extract impersonate client ID from URL parameters
   const impersonateIdParam = searchParams.get('impersonateClientId')
   
   // Find the proxied client from mock data
@@ -47,7 +45,6 @@ export function PortalProvider({ children, fallbackUser }: PortalProviderProps) 
 
   const isProxying = !!proxiedClient
 
-  const getDisplayName = (): string => {
     if (proxiedClient) {
       return proxiedClient.name
     }
