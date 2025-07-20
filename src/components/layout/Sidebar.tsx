@@ -124,6 +124,7 @@ export default function Sidebar({ sideMenuColor }: SidebarProps) {
         </Link>
       </div>
 
+      </div>
       </nav>
 
       {/* Footer */}
