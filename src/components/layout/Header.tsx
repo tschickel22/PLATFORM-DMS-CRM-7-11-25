@@ -28,6 +28,9 @@ export default function Header() {
             <p className="text-sm text-gray-500">
               {tenant?.domain || 'CRM/DMS'}
             </p>
+          </div>
+        </div>
+        
         {/* Right side - Notifications and User Menu */}
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm">
