@@ -1,10 +1,9 @@
 export const mockCompanySettings = {
   branding: {
-    logoUrl: 'https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
+    logoUrl: '/mock/logo.png',
     primaryColor: '#3b82f6',
     secondaryColor: '#64748b',
     fontFamily: 'Inter',
-    sideMenuColor: '#1e293b',
     fontOptions: [
       { value: 'Inter', label: 'Inter' },
       { value: 'Roboto', label: 'Roboto' },

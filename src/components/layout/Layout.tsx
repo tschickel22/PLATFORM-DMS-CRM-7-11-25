@@ -1,7 +1,6 @@
 import React, { ReactNode, useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
-import { useTenant } from '@/contexts/TenantContext'
 
 interface LayoutProps {
   children: ReactNode
@@ -10,9 +9,6 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const { tenant } = useTenant()
-  const sideMenuColor = tenant?.branding?.sideMenuColor
-
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
@@ -20,7 +16,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Sidebar sideMenuColor={sideMenuColor} />
+        <Header onMenuButtonClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto bg-background py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
