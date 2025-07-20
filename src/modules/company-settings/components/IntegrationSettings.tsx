@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 export function IntegrationSettings() {
-  const { tenant, updateTenantSettings } = useTenant()
+  const { tenant, updateTenant } = useTenant()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   
@@ -95,18 +95,20 @@ export function IntegrationSettings() {
   const handleSave = async () => {
     setLoading(true)
     try {
-      await updateTenantSettings({
-        emailProvider,
-        emailApiKey,
-        emailFromAddress,
-        emailFromName,
-        smsProvider,
-        smsApiKey,
-        smsFromNumber,
-        webhooks,
-        apiEnabled,
-        apiKey,
-        allowedOrigins
+      await updateTenant({
+        settings: {
+          emailProvider,
+          emailApiKey,
+          emailFromAddress,
+          emailFromName,
+          smsProvider,
+          smsApiKey,
+          smsFromNumber,
+          webhooks,
+          apiEnabled,
+          apiKey,
+          allowedOrigins
+        }
       })
       
       toast({

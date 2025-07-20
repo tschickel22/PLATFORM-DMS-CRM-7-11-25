@@ -32,7 +32,7 @@ interface SMSTemplate {
 }
 
 export function NotificationTemplates() {
-  const { tenant, updateTenantSettings } = useTenant()
+  const { tenant, updateTenant } = useTenant()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('email')
@@ -239,9 +239,11 @@ export function NotificationTemplates() {
   const handleSave = async () => {
     setLoading(true)
     try {
-      await updateTenantSettings({
-        emailTemplates,
-        smsTemplates
+      await updateTenant({
+        settings: {
+          emailTemplates,
+          smsTemplates
+        }
       })
       
       toast({

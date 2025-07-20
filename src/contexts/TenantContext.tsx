@@ -5,8 +5,7 @@ import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
 interface TenantContextType {
   tenant: Tenant | null
   getCustomFields: (module: string, section?: string) => CustomField[]
-  updateTenantSettings: (settings: Partial<Tenant['settings']>) => Promise<void>
-  updateTenantInfo: (info: Partial<Pick<Tenant, 'name' | 'domain' | 'branding'>>) => Promise<void>
+  updateTenant: (updates: Partial<Tenant>) => Promise<void>
   addCustomField: (field: Omit<CustomField, 'id'>) => Promise<void>
   updateCustomField: (id: string, field: Partial<CustomField>) => Promise<void>
   deleteCustomField: (id: string) => Promise<void>
@@ -99,24 +98,20 @@ export function TenantProvider({ children }: TenantProviderProps) {
     ) || []
   }
 
-  const updateTenantSettings = async (settings: Partial<Tenant['settings']>) => {
+  const updateTenant = async (updates: Partial<Tenant>) => {
     if (!tenant) return
     
-    const updatedTenant = {
+    // Deep merge for nested objects like settings and branding
+    const updatedTenant: Tenant = {
       ...tenant,
-      settings: { ...tenant.settings, ...settings },
-      updatedAt: new Date()
-    }
-    
-    setTenant(updatedTenant)
-  }
-
-  const updateTenantInfo = async (info: Partial<Pick<Tenant, 'name' | 'domain' | 'branding'>>) => {
-    if (!tenant) return
-    
-    const updatedTenant = {
-      ...tenant,
-      ...info,
+      ...updates,
+      settings: updates.settings 
+        ? { ...tenant.settings, ...updates.settings }
+        : tenant.settings,
+      branding: updates.branding
+        ? { ...tenant.branding, ...updates.branding }
+        : tenant.branding,
+      customFields: updates.customFields || tenant.customFields,
       updatedAt: new Date()
     }
     
@@ -172,8 +167,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const value = {
     tenant,
     getCustomFields,
-    updateTenantSettings,
-    updateTenantInfo,
+    updateTenant,
     addCustomField,
     updateCustomField,
     deleteCustomField

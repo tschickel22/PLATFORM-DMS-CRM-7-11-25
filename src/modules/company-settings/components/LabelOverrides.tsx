@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 export function LabelOverrides() {
-  const { tenant, updateTenantSettings } = useTenant()
+  const { tenant, updateTenant } = useTenant()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
@@ -57,9 +57,11 @@ export function LabelOverrides() {
   const handleSave = async () => {
     setLoading(true)
     try {
-      await updateTenantSettings({
-        labelOverrides,
-        platformType
+      await updateTenant({
+        settings: {
+          labelOverrides,
+          platformType
+        }
       })
       
       toast({
