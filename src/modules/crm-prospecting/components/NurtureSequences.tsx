@@ -15,13 +15,14 @@ interface NurtureSequencesProps {
 }
 
 export const NurtureSequences = ({
-  // Use mock data as fallback for sequence options
-  leads, 
+  leads,
   onSequenceStart, 
   onSequencePause, 
   onSequenceReset
 }: NurtureSequencesProps) => {
+  // Use mock data as fallback for sequence options and safe leads array
   const sequences = mockCrmProspecting.sequences
+  const safeLeads = leads || []
   const [selectedSequence, setSelectedSequence] = useState('')
 
   const getSequenceIcon = (type: string) => {
@@ -63,7 +64,7 @@ export const NurtureSequences = ({
       </div>
 
       <div className="grid gap-4">
-        {leads.map(lead => {
+        {safeLeads.length > 0 ? safeLeads.map(lead => {
           const Icon = getSequenceIcon(lead.sequenceType || 'email')
           
           return (
@@ -124,7 +125,16 @@ export const NurtureSequences = ({
               </CardContent>
             </Card>
           )
-        })}
+        }) : (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No leads available for nurturing sequences</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Leads will appear here when they are added to the system
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
