@@ -1,90 +1,36 @@
 import React, { useState } from 'react'
-import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
-import { ClientAgreements } from './components/ClientAgreements'
-import { PortalApplicationView } from '../finance-application/components/PortalApplicationView'
-import { mockAgreements } from '@/mocks/agreementsMock'
+import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useTenant } from '@/contexts/TenantContext'
-import { useAuth } from '@/contexts/AuthContext'
 import { 
+  Home, 
   FileText, 
   CreditCard, 
   User, 
   Settings, 
-  LogOut, 
-  Menu, 
-  X,
-  Home,
-  Phone,
-  Mail,
-  MapPin
+  Bell,
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useTenant } from '@/contexts/TenantContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
 
-// Placeholder components for client features
-function ClientDashboard() {
-  const { tenant } = useTenant()
-  const { user } = useAuth()
-  
+// Mock components for routes that aren't implemented yet
+function ClientProfile() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Welcome back!</h1>
-        <p className="text-muted-foreground">
-          Here's an overview of your account with {tenant?.name}
-        </p>
+        <h1 className="text-2xl font-bold">Profile</h1>
+        <p className="text-muted-foreground">Manage your profile information</p>
       </div>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Active Agreements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">1 pending signature</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Finance Applications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1</div>
-            <p className="text-xs text-muted-foreground">Under review</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Service Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">All up to date</p>
-          </CardContent>
-        </Card>
-      </div>
-      
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 text-sm">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Finance application submitted for review</span>
-              <span className="text-muted-foreground ml-auto">2 days ago</span>
-            </div>
-            <div className="flex items-center space-x-3 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Purchase agreement signed</span>
-              <span className="text-muted-foreground ml-auto">1 week ago</span>
-            </div>
+        <CardContent className="pt-6">
+          <div className="text-center py-12 text-muted-foreground">
+            <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>Profile management coming soon</p>
           </div>
         </CardContent>
       </Card>
@@ -92,36 +38,38 @@ function ClientDashboard() {
   )
 }
 
-function ClientProfile() {
-  const { user } = useAuth()
-  
+function ClientSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Profile Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account information and preferences
-        </p>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">Manage your account settings</p>
       </div>
-      
       <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium">Name</label>
-              <p className="text-sm text-muted-foreground">{user?.name || 'Not provided'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Email</label>
-              <p className="text-sm text-muted-foreground">{user?.email || 'Not provided'}</p>
-            </div>
+        <CardContent className="pt-6">
+          <div className="text-center py-12 text-muted-foreground">
+            <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>Account settings coming soon</p>
           </div>
-          <Button variant="outline" className="w-full sm:w-auto">
-            Edit Profile
-          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function ClientAgreements() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Agreements</h1>
+        <p className="text-muted-foreground">View and manage your agreements</p>
+      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>Agreement management coming soon</p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -131,305 +79,264 @@ function ClientProfile() {
 export default function ClientPortal() {
   const { tenant } = useTenant()
   const { user, logout } = useAuth()
-  const location = useLocation()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Get portal branding from tenant context
-  const portalName = tenant?.branding?.portalName || 'Customer Portal'
-  const portalLogo = tenant?.branding?.portalLogo || tenant?.branding?.logo
-  const primaryColor = tenant?.branding?.primaryColor || '#3b82f6'
-
-  // Navigation items
   const navigation = [
-    {
-      name: 'Dashboard',
-      href: '/portalclient',
-      icon: Home,
-      current: location.pathname === '/portalclient'
-    },
-    {
-      name: 'Agreements',
-      href: '/portalclient/agreements',
-      icon: FileText,
-      current: location.pathname.startsWith('/portalclient/agreements')
-    },
-    {
-      name: 'Finance Applications',
-      href: '/portalclient/applications',
-      icon: CreditCard,
-      current: location.pathname.startsWith('/portalclient/applications')
-    },
-    {
-      name: 'Profile',
-      href: '/portalclient/profile',
-      icon: User,
-      current: location.pathname.startsWith('/portalclient/profile')
-    }
+    { name: 'Dashboard', href: '/portalclient', icon: Home },
+    { name: 'Agreements', href: '/portalclient/agreements', icon: FileText },
+    { name: 'Applications', href: '/portalclient/applications', icon: CreditCard },
+    { name: 'Profile', href: '/portalclient/profile', icon: User },
+    { name: 'Settings', href: '/portalclient/settings', icon: Settings },
   ]
 
-  const handleLogout = () => {
-    logout()
-    // In a real app, this might redirect to a different login page for the portal
-  }
+  const portalName = tenant?.branding?.portalName || 'Customer Portal'
+  const portalLogo = tenant?.branding?.portalLogo || tenant?.branding?.logo
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+    <div className="min-h-screen bg-background">
+      <div className="flex h-screen">
+        {/* Sidebar */}
+        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+          <div className="flex h-full flex-col">
+            {/* Logo */}
+            <div className="flex h-16 shrink-0 items-center px-6 border-b">
+              <div className="flex items-center space-x-3">
+                {portalLogo && (
+                  <img 
+                    src={portalLogo} 
+                    alt="Portal Logo" 
+                    className="h-8 w-8 object-contain"
+                  />
+                )}
+                <span className="text-lg font-semibold">{portalName}</span>
+              </div>
+            </div>
 
-      {/* Mobile sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:hidden",
-        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-3">
-            {portalLogo && (
-              <img 
-                src={portalLogo} 
-                alt={portalName}
-                className="w-8 h-8 object-contain"
-              />
-            )}
-            <h1 className="text-lg font-semibold">{portalName}</h1>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        <nav className="p-4 space-y-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                item.current
-                  ? "text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-100"
-              )}
-              style={item.current ? { backgroundColor: primaryColor } : {}}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
-        </nav>
-        
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="h-4 w-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.name || 'User'}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-      </div>
+            {/* Navigation */}
+            <nav className="flex-1 space-y-1 px-4 py-6">
+              {navigation.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="group flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <item.icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </a>
+              ))}
+            </nav>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-64 lg:bg-white lg:shadow-sm">
-        <div className="flex items-center space-x-3 p-6 border-b">
-          {portalLogo && (
-            <img 
-              src={portalLogo} 
-              alt={portalName}
-              className="w-10 h-10 object-contain"
-            />
-          )}
-          <h1 className="text-xl font-semibold">{portalName}</h1>
-        </div>
-        
-        <nav className="p-6 space-y-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                item.current
-                  ? "text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-100"
-              )}
-              style={item.current ? { backgroundColor: primaryColor } : {}}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
-        </nav>
-        
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t bg-gray-50">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.name || 'User'}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top header for mobile */}
-        <div className="sticky top-0 z-40 bg-white shadow-sm border-b lg:hidden">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center space-x-3">
-              <Button 
-                variant="ghost" 
+            {/* User section */}
+            <div className="border-t p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
                 size="sm"
-                onClick={() => setMobileMenuOpen(true)}
+                className="w-full justify-start"
+                onClick={logout}
               >
-                <Menu className="h-5 w-5" />
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
               </Button>
-              {portalLogo && (
-                <img 
-                  src={portalLogo} 
-                  alt={portalName}
-                  className="w-6 h-6 object-contain"
-                />
-              )}
-              <h1 className="text-lg font-semibold">{portalName}</h1>
             </div>
           </div>
         </div>
 
-        {/* Page content */}
-        <main className="p-4 lg:p-8">
-          <Routes>
-            <Route path="/" element={<ClientDashboard />} />
-            <Route path="/applications/*" element={<PortalApplicationView />} />
-            <Route path="/profile" element={<ClientProfile />} />
-            <Route path="*" element={<Navigate to="/portalclient" replace />} />
-          </Routes>
-        </main>
+        {/* Main content */}
+        <div className="flex-1 flex flex-col lg:pl-0">
+          {/* Mobile header */}
+          <div className="lg:hidden flex h-16 items-center justify-between px-4 border-b bg-card">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            <span className="text-lg font-semibold">{portalName}</span>
+            <div className="w-10" /> {/* Spacer */}
+          </div>
 
-        {/* Footer */}
-        <footer className="bg-white border-t mt-12">
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <div className="flex items-center space-x-2 mb-4">
-                  {portalLogo && (
-                    <img 
-                      src={portalLogo} 
-                      alt={portalName}
-                      className="w-6 h-6 object-contain"
-                    />
-                  )}
-                  <h3 className="font-semibold">{tenant?.name}</h3>
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto p-6">
+            <Routes>
+              <Route path="/" element={
+                <div className="space-y-6">
+                  {/* Welcome Section */}
+                  <div className="space-y-2">
+                    <h1 className="text-2xl font-bold">Welcome back, {user?.name?.split(' ')[0]}!</h1>
+                    <p className="text-muted-foreground">
+                      Here's what's happening with your account
+                    </p>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Agreements</CardTitle>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">2</div>
+                        <p className="text-xs text-muted-foreground">
+                          1 pending signature
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Applications</CardTitle>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">1</div>
+                        <p className="text-xs text-muted-foreground">
+                          Under review
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Messages</CardTitle>
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">3</div>
+                        <p className="text-xs text-muted-foreground">
+                          2 unread
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Recent Activity */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent Activity</CardTitle>
+                      <CardDescription>
+                        Your latest account activity
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">Finance application submitted</p>
+                            <p className="text-xs text-muted-foreground">2 hours ago</p>
+                          </div>
+                          <Badge variant="secondary">Pending</Badge>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">Service agreement signed</p>
+                            <p className="text-xs text-muted-foreground">1 day ago</p>
+                          </div>
+                          <Badge variant="outline">Completed</Badge>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">Purchase agreement created</p>
+                            <p className="text-xs text-muted-foreground">3 days ago</p>
+                          </div>
+                          <Badge variant="secondary">Action Required</Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Actions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Quick Actions</CardTitle>
+                      <CardDescription>
+                        Common tasks and shortcuts
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <Button variant="outline" className="justify-start h-auto p-4">
+                          <div className="text-left">
+                            <div className="font-medium">View Agreements</div>
+                            <div className="text-sm text-muted-foreground">
+                              Review and sign pending agreements
+                            </div>
+                          </div>
+                        </Button>
+                        <Button variant="outline" className="justify-start h-auto p-4">
+                          <div className="text-left">
+                            <div className="font-medium">Check Application Status</div>
+                            <div className="text-sm text-muted-foreground">
+                              View your finance application progress
+                            </div>
+                          </div>
+                        </Button>
+                        <Button variant="outline" className="justify-start h-auto p-4">
+                          <div className="text-left">
+                            <div className="font-medium">Update Profile</div>
+                            <div className="text-sm text-muted-foreground">
+                              Keep your information current
+                            </div>
+                          </div>
+                        </Button>
+                        <Button variant="outline" className="justify-start h-auto p-4">
+                          <div className="text-left">
+                            <div className="font-medium">Contact Support</div>
+                            <div className="text-sm text-muted-foreground">
+                              Get help with your account
+                            </div>
+                          </div>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Your trusted partner for quality homes and RVs.
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-3">Quick Links</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><Link to="/portalclient" className="text-muted-foreground hover:text-foreground">Dashboard</Link></li>
-                  <li><Link to="/portalclient/agreements" className="text-muted-foreground hover:text-foreground">Agreements</Link></li>
-                  <li><Link to="/portalclient/applications" className="text-muted-foreground hover:text-foreground">Applications</Link></li>
-                </ul>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-3">Support</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">Help Center</a></li>
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">Contact Support</a></li>
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">FAQ</a></li>
-                </ul>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-3">Contact</h4>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-2">
-                    <Phone className="h-4 w-4" />
-                    <span>(555) 123-4567</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4" />
-                    <span>support@company.com</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>123 Main St, City, ST</span>
-                  </div>
-                </div>
-              </div>
+              } />
+              <Route path="/agreements/*" element={<ClientAgreements />} />
+              <Route path="/applications/*" element={<PortalApplicationView />} />
+              <Route path="/profile" element={<ClientProfile />} />
+              <Route path="/settings" element={<ClientSettings />} />
+            </Routes>
+          </main>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t bg-card">
+        <div className="mx-auto max-w-7xl px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <p className="text-sm text-muted-foreground">
+                © 2024 {tenant?.name || 'Your Company'}. All rights reserved.
+              </p>
             </div>
-            
-            <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-              <p>&copy; 2024 {tenant?.name}. All rights reserved.</p>
+            <div className="flex items-center space-x-4">
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Terms of Service
+              </a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Support
+              </a>
             </div>
           </div>
-            <Route path="/agreements/*" element={<ClientAgreements />} />
-            <Route path="/applications/*" element={<PortalApplicationView />} />
-            <Route path="/profile" element={
-              <div className="text-center py-12">
-                <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
-                <p className="text-muted-foreground">
-                  Manage your profile information (Coming in Phase 4)
-                </p>
-              </div>
-            } />
-            <Route path="/settings" element={
-              <div className="text-center py-12">
-                <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
-                <p className="text-muted-foreground">
-                  Manage your account preferences (Coming in Phase 4)
-                </p>
-              </div>
-            } />
-          </Routes>
-        </main>
-      </div>
+        </div>
+      </footer>
     </div>
   )
 }
-
-export default ClientPortal
