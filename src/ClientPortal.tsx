@@ -47,11 +47,9 @@ function ClientDashboard() {
   const { user, logout } = useAuth()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
 
-  console.log('ClientDashboard: getDisplayName()', getDisplayName());
-  console.log('ClientDashboard: isProxying', isProxying);
-
-  console.log('ClientDashboard: getDisplayName()', getDisplayName());
-  console.log('ClientDashboard: isProxying', isProxying);
+  console.log('ClientDashboard: getDisplayName()', getDisplayName())
+  console.log('ClientDashboard: isProxying', isProxying)
+  console.log('ClientDashboard: proxiedClient', proxiedClient)
 
   return (
     <div className="space-y-6">
