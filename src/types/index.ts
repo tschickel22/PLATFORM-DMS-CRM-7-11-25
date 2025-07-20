@@ -50,6 +50,8 @@ export interface TenantBranding {
   secondaryColor: string
   sideMenuColor?: string | null
   fontFamily: string
+  portalName?: string
+  portalLogo?: string
 }
 
 export interface BusinessHours {

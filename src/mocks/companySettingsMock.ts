@@ -5,6 +5,8 @@ export const mockCompanySettings = {
     secondaryColor: '#64748b',
     fontFamily: 'Inter',
     sideMenuColor: '#1e293b', // Default dark color for side menu
+    portalName: 'Customer Portal',
+    portalLogo: null, // Will use main logo if not set
     fontOptions: [
       { value: 'Inter', label: 'Inter' },
       { value: 'Roboto', label: 'Roboto' },
