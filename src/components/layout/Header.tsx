@@ -8,7 +8,6 @@ export default function Header() {
   const { tenant } = useTenant()
 
   const { user, logout } = useAuth()
-  const { tenant } = useTenant()
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
