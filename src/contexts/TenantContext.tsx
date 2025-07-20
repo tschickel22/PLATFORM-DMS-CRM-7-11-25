@@ -4,7 +4,6 @@ import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
 
 interface TenantContextType {
   tenant: Tenant | null
-  customFields: CustomField[]
   getCustomFields: (module: string, section?: string) => CustomField[]
   updateTenantSettings: (settings: Partial<Tenant['settings']>) => Promise<void>
   updateTenantInfo: (info: Partial<Pick<Tenant, 'name' | 'domain' | 'branding'>>) => Promise<void>
@@ -29,7 +28,6 @@ interface TenantProviderProps {
 
 export function TenantProvider({ children }: TenantProviderProps) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
-  const [customFields, setCustomFields] = useState<CustomField[]>([])
 
   useEffect(() => {
     // Try to load tenant data from localStorage first
@@ -38,7 +36,6 @@ export function TenantProvider({ children }: TenantProviderProps) {
     if (savedTenant) {
       // Use saved tenant data
       setTenant(savedTenant)
-      setCustomFields(savedTenant.customFields)
     } else {
       // Fall back to mock tenant data
       const mockTenant: Tenant = {
@@ -82,7 +79,6 @@ export function TenantProvider({ children }: TenantProviderProps) {
       }
 
       setTenant(mockTenant)
-      setCustomFields(mockTenant.customFields)
       
       // Save initial mock data to localStorage
       saveToLocalStorage('tenant', mockTenant)
@@ -96,23 +92,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
     }
   }, [tenant])
 
-  // Save custom fields to localStorage whenever they change
-  useEffect(() => {
-    if (tenant) {
-      const updatedTenant = {
-        ...tenant,
-        customFields,
-        updatedAt: new Date()
-      }
-      setTenant(updatedTenant)
-    }
-  }, [customFields])
-
   const getCustomFields = (module: string, section?: string): CustomField[] => {
-    return customFields.filter(field => 
+    return tenant?.customFields.filter(field => 
       field.module === module && 
       (section ? field.section === section : true)
-    )
+    ) || []
   }
 
   const updateTenantSettings = async (settings: Partial<Tenant['settings']>) => {
@@ -139,27 +123,54 @@ export function TenantProvider({ children }: TenantProviderProps) {
     setTenant(updatedTenant)
   }
   const addCustomField = async (field: Omit<CustomField, 'id'>) => {
+    if (!tenant) return
+    
     const newField: CustomField = {
       ...field,
       id: Math.random().toString(36).substr(2, 9)
     }
     
-    setCustomFields(prev => [...prev, newField])
+    const updatedTenant = {
+      ...tenant,
+      customFields: [...tenant.customFields, newField],
+      updatedAt: new Date()
+    }
+    
+    setTenant(updatedTenant)
   }
 
   const updateCustomField = async (id: string, field: Partial<CustomField>) => {
-    setCustomFields(prev => 
-      prev.map(f => f.id === id ? { ...f, ...field } : f)
+    if (!tenant) return
+    
+    const updatedCustomFields = tenant.customFields.map(f => 
+      f.id === id ? { ...f, ...field } : f
     )
+    
+    const updatedTenant = {
+      ...tenant,
+      customFields: updatedCustomFields,
+      updatedAt: new Date()
+    }
+    
+    setTenant(updatedTenant)
   }
 
   const deleteCustomField = async (id: string) => {
-    setCustomFields(prev => prev.filter(f => f.id !== id))
+    if (!tenant) return
+    
+    const updatedCustomFields = tenant.customFields.filter(f => f.id !== id)
+    
+    const updatedTenant = {
+      ...tenant,
+      customFields: updatedCustomFields,
+      updatedAt: new Date()
+    }
+    
+    setTenant(updatedTenant)
   }
 
   const value = {
     tenant,
-    customFields,
     getCustomFields,
     updateTenantSettings,
     updateTenantInfo,

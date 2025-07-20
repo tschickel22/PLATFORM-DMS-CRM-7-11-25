@@ -17,7 +17,7 @@ import { IntegrationSettings } from './components/IntegrationSettings'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 function CompanySettingsPage() {
-  const { tenant, customFields, updateTenantSettings, updateTenantInfo, addCustomField, updateCustomField, deleteCustomField } = useTenant()
+  const { tenant, getCustomFields, updateTenantSettings, updateTenantInfo, addCustomField, updateCustomField, deleteCustomField } = useTenant()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('general')
   const [showCustomFieldModal, setShowCustomFieldModal] = useState(false)
@@ -41,6 +41,9 @@ function CompanySettingsPage() {
     { id: 'custom-fields', name: 'Custom Fields', icon: Settings },
   ]
   const modules = mockCompanySettings.customFields.modules
+
+  // Get custom fields from tenant
+  const customFields = tenant?.customFields || []
 
   // Update form state when tenant changes
   React.useEffect(() => {
