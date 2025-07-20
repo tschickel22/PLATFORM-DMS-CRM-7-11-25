@@ -21,9 +21,12 @@ export const NurtureSequences = ({
   onSequenceReset
 }: NurtureSequencesProps) => {
   // Use mock data as fallback for sequence options and safe leads array
-  const sequences = mockCrmProspecting.sequences
+  const sequences = mockCrmProspecting.nurtureSequences
   const safeLeads = leads || []
   const [selectedSequence, setSelectedSequence] = useState('')
+  
+  // Use mock nurture leads as fallback for testing
+  const displayLeads = safeLeads.length > 0 ? safeLeads : mockCrmProspecting.nurtureLeads
 
   const getSequenceIcon = (type: string) => {
     switch (type) {
@@ -53,9 +56,9 @@ export const NurtureSequences = ({
               <SelectValue placeholder="Select sequence" />
             </SelectTrigger>
             <SelectContent>
-              {mockCrmProspecting.sequences.map(sequence => (
-                <SelectItem key={sequence} value={sequence}>
-                  {sequence}
+              {sequences.map(sequence => (
+                <SelectItem key={sequence.id} value={sequence.id}>
+                  {sequence.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -64,68 +67,82 @@ export const NurtureSequences = ({
       </div>
 
       <div className="grid gap-4">
-        {safeLeads.length > 0 ? safeLeads.map(lead => {
-          const Icon = getSequenceIcon(lead.sequenceType || 'email')
-          
-          return (
-            <Card key={lead.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{lead.name}</p>
-                      <p className="text-sm text-muted-foreground">{lead.email}</p>
+        {displayLeads.length > 0 ? (
+          displayLeads.map(lead => {
+            const Icon = getSequenceIcon(lead.sequenceType || 'email')
+            const currentSequence = sequences.find(seq => seq.id === lead.sequenceId)
+            
+            return (
+              <Card key={lead.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Icon className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{lead.firstName} {lead.lastName}</p>
+                        <p className="text-sm text-muted-foreground">{lead.email}</p>
+                        {currentSequence && (
+                          <p className="text-xs text-muted-foreground">
+                            {currentSequence.name} - Step {lead.sequenceStep || 1}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    {lead.sequenceStatus && (
-                      <Badge className={getSequenceColor(lead.sequenceStatus)}>
-                        {lead.sequenceStatus}
-                      </Badge>
-                    )}
                     
-                    <div className="flex items-center space-x-1">
-                      {!lead.sequenceStatus && (
-                        <Button
-                          size="sm"
-                          onClick={() => selectedSequence && onSequenceStart(lead.id, selectedSequence)}
-                          disabled={!selectedSequence}
-                        >
-                          <Play className="h-4 w-4 mr-1" />
-                          Start
-                        </Button>
-                      )}
-                      
-                      {lead.sequenceStatus === 'active' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onSequencePause(lead.id)}
-                        >
-                          <Pause className="h-4 w-4 mr-1" />
-                          Pause
-                        </Button>
-                      )}
-                      
+                    <div className="flex items-center space-x-3">
                       {lead.sequenceStatus && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onSequenceReset(lead.id)}
-                        >
-                          <RotateCcw className="h-4 w-4 mr-1" />
-                          Reset
-                        </Button>
+                        <Badge className={getSequenceColor(lead.sequenceStatus)}>
+                          {lead.sequenceStatus.charAt(0).toUpperCase() + lead.sequenceStatus.slice(1)}
+                        </Badge>
                       )}
+                      
+                      {lead.nextSequenceAction && (
+                        <div className="text-xs text-muted-foreground">
+                          Next: {new Date(lead.nextSequenceAction).toLocaleDateString()}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center space-x-1">
+                        {!lead.sequenceStatus && (
+                          <Button
+                            size="sm"
+                            onClick={() => selectedSequence && onSequenceStart(lead.id, selectedSequence)}
+                            disabled={!selectedSequence}
+                          >
+                            <Play className="h-4 w-4 mr-1" />
+                            Start
+                          </Button>
+                        )}
+                        
+                        {lead.sequenceStatus === 'active' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onSequencePause(lead.id)}
+                          >
+                            <Pause className="h-4 w-4 mr-1" />
+                            Pause
+                          </Button>
+                        )}
+                        
+                        {lead.sequenceStatus && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onSequenceReset(lead.id)}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                            Reset
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        }) : (
+                </CardContent>
+              </Card>
+            )
+          })
+        ) : (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">No leads available for nurturing sequences</p>
