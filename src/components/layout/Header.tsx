@@ -12,17 +12,6 @@ export default function Header() {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        {/* Company Logo */}
-        {tenant?.branding?.logo && (
-          <div className="flex items-center mr-6">
-            <img 
-              src={tenant.branding.logo} 
-              alt="Company Logo" 
-              className="h-8 w-auto object-contain"
-            />
-          </div>
-        )}
-        
         {/* Left side - Logo and Company Name */}
         <div className="flex items-center space-x-3">
           {tenant?.branding?.logo && (
