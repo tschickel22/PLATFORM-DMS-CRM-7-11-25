@@ -5,7 +5,6 @@ import { isColorLight } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useTenant } from '@/contexts/TenantContext'
 import { 
-  Package, 
   FileText, 
   DollarSign, 
   Settings, 
