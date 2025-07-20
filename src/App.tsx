@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { TenantProvider } from '@/contexts/TenantContext'
@@ -29,6 +29,48 @@ import PlatformAdmin from '@/modules/platform-admin/PlatformAdmin'
 import ReportingSuite from '@/modules/reporting-suite/ReportingSuite'
 import FinanceApplication from '@/modules/finance-application/FinanceApplication'
 
+function AppRoutes() {
+  const location = useLocation()
+  const isPortalClient = location.pathname.startsWith('/portalclient')
+
+  if (isPortalClient) {
+    return (
+      <ProtectedRoute>
+        <Routes>
+          <Route path="/portalclient/*" element={<ClientPortal />} />
+        </Routes>
+      </ProtectedRoute>
+    )
+  }
+
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/crm/*" element={<CRMProspecting />} />
+          <Route path="/inventory/*" element={<InventoryManagement />} />
+          <Route path="/deals/*" element={<CRMSalesDeal />} />
+          <Route path="/finance/*" element={<FinanceModule />} />
+          <Route path="/quotes/*" element={<QuoteBuilder />} />
+          <Route path="/agreements/*" element={<AgreementVault />} />
+          <Route path="/service/*" element={<ServiceOps />} />
+          <Route path="/pdi/*" element={<PDIChecklist />} />
+          <Route path="/delivery/*" element={<DeliveryTracker />} />
+          <Route path="/commissions/*" element={<CommissionEngine />} />
+          <Route path="/portal/*" element={<ClientPortalAdmin />} />
+          <Route path="/invoices/*" element={<InvoicePayments />} />
+          <Route path="/settings/*" element={<CompanySettings />} />
+          <Route path="/admin/*" element={<PlatformAdmin />} />
+          <Route path="/admin/settings/*" element={<PlatformSettings />} />
+          <Route path="/reports/*" element={<ReportingSuite />} />
+          <Route path="/client-applications/*" element={<FinanceApplication />} />
+        </Routes>
+      </Layout>
+    </ProtectedRoute>
+  )
+}
+
 function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="renter-insight-theme">
@@ -38,36 +80,7 @@ function App() {
             <div className="min-h-screen bg-background">
               <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route
-                  path="/*"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/crm/*" element={<CRMProspecting />} />
-                          <Route path="/inventory/*" element={<InventoryManagement />} />
-                          <Route path="/deals/*" element={<CRMSalesDeal />} />
-                          <Route path="/finance/*" element={<FinanceModule />} />
-                          <Route path="/quotes/*" element={<QuoteBuilder />} />
-                          <Route path="/agreements/*" element={<AgreementVault />} />
-                          <Route path="/service/*" element={<ServiceOps />} />
-                          <Route path="/pdi/*" element={<PDIChecklist />} />
-                          <Route path="/delivery/*" element={<DeliveryTracker />} />
-                          <Route path="/commissions/*" element={<CommissionEngine />} />
-                          <Route path="/portal/*" element={<ClientPortalAdmin />} />
-                          <Route path="/portalclient/*" element={<ClientPortal />} />
-                          <Route path="/invoices/*" element={<InvoicePayments />} />
-                          <Route path="/settings/*" element={<CompanySettings />} />
-                          <Route path="/admin/*" element={<PlatformAdmin />} />
-                          <Route path="/admin/settings/*" element={<PlatformSettings />} />
-                          <Route path="/reports/*" element={<ReportingSuite />} />
-                          <Route path="/client-applications/*" element={<FinanceApplication />} />
-                        </Routes>
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="/*" element={<AppRoutes />} />
               </Routes>
               <Toaster />
             </div>
