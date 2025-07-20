@@ -1,17 +1,25 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Users, Package, FileText, Wrench, Truck, CheckSquare, Percent, Globe, Receipt, CreditCard } from 'lucide-react'
+import { Users, Package, FileText, DollarSign, Wrench, Truck, CheckSquare, Percent, Globe, Receipt, Settings, BarChart3, CreditCard } from 'lucide-react'
 import { isColorLight } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useTenant } from '@/contexts/TenantContext'
 import { 
+  Users, 
+  Package, 
+  FileText, 
   DollarSign, 
   Settings, 
   ChevronDown, 
   ChevronRight,
   BarChart3,
+  Wrench,
+  Truck,
   ClipboardCheck,
+  Percent,
+  Globe,
   FileCheck,
+  Receipt,
   Building,
   Shield
 } from 'lucide-react'
@@ -84,6 +92,7 @@ const navigationItems = [
 ]
 
 export default function Sidebar() {
+  const { tenant } = useTenant()
   const location = useLocation()
   const { tenant } = useTenant()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
