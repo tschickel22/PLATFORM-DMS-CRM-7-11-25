@@ -308,6 +308,61 @@ export interface Payment {
   updatedAt: Date
 }
 
+export interface Loan {
+  id: string
+  customerId: string
+  customerName: string
+  customerEmail?: string
+  customerPhone?: string
+  vehicleId?: string
+  vehicleInfo?: string
+  loanAmount: number
+  downPayment: number
+  interestRate: number
+  termMonths: number
+  monthlyPayment: number
+  startDate: string
+  status: LoanStatus
+  remainingBalance: number
+  nextPaymentDate: string
+  totalPaid: number
+  paymentsRemaining: number
+  history: LoanHistoryEntry[]
+  isPortalVisible: boolean
+  portalNotes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LoanHistoryEntry {
+  id: string
+  timestamp: string
+  type: LoanHistoryType
+  amount?: number
+  principalAmount?: number
+  interestAmount?: number
+  description: string
+  userId?: string
+  userName?: string
+  paymentMethod?: string
+  transactionId?: string
+  status?: string
+}
+
+export interface LoanPayment {
+  id: string
+  loanId: string
+  paymentDate: string
+  amount: number
+  principalAmount: number
+  interestAmount: number
+  status: PaymentStatus
+  paymentMethod: string
+  transactionId?: string
+  processedDate?: string
+  notes?: string
+}
+
 export interface Report {
   id: string
   name: string
@@ -465,6 +520,24 @@ export enum PaymentStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded'
+}
+
+export enum LoanStatus {
+  ACTIVE = 'active',
+  CURRENT = 'current',
+  LATE = 'late',
+  DEFAULT = 'default',
+  PAID_OFF = 'paid_off',
+  CANCELLED = 'cancelled'
+}
+
+export enum LoanHistoryType {
+  PAYMENT = 'payment',
+  STATUS_CHANGE = 'status_change',
+  RATE_CHANGE = 'rate_change',
+  NOTE_ADDED = 'note_added',
+  LATE_FEE = 'late_fee',
+  PAYOFF = 'payoff'
 }
 
 export enum ReportType {

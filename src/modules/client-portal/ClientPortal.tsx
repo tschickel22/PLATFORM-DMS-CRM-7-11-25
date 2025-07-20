@@ -12,11 +12,13 @@ import {
   Bell,
   LogOut,
   Menu,
-  X
+  X,
+  DollarSign
 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
+import { ClientLoansView } from './components/ClientLoansView'
 
 // Mock components for routes that aren't implemented yet
 function ClientProfile() {
@@ -83,6 +85,7 @@ export default function ClientPortal() {
 
   const navigation = [
     { name: 'Dashboard', href: '/portalclient', icon: Home },
+    { name: 'My Loans', href: '/portalclient/loans', icon: DollarSign },
     { name: 'Agreements', href: '/portalclient/agreements', icon: FileText },
     { name: 'Applications', href: '/portalclient/applications', icon: CreditCard },
     { name: 'Profile', href: '/portalclient/profile', icon: User },
@@ -305,6 +308,7 @@ export default function ClientPortal() {
                   </Card>
                 </div>
               } />
+              <Route path="/loans" element={<ClientLoansView />} />
               <Route path="/agreements/*" element={<ClientAgreements />} />
               <Route path="/applications/*" element={<PortalApplicationView />} />
               <Route path="/profile" element={<ClientProfile />} />

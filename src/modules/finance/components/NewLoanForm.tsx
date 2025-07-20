@@ -1,136 +1,99 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { X, Save, DollarSign, Calculator, Calendar } from 'lucide-react'
-import { mockFinance } from '@/mocks/financeMock'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { X, Save, DollarSign } from 'lucide-react'
+import { Loan, LoanStatus } from '@/types'
+import { useLoans } from '../hooks/useLoans'
 import { useToast } from '@/hooks/use-toast'
-import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
-import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
-import { LoanCalculator } from './LoanCalculator'
+import { formatCurrency } from '@/lib/utils'
 
 interface NewLoanFormProps {
-  onSave: (loanData: any) => Promise<void>
-  onCancel: () => void
-  onAddNewCustomer?: () => void
-  preselectedCustomerId?: string | null
+  loan?: Loan
+  onClose: () => void
+  onSuccess?: (loan: Loan) => void
 }
 
-export function NewLoanForm({
-  onSave,
-  onCancel,
-  onAddNewCustomer,
-  preselectedCustomerId
-}: NewLoanFormProps) {
+export function NewLoanForm({ loan, onClose, onSuccess }: NewLoanFormProps) {
+  const { createLoan, updateLoan } = useLoans()
   const { toast } = useToast()
-  const { leads } = useLeadManagement()
-  const { vehicles } = useInventoryManagement()
   const [loading, setLoading] = useState(false)
-  const [loanAmount, setLoanAmount] = useState(mockFinance.defaultLoan.amount.toString())
-  const [downPayment, setDownPayment] = useState(mockFinance.defaultLoan.downPayment.toString())
-  const [interestRate, setInterestRate] = useState(mockFinance.defaultLoan.rate.toString())
-  const [termMonths, setTermMonths] = useState(mockFinance.defaultLoan.termMonths.toString())
-  const [paymentFrequency, setPaymentFrequency] = useState(mockFinance.paymentFrequencies[0])
-  const [loanType, setLoanType] = useState('Retail')
-  const [showCalculator, setShowCalculator] = useState(false)
-  const [calculatorResults, setCalculatorResults] = useState<any>(null)
 
   const [formData, setFormData] = useState({
-    customerId: preselectedCustomerId || '',
-    customerName: '',
-    vehicleId: '',
-    vehicleInfo: '',
-    amount: 0,
-    downPayment: 0,
-    term: 60,
-    rate: 0,
-    paymentAmount: 0,
-    paymentFrequency: '',
-    includeInsurance: false,
-    insuranceAmount: 0,
-    includeTax: false,
-    taxRate: 0,
-    startDate: '',
-    loanType: '',
-    notes: ''
+    customerId: loan?.customerId || '',
+    customerName: loan?.customerName || '',
+    customerEmail: loan?.customerEmail || '',
+    customerPhone: loan?.customerPhone || '',
+    vehicleId: loan?.vehicleId || '',
+    vehicleInfo: loan?.vehicleInfo || '',
+    loanAmount: loan?.loanAmount || 0,
+    downPayment: loan?.downPayment || 0,
+    interestRate: loan?.interestRate || 7.25,
+    termMonths: loan?.termMonths || 60,
+    startDate: loan?.startDate ? loan.startDate.split('T')[0] : new Date().toISOString().split('T')[0],
+    status: loan?.status || LoanStatus.ACTIVE,
+    isPortalVisible: loan?.isPortalVisible || false,
+    portalNotes: loan?.portalNotes || ''
   })
 
-  useEffect(() => {
-    if (preselectedCustomerId) {
-      setFormData(prev => ({ ...prev, customerId: preselectedCustomerId }))
+  // Calculate monthly payment
+  const calculateMonthlyPayment = () => {
+    const principal = formData.loanAmount - formData.downPayment
+    const monthlyRate = formData.interestRate / 100 / 12
+    const numPayments = formData.termMonths
+    
+    if (monthlyRate === 0) {
+      return principal / numPayments
     }
-  }, [preselectedCustomerId])
-
-  useEffect(() => {
-    if (formData.customerId) {
-      const customer = leads.find(c => c.id === formData.customerId)
-      if (customer) {
-        setFormData(prev => ({
-          ...prev,
-          customerName: `${customer.firstName} ${customer.lastName}`
-        }))
-      }
-    }
-  }, [formData.customerId, leads])
-
-  const handleCustomerSelect = (value: string) => {
-    if (value === 'add-new') {
-      onAddNewCustomer?.()
-    } else {
-      setFormData(prev => ({ ...prev, customerId: value }))
-    }
+    
+    const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                          (Math.pow(1 + monthlyRate, numPayments) - 1)
+    
+    return monthlyPayment
   }
 
-  const handleVehicleSelect = (value: string) => {
-    const vehicle = vehicles.find(v => v.id === value)
-    if (vehicle) {
-      setFormData(prev => ({
-        ...prev,
-        vehicleId: value,
-        vehicleInfo: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
-        amount: vehicle.price
-      }))
-    }
-  }
-
-  const handleCalculatorResults = (results: any) => {
-    setCalculatorResults(results)
-    setFormData(prev => ({
-      ...prev,
-      amount: results.loanAmount,
-      downPayment: results.downPayment,
-      term: results.loanTerm,
-      rate: results.interestRate,
-      paymentAmount: results.monthlyPayment,
-      paymentFrequency: results.paymentFrequency,
-      includeInsurance: results.includeInsurance,
-      insuranceAmount: results.insuranceAmount,
-      includeTax: results.includeTax,
-      taxRate: results.taxRate
-    }))
-  }
-
-  const loanTypes = ['Retail', 'Rent-to-Own', 'Lease']
+  const monthlyPayment = calculateMonthlyPayment()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.customerId || !formData.vehicleId) {
+    setLoading(true)
+
+    try {
+      const loanData = {
+        ...formData,
+        monthlyPayment,
+        remainingBalance: formData.loanAmount - formData.downPayment,
+        nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        totalPaid: 0,
+        paymentsRemaining: formData.termMonths,
+        history: []
+      }
+
+      let savedLoan: Loan
+      if (loan) {
+        updateLoan(loan.id, loanData)
+        savedLoan = { ...loan, ...loanData }
+      } else {
+        savedLoan = createLoan(loanData)
+      }
+
       toast({
-        title: 'Validation Error',
-        description: 'Customer and vehicle are required.',
+        title: loan ? 'Loan Updated' : 'Loan Created',
+        description: `Loan has been ${loan ? 'updated' : 'created'} successfully.`
+      })
+
+      onSuccess?.(savedLoan)
+      onClose()
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Failed to ${loan ? 'update' : 'create'} loan.`,
         variant: 'destructive'
       })
-      return
-    }
-    setLoading(true)
-    try {
-      await onSave(formData)
-    } catch {
-      toast({ title: 'Error', description: 'Failed to create loan', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -138,340 +101,260 @@ export function NewLoanForm({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      {showCalculator ? (
-        <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <LoanCalculator
-            initialValues={{
-              loanAmount: formData.amount,
-              downPayment: formData.downPayment,
-              interestRate: formData.rate,
-              loanTerm: formData.term
-            }}
-            onSave={handleCalculatorResults}
-            onClose={() => setShowCalculator(false)}
-          />
-        </div>
-      ) : (
-        <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Create New Loan</CardTitle>
-              <Button variant="ghost" size="sm" onClick={onCancel}>
-                <X className="h-4 w-4" />
-              </Button>
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                {loan ? 'Edit Loan' : 'Create New Loan'}
+              </CardTitle>
+              <CardDescription>
+                {loan ? 'Update loan details and settings' : 'Enter loan information and configure portal visibility'}
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Customer & Vehicle */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Customer & Vehicle</h3>
-                
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Customer Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Customer Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                    <Label htmlFor="customerId">Customer *</Label>
-                    <Select
-                      value={formData.customerId}
-                      onValueChange={handleCustomerSelect}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select customer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <div className="px-2 py-1.5">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full justify-start" 
-                            onClick={() => handleCustomerSelect('add-new')}
-                          >
-                            <X className="h-3.5 w-3.5 mr-2" />
-                            Add New Customer
-                          </Button>
-                        </div>
-                        <div className="px-2 py-1 border-t"></div>
-                        {leads.map(lead => (
-                          <SelectItem key={lead.id} value={lead.id}>
-                            {lead.firstName} {lead.lastName}
-                          </SelectItem>
-                        ))}
-                        {mockFinance.sampleLoans.map(loan => (
-                          <SelectItem key={loan.customerId} value={loan.customerId}>
-                            {loan.customerName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="vehicleId">Vehicle *</Label>
-                    <Select 
-                      value={formData.vehicleId} 
-                      onValueChange={handleVehicleSelect}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select vehicle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vehicles.map(vehicle => (
-                          <SelectItem key={vehicle.id} value={vehicle.id}>
-                            {vehicle.year} {vehicle.make} {vehicle.model}
-                          </SelectItem>
-                        ))}
-                        {mockFinance.sampleLoans.map(loan => (
-                          <SelectItem key={loan.vehicleId} value={loan.vehicleId}>
-                            {loan.vehicleInfo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor="customerId">Customer ID</Label>
+                  <Input
+                    id="customerId"
+                    value={formData.customerId}
+                    onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                    placeholder="Enter customer ID"
+                    required
+                  />
                 </div>
-
-              {/* Loan Details */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Loan Details</h3>
-                  <Button type="button" variant="outline" onClick={() => setShowCalculator(true)}>
-                    <Calculator className="h-4 w-4 mr-2" />
-                    Loan Calculator
-                  </Button>
-                </div>
-                
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="amount">Loan Amount *</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="amount"
-                        type="number"
-                        value={formData.amount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="downPayment">Down Payment</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="downPayment"
-                        type="number"
-                        value={formData.downPayment}
-                        onChange={(e) => setFormData(prev => ({ ...prev, downPayment: parseFloat(e.target.value) || 0 }))}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label htmlFor="term">Term (months) *</Label>
-                    <Select
-                      value={formData.term.toString()}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, term: parseInt(value) }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="12">12 months (1 year)</SelectItem>
-                        <SelectItem value="24">24 months (2 years)</SelectItem>
-                        <SelectItem value="36">36 months (3 years)</SelectItem>
-                        <SelectItem value="48">48 months (4 years)</SelectItem>
-                        <SelectItem value="60">60 months (5 years)</SelectItem>
-                        <SelectItem value="72">72 months (6 years)</SelectItem>
-                        <SelectItem value="84">84 months (7 years)</SelectItem>
-                        <SelectItem value="96">96 months (8 years)</SelectItem>
-                        <SelectItem value="120">120 months (10 years)</SelectItem>
-                        {mockFinance.termOptions.map(term => (
-                          <SelectItem key={term} value={term.toString()}>
-                            {term} months
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="rate">Interest Rate (%) *</Label>
-                    <Select
-                      value={formData.rate.toString()}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, rate: parseFloat(value) }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockFinance.interestRates.map(rate => (
-                          <SelectItem key={rate} value={rate.toString()}>
-                            {rate}%
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      id="rate"
-                      type="number"
-                      step="0.01"
-                      value={formData.rate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="paymentAmount">Monthly Payment *</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="paymentAmount"
-                        type="number"
-                        step="0.01"
-                        value={formData.paymentAmount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, paymentAmount: parseFloat(e.target.value) || 0 }))}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="startDate">Start Date *</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="loanType">Loan Type *</Label>
-                    <Select
-                      value={formData.loanType}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, loanType: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="bhph">Buy Here Pay Here</SelectItem>
-                        <SelectItem value="balloon">Balloon</SelectItem>
-                        <SelectItem value="lease">Lease</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="paymentFrequency">Payment Frequency *</Label>
+                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                    placeholder="Enter customer name"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerEmail">Email</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={formData.customerEmail}
+                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerPhone">Phone</Label>
+                  <Input
+                    id="customerPhone"
+                    type="tel"
+                    value={formData.customerPhone}
+                    onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicle Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Vehicle Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="vehicleId">Vehicle ID</Label>
+                  <Input
+                    id="vehicleId"
+                    value={formData.vehicleId}
+                    onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
+                    placeholder="Enter vehicle ID"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vehicleInfo">Vehicle Description</Label>
+                  <Input
+                    id="vehicleInfo"
+                    value={formData.vehicleInfo}
+                    onChange={(e) => setFormData({ ...formData, vehicleInfo: e.target.value })}
+                    placeholder="e.g., 2023 Forest River Cherokee 274RK"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Loan Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Loan Details</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="loanAmount">Loan Amount</Label>
+                  <Input
+                    id="loanAmount"
+                    type="number"
+                    step="0.01"
+                    value={formData.loanAmount}
+                    onChange={(e) => setFormData({ ...formData, loanAmount: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="downPayment">Down Payment</Label>
+                  <Input
+                    id="downPayment"
+                    type="number"
+                    step="0.01"
+                    value={formData.downPayment}
+                    onChange={(e) => setFormData({ ...formData, downPayment: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="interestRate">Interest Rate (%)</Label>
+                  <Input
+                    id="interestRate"
+                    type="number"
+                    step="0.01"
+                    value={formData.interestRate}
+                    onChange={(e) => setFormData({ ...formData, interestRate: parseFloat(e.target.value) || 0 })}
+                    placeholder="7.25"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="termMonths">Term (Months)</Label>
                   <Select
-                    value={formData.paymentFrequency}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, paymentFrequency: value }))}
+                    value={formData.termMonths.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, termMonths: parseInt(value) })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockFinance.paymentFrequencies.map(frequency => (
-                        <SelectItem key={frequency} value={frequency}>
-                          {frequency}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="12">12 months</SelectItem>
+                      <SelectItem value="24">24 months</SelectItem>
+                      <SelectItem value="36">36 months</SelectItem>
+                      <SelectItem value="48">48 months</SelectItem>
+                      <SelectItem value="60">60 months</SelectItem>
+                      <SelectItem value="72">72 months</SelectItem>
+                      <SelectItem value="84">84 months</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="includeInsurance"
-                    checked={formData.includeInsurance}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeInsurance: !!checked }))}
+                <div>
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    required
                   />
-                  <Label htmlFor="includeInsurance">Include Insurance</Label>
                 </div>
-                
-                {formData.includeInsurance && (
-                  <div>
-                    <Label htmlFor="insuranceAmount">Monthly Insurance Amount</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="insuranceAmount"
-                        type="number"
-                        step="0.01"
-                        value={formData.insuranceAmount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, insuranceAmount: parseFloat(e.target.value) || 0 }))}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="includeTax"
-                    checked={formData.includeTax}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeTax: !!checked }))}
-                  />
-                  <Label htmlFor="includeTax">Include Tax</Label>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value: LoanStatus) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={LoanStatus.ACTIVE}>Active</SelectItem>
+                      <SelectItem value={LoanStatus.CURRENT}>Current</SelectItem>
+                      <SelectItem value={LoanStatus.LATE}>Late</SelectItem>
+                      <SelectItem value={LoanStatus.DEFAULT}>Default</SelectItem>
+                      <SelectItem value={LoanStatus.PAID_OFF}>Paid Off</SelectItem>
+                      <SelectItem value={LoanStatus.CANCELLED}>Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                
-                {formData.includeTax && (
-                  <div>
-                    <Label htmlFor="taxRate">Tax Rate (%)</Label>
-                    <Input
-                      id="taxRate"
-                      type="number"
-                      step="0.01"
-                      value={formData.taxRate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, taxRate: parseFloat(e.target.value) || 0 }))}
-                    />
-                  </div>
-                )}
               </div>
 
-              {/* Notes */}
+              {/* Calculated Monthly Payment */}
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Calculated Monthly Payment:</span>
+                  <span className="text-lg font-bold text-primary">
+                    {formatCurrency(monthlyPayment)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Portal Settings */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Portal Settings</h3>
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Notes</h3>
-                
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Add any additional notes about this loan..."
-                  rows={3}
-                />
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isPortalVisible"
+                    checked={formData.isPortalVisible}
+                    onCheckedChange={(checked) => setFormData({ 
+                      ...formData, 
+                      isPortalVisible: !!checked,
+                      portalNotes: checked ? formData.portalNotes : ''
+                    })}
+                  />
+                  <Label htmlFor="isPortalVisible" className="font-medium">
+                    Make this loan visible in customer portal
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, customers can view this loan, payment history, and make payments through the portal.
+                </p>
 
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-3 pt-6 border-t">
-                <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating Loan...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Create Loan
-                    </>
-                  )}
-                </Button>
+                {formData.isPortalVisible && (
+                  <div>
+                    <Label htmlFor="portalNotes">Portal Notes (Optional)</Label>
+                    <Textarea
+                      id="portalNotes"
+                      value={formData.portalNotes}
+                      onChange={(e) => setFormData({ ...formData, portalNotes: e.target.value })}
+                      placeholder="Add any notes or messages that will be visible to the customer in the portal..."
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      These notes will be displayed to the customer when they view this loan in the portal.
+                    </p>
+                  </div>
+                )}
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {loan ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {loan ? 'Update Loan' : 'Create Loan'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
