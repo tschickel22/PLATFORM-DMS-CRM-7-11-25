@@ -146,7 +146,7 @@ export default function Sidebar() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-center px-4 py-4 border-b">
+      <div className="flex items-center justify-start px-4 py-4 border-b">
         <Link to="/" className="flex items-center">
           {tenant?.branding?.logo ? (
             <img 
