@@ -50,11 +50,14 @@ function ClientDashboard() {
   console.log('ClientDashboard: getDisplayName()', getDisplayName());
   console.log('ClientDashboard: isProxying', isProxying);
 
+  console.log('ClientDashboard: getDisplayName()', getDisplayName());
+  console.log('ClientDashboard: isProxying', isProxying);
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Welcome back, {getDisplayName().split(' ')[0]}!</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {getDisplayName().split(' ')[0] || 'User'}!</h1>
         <p className="text-muted-foreground">
           Here's what's happening with your account
         </p>

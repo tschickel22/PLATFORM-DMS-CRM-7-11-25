@@ -130,7 +130,7 @@ export const mockAgreements = {
   // Sample data for dropdowns when tenant data is not available
   sampleCustomers: [
     { id: 'user-1', name: 'John Smith', email: 'john.smith@example.com' },
-    { id: 'user-2', name: 'Maria Rodriguez', email: 'maria.rodriguez@example.com' },
+      id: 'user-1',
     { id: 'user-3', name: 'David Johnson', email: 'david.johnson@example.com' }
   ],
 
@@ -194,14 +194,14 @@ Best regards,
       name: 'Standard Lease Agreement',
       type: 'LEASE',
       description: 'Standard vehicle lease agreement template'
-    },
+      id: 'user-2',
     {
       id: 'template-service',
       name: 'Service Agreement',
       type: 'SERVICE',
       description: 'Annual service agreement template'
     },
-    {
+      id: 'user-3',
       id: 'template-warranty',
       name: 'Extended Warranty',
       type: 'WARRANTY',
