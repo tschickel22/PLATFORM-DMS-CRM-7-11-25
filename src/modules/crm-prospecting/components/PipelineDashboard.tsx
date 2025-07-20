@@ -399,3 +399,4 @@ export default function PipelineDashboard() {
     </div>
   )
 }
+export { PipelineDashboard }
