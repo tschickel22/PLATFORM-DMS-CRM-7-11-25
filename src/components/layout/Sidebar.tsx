@@ -107,6 +107,10 @@ export default function Sidebar() {
       ? 'var(--foreground)'
       : 'white'
 
+  // Determine if we're using a light background for menu item text colors
+  const isLightBackground = useDefaultColor || 
+    (tenant?.branding.sideMenuColor && isColorLight(tenant.branding.sideMenuColor))
+
   const toggleSection = (sectionId: string) => {
     // If the clicked section is already expanded, collapse it
     // Otherwise, expand the clicked section (this automatically collapses any other expanded section)
@@ -159,7 +163,9 @@ export default function Sidebar() {
             'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
             isActive('/') && location.pathname === '/'
               ? 'bg-slate-800 text-white'
-              : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+              : isLightBackground 
+                ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
           )}
         >
           <BarChart3 className="mr-3 h-5 w-5" />
@@ -176,7 +182,9 @@ export default function Sidebar() {
                 'group flex w-full items-center justify-between px-2 py-2 text-left text-sm font-medium rounded-md transition-colors',
                 expandedSection === item.id
                   ? 'bg-slate-800 text-white'
-                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                  : isLightBackground 
+                    ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
               )}
             >
               <div className="flex items-center">
@@ -203,7 +211,9 @@ export default function Sidebar() {
                       'group flex items-center px-2 py-2 text-sm rounded-md transition-colors',
                       isActive(subItem.href)
                         ? 'bg-slate-700 text-white'
-                        : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                        : isLightBackground 
+                          ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                          : 'text-white/80 hover:bg-white/10 hover:text-white'
                     )}
                   >
                     <subItem.icon className="mr-3 h-4 w-4" />
