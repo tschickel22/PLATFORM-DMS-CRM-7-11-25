@@ -9,7 +9,6 @@ import { useFinanceApplications } from '../hooks/useFinanceApplications'
 import { FinanceApplicationForm } from './FinanceApplicationForm'
 import { useTenant } from '@/contexts/TenantContext'
 import { usePortal } from '@/contexts/PortalContext'
-import { usePortal } from '@/contexts/PortalContext'
 import { useToast } from '@/hooks/use-toast'
 
 export function PortalApplicationView() {
