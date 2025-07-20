@@ -129,9 +129,9 @@ export const mockAgreements = {
 
   // Sample data for dropdowns when tenant data is not available
   sampleCustomers: [
-    { id: 'user-1', name: 'John Smith', email: 'john.smith@email.com' },
-    { id: 'user-2', name: 'Maria Rodriguez', email: 'maria.rodriguez@email.com' },
-    { id: 'user-3', name: 'David Johnson', email: 'david.johnson@email.com' }
+    { id: 'user-1', name: 'John Smith', email: 'john.smith@example.com' },
+    { id: 'user-2', name: 'Maria Rodriguez', email: 'maria.rodriguez@example.com' },
+    { id: 'user-3', name: 'David Johnson', email: 'david.johnson@example.com' }
   ],
 
   sampleVehicles: [

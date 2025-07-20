@@ -40,6 +40,8 @@ export function PortalProvider({ children, fallbackUser }: PortalProviderProps) 
   // Extract impersonate client ID from URL parameters
   const impersonateIdParam = searchParams.get('impersonateClientId')
   
+  console.log('PortalContext: impersonateIdParam', impersonateIdParam);
+
   // Find the proxied client from mock data
   const proxiedClient = impersonateIdParam 
     ? mockAgreements.sampleCustomers.find(customer => customer.id === impersonateIdParam) || null
@@ -47,6 +49,7 @@ export function PortalProvider({ children, fallbackUser }: PortalProviderProps) 
 
   const isProxying = !!proxiedClient
 
+  console.log('PortalContext: proxiedClient', proxiedClient);
   const getDisplayName = (): string => {
     if (proxiedClient) {
       return proxiedClient.name
