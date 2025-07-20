@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,8 @@ function FinanceApplicationDashboard() {
   
   // Admin notes state
   const [currentAdminNote, setCurrentAdminNote] = useState('')
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
+  const adminNotesRef = useRef<HTMLTextAreaElement>(null)
   
   const {
     applications,
@@ -152,6 +155,7 @@ function FinanceApplicationDashboard() {
   const handleCloseApplicationForm = () => {
     setSelectedApplication(null)
     setCurrentAdminNote('')
+    setPendingStatus(null)
     setApplicationCreationMode('none')
   }
 
@@ -162,6 +166,7 @@ function FinanceApplicationDashboard() {
   const handleViewApplication = (application: FinanceApplicationType) => {
     setSelectedApplication(application)
     setCurrentAdminNote(application.adminNotes || '')
+    setPendingStatus(null)
     setApplicationCreationMode('none') // Reset creation mode when viewing
   }
 
@@ -186,35 +191,19 @@ function FinanceApplicationDashboard() {
     }
   }
 
-  const handleSaveAdminNotes = () => {
+  const handleSaveNotesAndStatus = () => {
     if (selectedApplication) {
-      updateApplication(selectedApplication.id, {
-        adminNotes: currentAdminNote
-      })
+      const newStatusToApply = pendingStatus || selectedApplication.status
+      const isStatusChanging = newStatusToApply !== selectedApplication.status
       
-      // Update the selected application state to reflect changes immediately
-      setSelectedApplication({
-        ...selectedApplication,
-        adminNotes: currentAdminNote,
-        updatedAt: new Date().toISOString()
-      })
-      
-      toast({
-        title: 'Admin Notes Saved',
-        description: 'Internal notes have been saved successfully.'
-      })
-    }
-  }
-
-  const handleStatusChange = (newStatus: string) => {
-    if (selectedApplication) {
-      // Check if status is actually changing
-      if (newStatus === selectedApplication.status) {
-        return
-      }
-      
-      // Require internal note only when changing FROM denied to another status
-      if (selectedApplication.status === 'denied' && newStatus !== 'denied' && !currentAdminNote.trim()) {
+      // Check if note is required (changing FROM denied to another status)
+      if (isStatusChanging && selectedApplication.status === 'denied' && newStatusToApply !== 'denied' && !currentAdminNote.trim()) {
+        // Scroll to admin notes section
+        adminNotesRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        })
+        
         toast({
           title: 'Internal Note Required',
           description: 'Please add an internal note explaining the reason for changing from denied status.',
@@ -223,33 +212,41 @@ function FinanceApplicationDashboard() {
         return
       }
       
-      // Update the application
-      const updatedApplication = {
-        ...selectedApplication,
-        status: newStatus as any,
-        reviewedBy: 'Admin User', // In real app, get from auth context
-        reviewedAt: new Date().toISOString(),
-        adminNotes: currentAdminNote,
-        updatedAt: new Date().toISOString()
+      // Prepare update data
+      const updateData: any = {
+        adminNotes: currentAdminNote
       }
       
-      updateApplication(selectedApplication.id, {
-        status: newStatus as any,
-        reviewedBy: 'Admin User',
-        reviewedAt: new Date().toISOString(),
-        adminNotes: currentAdminNote
-      })
+      // Add status change data if status is changing
+      if (isStatusChanging) {
+        updateData.status = newStatusToApply
+        updateData.reviewedBy = 'Admin User' // In real app, get from auth context
+        updateData.reviewedAt = new Date().toISOString()
+      }
       
-      // Update the selected application state immediately
+      // Update the application
+      updateApplication(selectedApplication.id, updateData)
+      
+      // Update the selected application state to reflect changes immediately
+      const updatedApplication = {
+        ...selectedApplication,
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      }
       setSelectedApplication(updatedApplication)
       
-      const statusLabel = mockFinanceApplications.statusOptions.find(s => s.value === newStatus)?.label || newStatus
+      // Clear pending status
+      setPendingStatus(null)
+      
       toast({
-        title: 'Status Updated',
-        description: `Application status changed to ${statusLabel}.`
+        title: isStatusChanging ? 'Status and Notes Updated' : 'Admin Notes Saved',
+        description: isStatusChanging 
+          ? `Application status changed to ${mockFinanceApplications.statusOptions.find(s => s.value === newStatusToApply)?.label || newStatusToApply} and notes saved.`
+          : 'Internal notes have been saved successfully.'
       })
     }
   }
+
 
   if (selectedApplication && applicationCreationMode === 'completeNow') {
     return (
@@ -335,8 +332,8 @@ function FinanceApplicationDashboard() {
                 <div className="flex items-center space-x-2">
                   <Label className="text-sm font-medium">Status:</Label>
                   <Select
-                    value={selectedApplication.status}
-                    onValueChange={handleStatusChange}
+                    value={pendingStatus || selectedApplication.status}
+                    onValueChange={setPendingStatus}
                   >
                     <SelectTrigger className="w-[200px]">
                       <SelectValue />
@@ -469,13 +466,14 @@ function FinanceApplicationDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleSaveAdminNotes}
+                  onClick={handleSaveNotesAndStatus}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  Save Notes
+                  {pendingStatus && pendingStatus !== selectedApplication.status ? 'Save Status & Notes' : 'Save Notes'}
                 </Button>
               </div>
               <Textarea
+                ref={adminNotesRef}
                 value={currentAdminNote}
                 onChange={(e) => setCurrentAdminNote(e.target.value)}
                 placeholder="Add internal notes about this application (not visible to customer)..."
@@ -484,6 +482,11 @@ function FinanceApplicationDashboard() {
               />
               <p className="text-xs text-muted-foreground">
                 These notes are for internal use only and will not be visible to the customer.
+                {pendingStatus && pendingStatus !== selectedApplication.status && (
+                  <span className="block mt-1 text-orange-600 font-medium">
+                    Status will be changed to "{mockFinanceApplications.statusOptions.find(s => s.value === pendingStatus)?.label}" when saved.
+                  </span>
+                )}
               </p>
             </div>
           </CardContent>
