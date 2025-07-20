@@ -15,7 +15,7 @@ interface PortalUserFormProps {
   onCancel: () => void
 }
 
-export function PortalUserForm({ user, onSave, onCancel }: PortalUserFormProps) {
+export function PortalAdminUserForm({ user, onSave, onCancel }: PortalUserFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
