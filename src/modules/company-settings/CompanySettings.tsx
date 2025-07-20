@@ -21,6 +21,14 @@ function CompanySettingsPage() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('general')
   const [showCustomFieldModal, setShowCustomFieldModal] = useState(false)
+  const [selectedCustomField, setSelectedCustomField] = useState<CustomField | null>(null)
+  const [loading, setLoading] = useState(false)
+  
+  // Form state for general settings
+  const [companyName, setCompanyName] = useState(tenant?.name || '')
+  const [companyDomain, setCompanyDomain] = useState(tenant?.domain || '')
+  const [timezone, setTimezone] = useState(tenant?.settings?.timezone || '')
+  const [currency, setCurrency] = useState(tenant?.settings?.currency || '')
 
   // Use tabs and modules from mock
   const tabs = [
@@ -34,6 +42,57 @@ function CompanySettingsPage() {
   ]
   const modules = mockCompanySettings.customFields.modules
 
+  // Update form state when tenant changes
+  React.useEffect(() => {
+    if (tenant) {
+      setCompanyName(tenant.name)
+      setCompanyDomain(tenant.domain)
+      setTimezone(tenant.settings?.timezone || '')
+      setCurrency(tenant.settings?.currency || '')
+    }
+  }, [tenant])
+
+  const handleSaveSettings = async () => {
+    setLoading(true)
+    try {
+      // Update tenant name and domain
+      const updatedTenant = {
+        ...tenant,
+        name: companyName,
+        domain: companyDomain,
+        updatedAt: new Date()
+      }
+      
+      // Update tenant settings
+      await updateTenantSettings({
+        timezone,
+        currency
+      })
+      
+      // Update the tenant object directly for name and domain
+      // Note: In a real app, this would be handled by a more comprehensive update function
+      if (tenant) {
+        Object.assign(tenant, {
+          name: companyName,
+          domain: companyDomain,
+          updatedAt: new Date()
+        })
+      }
+      
+      toast({
+        title: 'Settings Saved',
+        description: 'Company settings have been updated successfully.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save settings. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
   const handleCreateCustomField = () => {
     setSelectedCustomField(null)
     setShowCustomFieldModal(true)
@@ -89,19 +148,35 @@ function CompanySettingsPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-medium text-foreground">Company Name</label>
-              <Input defaultValue={tenant?.name} className="mt-1 shadow-sm" />
+              <Input 
+                value={companyName} 
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="mt-1 shadow-sm" 
+              />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Domain</label>
-              <Input defaultValue={tenant?.domain} className="mt-1 shadow-sm" />
+              <Input 
+                value={companyDomain} 
+                onChange={(e) => setCompanyDomain(e.target.value)}
+                className="mt-1 shadow-sm" 
+              />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Timezone</label>
-              <Input defaultValue={tenant?.settings.timezone} className="mt-1 shadow-sm" />
+              <Input 
+                value={timezone} 
+                onChange={(e) => setTimezone(e.target.value)}
+                className="mt-1 shadow-sm" 
+              />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Currency</label>
-              <Input defaultValue={tenant?.settings.currency} className="mt-1 shadow-sm" />
+              <Input 
+                value={currency} 
+                onChange={(e) => setCurrency(e.target.value)}
+                className="mt-1 shadow-sm" 
+              />
             </div>
           </div>
         </CardContent>
@@ -280,9 +355,18 @@ function CompanySettingsPage() {
               Configure your dealership settings and preferences
             </p>
           </div>
-          <Button onClick={handleSaveSettings} className="shadow-sm">
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
+          <Button onClick={handleSaveSettings} className="shadow-sm" disabled={loading}>
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -321,10 +405,6 @@ function CompanySettingsPage() {
     </div>
   )
   
-}
-
-const handleSaveSettings = async () => {
-  console.log('Saving settings...')
 }
 
 export default function CompanySettings() {
