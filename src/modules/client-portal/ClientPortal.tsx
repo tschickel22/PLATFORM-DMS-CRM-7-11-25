@@ -340,18 +340,7 @@ export default function ClientPortal() {
         <main className="p-4 lg:p-8">
           <Routes>
             <Route path="/" element={<ClientDashboard />} />
-            <Route path="/agreements/*" element={<ClientAgreements />} />
             <Route path="/applications/*" element={<PortalApplicationView />} />
-            <Route path="/profile" element={
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  Profile management (Coming Soon)
-                </p>
-              </div>
-            } />
-                </p>
-              </div>
-            } />
             <Route path="/profile" element={<ClientProfile />} />
             <Route path="*" element={<Navigate to="/portalclient" replace />} />
           </Routes>
