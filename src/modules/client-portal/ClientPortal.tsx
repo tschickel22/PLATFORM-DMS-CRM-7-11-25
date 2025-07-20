@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
+import { ClientAgreements } from './components/ClientAgreements'
+import { PortalApplicationView } from '../finance-application/components/PortalApplicationView'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -337,8 +339,8 @@ export default function ClientPortal() {
         <main className="p-4 lg:p-8">
           <Routes>
             <Route path="/" element={<ClientDashboard />} />
-            <Route path="/agreements/*" element={
-              <div className="text-center py-12">
+            <Route path="/agreements/*" element={<ClientAgreements />} />
+            <Route path="/applications/*" element={<PortalApplicationView />} />
                 <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">Agreements</h3>
                 <p className="text-muted-foreground">

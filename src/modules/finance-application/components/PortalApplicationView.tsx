@@ -167,13 +167,13 @@ export function PortalApplicationView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="ri-page-header">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="ri-page-title">Applications</h1>
-            <p className="ri-page-description">
+            <h1 className="text-2xl font-bold">Applications</h1>
+            <p className="text-muted-foreground">
               Manage your {getApplicationLabel().toLowerCase()}s
             </p>
           </div>
