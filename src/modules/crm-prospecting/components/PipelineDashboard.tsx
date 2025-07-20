@@ -17,6 +17,9 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
   // Use mock data as fallback for pipeline stages
   const pipelineStages = mockCrmProspecting.pipelines
   
+  // Ensure leads is always an array to prevent errors
+  const safeLeads = leads || []
+  
   const [stageData, setStageData] = useState<Array<{
     stage: string
     value: number
@@ -26,7 +29,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
   useEffect(() => {
     // Calculate stage metrics
     const data = mockCrmProspecting.pipelines.map(stage => {
-      const stageLeads = leads.filter(lead => mockCrmProspecting.pipelines.includes(lead.customFields?.pipelineStage))
+      const stageLeads = safeLeads.filter(lead => mockCrmProspecting.pipelines.includes(lead.customFields?.pipelineStage))
       const value = stageLeads.reduce((sum, lead) => sum + (lead.customFields?.estimatedValue || 0), 0)
       
       return {
@@ -38,7 +41,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
     })
     
     setStageData(data)
-  }, [leads, pipelineStages])
+  }, [safeLeads, pipelineStages])
 
   const totalValue = stageData.reduce((sum, stage) => sum + stage.value, 0)
   const totalLeads = stageData.reduce((sum, stage) => sum + stage.count, 0)
@@ -161,7 +164,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {leads.slice(0, 5).map(lead => (
+            {safeLeads.slice(0, 5).map(lead => (
               <div key={lead.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div>
@@ -183,6 +186,12 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
                 </div>
               </div>
             ))}
+            {safeLeads.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No recent pipeline activity</p>
+                <p className="text-sm">Leads will appear here once they're added to the pipeline</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
