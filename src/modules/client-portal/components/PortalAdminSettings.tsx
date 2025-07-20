@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Save, Globe, Mail, MessageSquare, Bell, Lock } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
-export function PortalSettings() {
+export function PortalAdminSettings() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('general')
   
