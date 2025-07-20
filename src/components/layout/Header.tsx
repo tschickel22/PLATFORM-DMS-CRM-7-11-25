@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Bell, Search, User, LogOut } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTenant } from '@/contexts/TenantContext'
 
 export default function Header() {
   const { tenant } = useTenant()
