@@ -28,7 +28,7 @@ interface SidebarProps {
   onClose: () => void
 }
 
-interface MenuItem {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
@@ -100,10 +100,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['CRM & Sales'])
 
   const toggleGroup = (groupName: string) => {
-    setExpandedGroups(prev => 
-      prev.includes(groupName) 
-        ? prev.filter(name => name !== groupName)
-        : [...prev, groupName]
+    setExpandedSection(prev => 
+      prev === sectionId ? null : sectionId
     )
   }
 
@@ -138,7 +136,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex items-center justify-between p-4 border-b border-border bg-background">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Building className="h-5 w-5 text-primary-foreground" />
+    const isExpanded = expandedSection === item.id
             </div>
             <div>
               <h1 className="text-lg font-semibold text-foreground">Renter Insight</h1>
