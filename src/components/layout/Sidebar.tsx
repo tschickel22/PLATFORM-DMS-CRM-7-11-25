@@ -67,7 +67,7 @@ const navigationItems = [
     hasSubmenu: true,
     items: [
       { title: 'Service Ops', href: '/service', icon: Wrench },
-      { title: 'Client Portal Admin', href: '/portal-admin', icon: Globe }
+      { title: 'Client Portal Admin', href: '/portal', icon: Globe }
     ]
   },
   {
