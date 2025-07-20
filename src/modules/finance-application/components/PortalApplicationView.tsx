@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast'
 export function PortalApplicationView() {
   const { tenant } = useTenant()
   const { getCustomerId, getDisplayName, getDisplayEmail } = usePortal()
-  const { getCustomerId } = usePortal()
   const { toast } = useToast()
   const {
     applications,
