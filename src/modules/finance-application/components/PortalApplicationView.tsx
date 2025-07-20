@@ -9,10 +9,12 @@ import { useFinanceApplications } from '../hooks/useFinanceApplications'
 import { FinanceApplicationForm } from './FinanceApplicationForm'
 import { useTenant } from '@/contexts/TenantContext'
 import { usePortal } from '@/contexts/PortalContext'
+import { usePortal } from '@/contexts/PortalContext'
 import { useToast } from '@/hooks/use-toast'
 
 export function PortalApplicationView() {
   const { tenant } = useTenant()
+  const { getCustomerId, getDisplayName, getDisplayEmail } = usePortal()
   const { getCustomerId } = usePortal()
   const { toast } = useToast()
   const {
@@ -117,8 +119,8 @@ export function PortalApplicationView() {
 
     const newApp = createApplication({
       customerId,
-      customerName: 'Portal Customer', // In real app, get from session
-      customerEmail: 'customer@email.com', // In real app, get from session
+      customerName: getDisplayName(),
+      customerEmail: getDisplayEmail(),
       templateId: defaultTemplate.id,
       status: 'draft'
     })
