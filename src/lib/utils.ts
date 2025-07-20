@@ -34,14 +34,18 @@ export function generateId(): string {
   return Math.random().toString(36).substr(2, 9)
 }
 
+// Capture timer functions at module level to avoid conflicts
+const setTimeoutFn = window.setTimeout
+const clearTimeoutFn = window.clearTimeout
+
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: any
   return (...args: Parameters<T>) => {
-    window.clearTimeout(timeout)
-    timeout = window.setTimeout(() => func(...args), wait)
+    clearTimeoutFn(timeout)
+    timeout = setTimeoutFn(() => func(...args), wait)
   }
 }
 
