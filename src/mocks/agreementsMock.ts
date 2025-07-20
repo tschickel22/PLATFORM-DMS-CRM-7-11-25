@@ -193,14 +193,14 @@ Best regards,
       name: 'Standard Lease Agreement',
       type: 'LEASE',
       description: 'Standard vehicle lease agreement template'
-      id: 'user-2',
+    },
     {
       id: 'template-service',
       name: 'Service Agreement',
       type: 'SERVICE',
       description: 'Annual service agreement template'
     },
-      id: 'user-3',
+    {
       id: 'template-warranty',
       name: 'Extended Warranty',
       type: 'WARRANTY',
