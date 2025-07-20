@@ -42,7 +42,7 @@ const mockUsers = [
     status: 'Inactive',
     lastLogin: '2024-01-10T09:15:00Z',
     department: 'Marketing',
-interface PortalAdminUserListProps {
+    joinDate: '2023-08-10',
     permissions: ['read']
   }
 ]
