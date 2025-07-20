@@ -418,8 +418,29 @@ export default function ClientPortal() {
               <p>&copy; 2024 {tenant?.name}. All rights reserved.</p>
             </div>
           </div>
-        </footer>
+            <Route path="/agreements/*" element={<ClientAgreements />} />
+            <Route path="/applications/*" element={<PortalApplicationView />} />
+            <Route path="/profile" element={
+              <div className="text-center py-12">
+                <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
+                <p className="text-muted-foreground">
+                  Manage your profile information (Coming in Phase 4)
+                </p>
+              </div>
+            } />
+            <Route path="/settings" element={
+              <div className="text-center py-12">
+                <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
+                <p className="text-muted-foreground">
+                  Manage your account preferences (Coming in Phase 4)
+                </p>
+              </div>
+            } />
+          </Routes>
+        </main>
       </div>
     </div>
   )
 }
+
+export default ClientPortal
