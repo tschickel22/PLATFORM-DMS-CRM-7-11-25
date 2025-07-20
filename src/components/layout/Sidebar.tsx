@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useTenant } from '@/contexts/TenantContext'
+import { Users, Package, FileText, DollarSign, Wrench, Truck, CheckSquare, Percent, Globe, Receipt, Settings, BarChart3, CreditCard } from 'lucide-react'
 import { isColorLight } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useTenant } from '@/contexts/TenantContext'
 import { 
   Users, 
   Package, 
@@ -93,6 +94,7 @@ const navigationItems = [
 export default function Sidebar() {
   const { tenant } = useTenant()
   const location = useLocation()
+  const { tenant } = useTenant()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
   // Determine sidebar colors
@@ -226,12 +228,19 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-slate-700 p-4">
-        <div className="text-xs text-slate-400">
-          <div>CRM/DMS</div>
-          <div>Version 1.0.0</div>
-        </div>
+      {/* Logo Section */}
+      <div className="px-4 py-4 border-b">
+        {tenant?.branding?.logo ? (
+          <img 
+            src={tenant.branding.logo} 
+            alt="Company Logo"
+            className="max-h-10 object-contain h-8 w-auto"
+          />
+        ) : (
+          <div className="text-lg font-semibold text-foreground">
+            {tenant?.name || 'Renter Insight'}
+          </div>
+        )}
       </div>
     </div>
   )
