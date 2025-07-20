@@ -129,45 +129,6 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const addCustomField = async (field: Omit<CustomField, 'id'>) => {
     const newField: CustomField = {
       ...field,
-      id: 'tenant-1',
-      name: 'Demo RV Dealership',
-      domain: 'demo.renterinsight.com',
-      settings: {
-        timezone: 'America/New_York',
-        currency: 'USD',
-        dateFormat: 'MM/dd/yyyy',
-        businessHours: {
-          monday: { open: '09:00', close: '18:00', closed: false },
-          tuesday: { open: '09:00', close: '18:00', closed: false },
-          wednesday: { open: '09:00', close: '18:00', closed: false },
-          thursday: { open: '09:00', close: '18:00', closed: false },
-          friday: { open: '09:00', close: '18:00', closed: false },
-          saturday: { open: '09:00', close: '17:00', closed: false },
-          sunday: { open: '12:00', close: '17:00', closed: false }
-        },
-        features: {
-          crm: true,
-          inventory: true,
-          quotes: true,
-          agreements: true,
-          service: true,
-          delivery: true,
-          commissions: true,
-          portal: true,
-          invoices: true,
-          reports: true
-        }
-      },
-      customFields: [],
-      branding: {
-        primaryColor: '#3b82f6',
-        secondaryColor: '#64748b',
-        fontFamily: 'Inter'
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
       id: Math.random().toString(36).substr(2, 9)
     }
     
