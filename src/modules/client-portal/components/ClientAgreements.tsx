@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,17 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileText, Download, Edit, Search, Filter } from 'lucide-react'
 import { Agreement, AgreementStatus } from '@/types'
 import { useTenant } from '@/contexts/TenantContext'
+import { usePortal } from '@/contexts/PortalContext'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate } from '@/lib/utils'
 
 export function ClientAgreements() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const { tenant } = useTenant()
+  const { getCustomerId } = usePortal()
   
-  // Get client ID from impersonation or session
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  const currentClientId = impersonateClientId || 'current-client-id' // In real app, get from auth context
+  // Get customer ID from portal context (handles both proxied and regular sessions)
+  const currentClientId = getCustomerId()
   
   // Use tenant agreements or fallback to mock data
   const allAgreements = tenant?.agreements || mockAgreements.sampleAgreements

@@ -8,10 +8,12 @@ import { FinanceApplication } from '../types'
 import { useFinanceApplications } from '../hooks/useFinanceApplications'
 import { FinanceApplicationForm } from './FinanceApplicationForm'
 import { useTenant } from '@/contexts/TenantContext'
+import { usePortal } from '@/contexts/PortalContext'
 import { useToast } from '@/hooks/use-toast'
 
 export function PortalApplicationView() {
   const { tenant } = useTenant()
+  const { getCustomerId } = usePortal()
   const { toast } = useToast()
   const {
     applications,
@@ -24,8 +26,8 @@ export function PortalApplicationView() {
   const [selectedApplication, setSelectedApplication] = useState<FinanceApplication | null>(null)
   const [showNewApplicationForm, setShowNewApplicationForm] = useState(false)
 
-  // Mock customer ID - in real app, this would come from portal session
-  const customerId = 'portal-customer-001'
+  // Get customer ID from portal context (handles both proxied and regular sessions)
+  const customerId = getCustomerId()
   const customerApplications = getApplicationsByCustomer(customerId)
 
   // Get platform-specific labels

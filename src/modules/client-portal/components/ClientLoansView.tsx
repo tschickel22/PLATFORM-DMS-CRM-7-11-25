@@ -5,16 +5,18 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { DollarSign, Calendar, CreditCard, Eye, TrendingUp, AlertCircle } from 'lucide-react'
 import { useLoans } from '@/modules/finance/hooks/useLoans'
+import { usePortal } from '@/contexts/PortalContext'
 import { Loan, LoanStatus } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ClientLoanDetail } from './ClientLoanDetail'
 
 export function ClientLoansView() {
   const { getPortalLoansByCustomer } = useLoans()
+  const { getCustomerId } = usePortal()
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
 
-  // Mock customer ID - in real app, this would come from portal session
-  const customerId = 'portal-customer-001'
+  // Get customer ID from portal context (handles both proxied and regular sessions)
+  const customerId = getCustomerId()
   const loans = getPortalLoansByCustomer(customerId)
 
   const getStatusColor = (status: LoanStatus) => {
