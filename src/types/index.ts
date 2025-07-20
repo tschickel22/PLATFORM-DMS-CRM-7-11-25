@@ -48,6 +48,7 @@ export interface TenantBranding {
   logo?: string
   primaryColor: string
   secondaryColor: string
+  sideMenuColor?: string | null
   fontFamily: string
 }
 
