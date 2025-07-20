@@ -107,10 +107,12 @@ export default function Sidebar({ sideMenuColor }: SidebarProps) {
   }
 
   return (
+    <nav>
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-2">
             {navigationItems.map((item) => (
+              <div key={item.id}>
                 {/* Sub-navigation */}
                 {item.children && isActive(item.href) && (
                   <div className="ml-6 mt-2 space-y-1">
@@ -130,12 +132,17 @@ export default function Sidebar({ sideMenuColor }: SidebarProps) {
                       </Link>
                     ))}
                   </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       {/* Footer */}
       <div className="border-t border-slate-700 p-4">
         <div className="text-xs text-slate-400">
           <p>Version 1.0.0</p>
         </div>
         </div>
-    </>
       </nav>
+  )
 }
