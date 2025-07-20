@@ -97,6 +97,7 @@ export function IntegrationSettings() {
     try {
       await updateTenant({
         settings: {
+          ...tenant?.settings,
           emailProvider,
           emailApiKey,
           emailFromAddress,

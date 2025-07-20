@@ -241,6 +241,7 @@ export function NotificationTemplates() {
     try {
       await updateTenant({
         settings: {
+          ...tenant?.settings,
           emailTemplates,
           smsTemplates
         }
