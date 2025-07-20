@@ -1,25 +1,29 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Users, Package, FileText, DollarSign, Wrench, Truck, CheckSquare, Percent, Globe, Receipt, Settings, BarChart3, CreditCard } from 'lucide-react'
-import { isColorLight } from '@/lib/utils'
-import { cn } from '@/lib/utils'
-import { useTenant } from '@/contexts/TenantContext'
 import { 
+  Users, 
+  Package, 
+  FileText, 
   DollarSign, 
+  Wrench, 
+  Truck, 
+  CheckSquare, 
+  Percent, 
+  Globe, 
+  Receipt, 
   Settings, 
+  BarChart3, 
+  CreditCard,
   ChevronDown, 
   ChevronRight,
-  BarChart3,
-  Wrench,
-  Truck,
   ClipboardCheck,
-  Percent,
-  Globe,
   FileCheck,
-  Receipt,
   Building,
   Shield
 } from 'lucide-react'
+import { isColorLight } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTenant } from '@/contexts/TenantContext'
 
 const navigationItems = [
   {
@@ -91,7 +95,6 @@ const navigationItems = [
 export default function Sidebar() {
   const { tenant } = useTenant()
   const location = useLocation()
-  const { tenant } = useTenant()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
   // Determine sidebar colors
@@ -116,22 +119,6 @@ export default function Sidebar() {
     setExpandedSection(expandedSection === sectionId ? null : sectionId)
   }
 
-  // Get sidebar background color from tenant branding
-  const getSidebarStyle = () => {
-    const branding = tenant?.branding
-    if (!branding) return {}
-
-    // If useDefaultSideMenuColor is true or sideMenuColor is null, use default
-    if (branding.sideMenuColor === null || branding.sideMenuColor === undefined) {
-      return {} // Use default CSS classes
-    }
-
-    // Use custom side menu color
-    return {
-      backgroundColor: branding.sideMenuColor
-    }
-  }
-
   const isActive = (href: string) => {
     return location.pathname === href || location.pathname.startsWith(href + '/')
   }
@@ -144,14 +131,19 @@ export default function Sidebar() {
         color: textColor
       }}
     >
-      {/* Header */}
-      <div className="flex items-center px-4 py-4 border-b">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-            <Building className="h-5 w-5 text-white" />
+      {/* Logo Section */}
+      <div className="px-4 py-4 border-b">
+        {tenant?.branding?.logo ? (
+          <img 
+            src={tenant.branding.logo} 
+            alt="Company Logo"
+            className="max-h-10 object-contain h-8 w-auto"
+          />
+        ) : (
+          <div className="text-lg font-semibold">
+            {tenant?.name || 'Renter Insight'}
           </div>
-          <span className="text-lg font-semibold">Renter Insight</span>
-        </Link>
+        )}
       </div>
 
       {/* Navigation */}
@@ -224,21 +216,6 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-
-      {/* Logo Section */}
-      <div className="px-4 py-4 border-b">
-        {tenant?.branding?.logo ? (
-          <img 
-            src={tenant.branding.logo} 
-            alt="Company Logo"
-            className="max-h-10 object-contain h-8 w-auto"
-          />
-        ) : (
-          <div className="text-lg font-semibold text-foreground">
-            {tenant?.name || 'Renter Insight'}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
