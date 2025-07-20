@@ -107,33 +107,35 @@ export default function Sidebar({ sideMenuColor }: SidebarProps) {
   }
 
   return (
-    <div 
-      className={cn(
-        "w-64 text-white flex flex-col",
-        !sideMenuColor && "bg-slate-900"
-      )}
-      style={sideMenuColor ? { backgroundColor: sideMenuColor } : undefined}
-    >
-      {/* Logo/Brand */}
-      <div className="flex h-16 items-center justify-center border-b border-slate-700 px-4">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-            <Building className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-lg font-semibold">Renter Insight</span>
-        </Link>
-      </div>
-
-      </div>
-      </nav>
-
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-2">
+            {navigationItems.map((item) => (
+                {/* Sub-navigation */}
+                {item.children && isActive(item.href) && (
+                  <div className="ml-6 mt-2 space-y-1">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.name}
+                        to={child.href}
+                        className={cn(
+                          "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+                          isActive(child.href)
+                            ? "bg-slate-700 text-white"
+                            : "text-slate-400 hover:bg-slate-700 hover:text-white"
+                        )}
+                      >
+                        <child.icon className="mr-3 h-4 w-4" />
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
       {/* Footer */}
       <div className="border-t border-slate-700 p-4">
         <div className="text-xs text-slate-400">
-          <div>CRM/DMS</div>
-          <div>Version 1.0.0</div>
+          <p>Version 1.0.0</p>
         </div>
-      </div>
-    </div>
-  )
+        </div>
+    </>
+      </nav>
 }
