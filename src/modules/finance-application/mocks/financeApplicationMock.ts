@@ -105,16 +105,6 @@ export const mockFinanceApplications = {
         }
       },
       uploadedFiles: [],
-      history: [
-        {
-          id: 'hist-005',
-          timestamp: '2024-01-18T11:15:00Z',
-          action: 'Application Created',
-          userId: 'system',
-          userName: 'System',
-          details: 'Application created with status: draft'
-        }
-      ],
       fraudCheckStatus: 'pending' as const,
       createdAt: '2024-01-18T11:15:00Z',
       updatedAt: '2024-01-18T11:15:00Z',
@@ -365,6 +355,50 @@ export const mockFinanceApplications = {
           size: 201234,
           url: '/mock/paystub-wilson.pdf',
           uploadedAt: '2024-01-22T14:20:00Z'
+        }
+      ],
+      history: [
+        {
+          id: 'hist-027',
+          timestamp: '2024-01-20T13:45:00Z',
+          action: 'Application Created',
+          userId: 'system',
+          userName: 'System',
+          details: 'Application created with status: draft'
+        },
+        {
+          id: 'hist-028',
+          timestamp: '2024-01-22T14:20:00Z',
+          action: 'Document Uploaded',
+          userId: 'cust-008',
+          userName: 'David Wilson',
+          details: '1 document(s) uploaded'
+        },
+        {
+          id: 'hist-029',
+          timestamp: '2024-01-22T15:00:00Z',
+          action: 'Application Submitted',
+          userId: 'cust-008',
+          userName: 'David Wilson',
+          details: 'Application submitted for review'
+        },
+        {
+          id: 'hist-030',
+          timestamp: '2024-01-27T11:30:00Z',
+          action: 'Status Changed',
+          userId: 'admin-001',
+          userName: 'Finance Admin',
+          details: 'Status changed from under_review to conditionally_approved',
+          oldValue: 'under_review',
+          newValue: 'conditionally_approved'
+        },
+        {
+          id: 'hist-031',
+          timestamp: '2024-01-27T11:30:00Z',
+          action: 'Admin Notes Updated',
+          userId: 'admin-001',
+          userName: 'Finance Admin',
+          details: 'Admin notes added/updated'
         }
       ],
       fraudCheckStatus: 'verified' as const,

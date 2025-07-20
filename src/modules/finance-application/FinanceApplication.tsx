@@ -543,6 +543,72 @@ function FinanceApplicationDashboard() {
                 )}
               </p>
             </div>
+
+            {/* Application History */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Application History</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {selectedApplication.history?.length > 0 ? (
+                  selectedApplication.history
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .map((entry) => (
+                      <div key={entry.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-muted/20">
+                        <div className="flex-shrink-0 mt-1">
+                          {entry.action.includes('Status') ? (
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Settings className="h-4 w-4 text-blue-600" />
+                            </div>
+                          ) : entry.action.includes('Document') ? (
+                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-green-600" />
+                            </div>
+                          ) : entry.action.includes('Notes') ? (
+                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-purple-600" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                              <Clock className="h-4 w-4 text-gray-600" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium">{entry.action}</h4>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(entry.timestamp).toLocaleDateString()} {new Date(entry.timestamp).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{entry.details}</p>
+                          {(entry.oldValue || entry.newValue) && (
+                            <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                              {entry.oldValue && (
+                                <div>
+                                  <span className="font-medium">From:</span> {entry.oldValue}
+                                </div>
+                              )}
+                              {entry.newValue && (
+                                <div>
+                                  <span className="font-medium">To:</span> {entry.newValue}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex items-center space-x-1 mt-2">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{entry.userName}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Clock className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                    <p className="text-sm">No history available</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
