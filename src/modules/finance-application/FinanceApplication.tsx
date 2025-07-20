@@ -151,6 +151,61 @@ function FinanceApplicationDashboard() {
     }
   }
 
+  const handleStatusChange = (newStatus: string) => {
+    if (!selectedApplication) return
+    
+    // Check if changing FROM denied TO another status - requires note validation
+    if (selectedApplication.status === 'denied' && newStatus !== 'denied') {
+      if (!currentAdminNote.trim()) {
+        // Set pending status but don't save yet
+        setPendingStatus(newStatus)
+        
+        // Scroll to admin notes section
+        adminNotesRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        })
+        
+        toast({
+          title: 'Internal Note Required',
+          description: 'Please add an internal note explaining the reason for changing from denied status.',
+          variant: 'destructive'
+        })
+        return
+      }
+    }
+    
+    // Auto-save the status change
+    const isStatusChanging = newStatus !== selectedApplication.status
+    
+    if (isStatusChanging) {
+      const updateData: any = {
+        status: newStatus,
+        reviewedBy: 'Admin User', // In real app, get from auth context
+        reviewedAt: new Date().toISOString(),
+        adminNotes: currentAdminNote
+      }
+      
+      // Update the application
+      updateApplication(selectedApplication.id, updateData)
+      
+      // Update the selected application state to reflect changes immediately
+      const updatedApplication = {
+        ...selectedApplication,
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      }
+      setSelectedApplication(updatedApplication)
+      
+      // Clear pending status
+      setPendingStatus(null)
+      
+      toast({
+        title: 'Status Updated',
+        description: `Application status changed to ${mockFinanceApplications.statusOptions.find(s => s.value === newStatus)?.label || newStatus}.`
+      })
+    }
+  }
   const handleCloseApplicationForm = () => {
     setSelectedApplication(null)
     setCurrentAdminNote('')
@@ -332,7 +387,7 @@ function FinanceApplicationDashboard() {
                   <Label className="text-sm font-medium">Status:</Label>
                   <Select
                     value={pendingStatus || selectedApplication.status}
-                    onValueChange={setPendingStatus}
+                    onValueChange={handleStatusChange}
                   >
                     <SelectTrigger className="w-[200px]">
                       <SelectValue />
