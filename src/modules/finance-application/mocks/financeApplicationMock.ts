@@ -105,6 +105,16 @@ export const mockFinanceApplications = {
         }
       },
       uploadedFiles: [],
+      history: [
+        {
+          id: 'hist-005',
+          timestamp: '2024-01-18T11:15:00Z',
+          action: 'Application Created',
+          userId: 'system',
+          userName: 'System',
+          details: 'Application created with status: draft'
+        }
+      ],
       fraudCheckStatus: 'pending' as const,
       createdAt: '2024-01-18T11:15:00Z',
       updatedAt: '2024-01-18T11:15:00Z',
