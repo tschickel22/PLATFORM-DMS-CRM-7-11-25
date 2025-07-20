@@ -24,7 +24,14 @@ export function BrandingSettings() {
     tenant?.branding.sideMenuColor === null || !tenant?.branding.sideMenuColor
   )
   const [logoPreview, setLogoPreview] = useState(tenant?.branding.logo || mockCompanySettings.branding.logoUrl || '')
+  
+  // Portal branding states
+  const [portalName, setPortalName] = useState(tenant?.branding.portalName || mockCompanySettings.branding.portalName || '')
+  const [portalLogoUrl, setPortalLogoUrl] = useState(tenant?.branding.portalLogo || mockCompanySettings.branding.portalLogo || '')
+  const [portalLogoPreview, setPortalLogoPreview] = useState(tenant?.branding.portalLogo || mockCompanySettings.branding.portalLogo || '')
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const portalLogoInputRef = useRef<HTMLInputElement>(null)
   
   const fontOptions = mockCompanySettings.branding.fontOptions
 
@@ -42,6 +49,20 @@ export function BrandingSettings() {
     }
   }
 
+  const handlePortalLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // In a real app, you would upload this file to a storage service
+      // For this demo, we'll create an object URL
+      const objectUrl = URL.createObjectURL(file)
+      setPortalLogoPreview(objectUrl)
+      
+      // In a real app, you would set the portalLogoUrl to the URL returned from the storage service
+      // For this demo, we'll just use the object URL
+      setPortalLogoUrl(objectUrl)
+    }
+  }
+
   const handleSave = async () => {
     setLoading(true)
     try {
@@ -52,7 +73,9 @@ export function BrandingSettings() {
           secondaryColor,
           fontFamily,
           logo: logoUrl,
-          sideMenuColor: useDefaultSideMenuColor ? null : sideMenuColor
+          sideMenuColor: useDefaultSideMenuColor ? null : sideMenuColor,
+          portalName,
+          portalLogo: portalLogoUrl
         }
       })
       
@@ -118,6 +141,68 @@ export function BrandingSettings() {
                 <br />
                 Supported formats: PNG, JPG, SVG
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Portal Branding Section */}
+        <div className="space-y-4 pt-6 border-t">
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Client Portal Branding</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Customize the branding for your client-facing portal
+            </p>
+          </div>
+          
+          <div>
+            <Label htmlFor="portalName">Portal Name</Label>
+            <Input
+              id="portalName"
+              value={portalName}
+              onChange={(e) => setPortalName(e.target.value)}
+              placeholder="e.g., Customer Portal"
+              className="shadow-sm"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              This name will appear in the portal header and browser title
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <Label>Portal Logo</Label>
+            <div className="flex items-center space-x-4">
+              <div className="border rounded-md p-4 w-40 h-40 flex items-center justify-center bg-muted/30">
+                {portalLogoPreview ? (
+                  <img 
+                    src={portalLogoPreview} 
+                    alt="Portal Logo" 
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : (
+                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => portalLogoInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Portal Logo
+                </Button>
+                <Input 
+                  type="file" 
+                  ref={portalLogoInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handlePortalLogoChange}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Portal-specific logo (optional). If not set, company logo will be used.
+                  <br />
+                  Recommended size: 200x200px. Max file size: 2MB.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -295,6 +380,27 @@ export function BrandingSettings() {
                 }}
               >
                 Side Menu Background
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold">Portal Preview</h4>
+              <div className="border rounded-md p-4 bg-muted/20">
+                <div className="flex items-center space-x-3 mb-2">
+                  {portalLogoPreview && (
+                    <img 
+                      src={portalLogoPreview} 
+                      alt="Portal Logo" 
+                      className="w-8 h-8 object-contain"
+                    />
+                  )}
+                  <h5 className="font-semibold">
+                    {portalName || 'Customer Portal'}
+                  </h5>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  This is how your client portal header will appear
+                </p>
               </div>
             </div>
           </div>
