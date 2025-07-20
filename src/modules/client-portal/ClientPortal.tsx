@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Globe, Plus, Search, Filter, Users, Eye, Settings, MessageSquare, Mail, Phone, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PortalUserForm } from './components/PortalUserForm'
-import { PortalUserList } from './components/PortalUserList'
-import { PortalSettings } from './components/PortalSettings'
+import { PortalAdminUserForm } from './components/PortalAdminUserForm'
+import { PortalAdminUserList } from './components/PortalAdminUserList'
+import { PortalAdminSettings } from './components/PortalAdminSettings'
 import { ClientAgreements } from './components/ClientAgreements'
 import { ClientAgreementSign } from './components/ClientAgreementSign'
 
@@ -31,7 +31,7 @@ function ClientPortalDashboard() {
     <div className="space-y-8">
       {/* User Form Modal */}
       {showUserForm && (
-        <PortalUserForm
+        <PortalAdminUserForm
           onSave={() => {
             setShowUserForm(false)
           }}
@@ -64,11 +64,11 @@ function ClientPortalDashboard() {
         </TabsList>
 
         <TabsContent value="users">
-          <PortalUserList onImpersonate={handleImpersonateUser} />
+          <PortalAdminUserList onImpersonate={handleImpersonateUser} />
         </TabsContent>
 
         <TabsContent value="settings">
-          <PortalSettings />
+          <PortalAdminSettings />
         </TabsContent>
 
         <TabsContent value="activity">
