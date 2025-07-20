@@ -6,19 +6,23 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DollarSign, Calculator, CreditCard, FileText, Plus, Search, Filter, TrendingUp, Clock, Calendar } from 'lucide-react'
+import { Plus, DollarSign, TrendingUp, Users, Calculator, History, Settings } from 'lucide-react'
 import { mockFinance } from '@/mocks/financeMock'
 import { useTenant } from '@/contexts/TenantContext'
 import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
 import { formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
+import { useLoans } from './hooks/useLoans'
+import { NewLoanForm } from './components/NewLoanForm'
+import { NewLoanForm as OriginalNewLoanForm } from './components/NewLoanForm'
 import { LoanCalculator } from './components/LoanCalculator'
 import { PaymentHistory } from './components/PaymentHistory'
 import { LoanSettings } from './components/LoanSettings'
-import { NewLoanForm } from './components/NewLoanForm'
+import { AmortizationSchedule } from './components/AmortizationSchedule'
 import { LoanPaymentHistory } from './components/LoanPaymentHistory' // Import the new component
 import { Payment, PaymentMethod, PaymentStatus } from '@/types' 
+import { Loan } from '@/types'
 
 // Define interfaces
 interface Loan {
@@ -49,14 +53,15 @@ interface Payment {
   method: string;
 }
 
-export const FinanceModule: React.FC = () => {
-  const { toast } = useToast()
-  const { vehicles } = useInventoryManagement()
-  const [loans, setLoans] = useState<Loan[]>([])
+function FinanceModulePage() {
   const { tenant } = useTenant()
+  const { toast } = useToast()
+  const { loans, getLoansByCustomer } = useLoans()
+  const { vehicles } = useInventoryManagement()
+  const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [showNewLoanForm, setShowNewLoanForm] = useState(false) 
+  const [showLoanForm, setShowLoanForm] = useState(false)
   const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false) 
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null) 
   const [statusFilter, setStatusFilter] = useState('all')
@@ -98,6 +103,42 @@ export const FinanceModule: React.FC = () => {
     const matchesFilter = filterStatus === 'all' || loan?.status === filterStatus
     return matchesSearch && matchesFilter
   })
+
+  // Get platform-specific labels
+  const getModuleLabel = () => {
+    switch (tenant?.platform) {
+      case 'rv':
+        return 'RV Finance'
+      case 'marine':
+        return 'Marine Finance'
+      case 'manufactured_home':
+        return 'MH Finance'
+      default:
+        return 'Finance Management'
+    }
+  }
+
+  const handleCreateLoan = () => {
+    setSelectedLoan(null)
+    setShowLoanForm(true)
+  }
+
+  const handleEditLoan = (loan: Loan) => {
+    setSelectedLoan(loan)
+    setShowLoanForm(true)
+  }
+
+  const handleCloseLoanForm = () => {
+    setShowLoanForm(false)
+    setSelectedLoan(null)
+  }
+
+  const handleLoanSuccess = (loan: Loan) => {
+    toast({
+      title: selectedLoan ? 'Loan Updated' : 'Loan Created',
+      description: `Loan has been ${selectedLoan ? 'updated' : 'created'} successfully.`
+    })
+  }
 
   const handleViewPaymentHistory = (loan: Loan) => { 
     if (loan) {
@@ -168,111 +209,253 @@ export const FinanceModule: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Finance Management</h1>
-          <p className="text-muted-foreground">
-            Manage loans, payments, and financial operations
-          </p>
+      {/* Loan Form Modal */}
+      {showLoanForm && (
+        <NewLoanForm
+          loan={selectedLoan || undefined}
+          onClose={handleCloseLoanForm}
+          onSuccess={handleLoanSuccess}
+        />
+      )}
+
+      {/* Page Header */}
+      <div className="ri-page-header">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="ri-page-title">{getModuleLabel()}</h1>
+            <p className="ri-page-description">
+              Manage loans, payments, and financial operations
+            </p>
+          </div>
+          <div>
+            <Button onClick={handleCreateLoan}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Loan
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setShowNewLoanForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Loan
-        </Button>
       </div>
 
-      <Tabs defaultValue="loans" className="space-y-4">
+      {/* Stats Cards */}
+      <div className="ri-stats-grid">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Loans</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{loans.length}</div>
+            <p className="text-xs text-muted-foreground">
+              +2 from last month
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Portfolio</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${(loans.reduce((sum, loan) => sum + loan.remainingBalance, 0) / 1000000).toFixed(1)}M
+            </div>
+            <p className="text-xs text-muted-foreground">
+              +12% from last month
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Collections</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${(loans.reduce((sum, loan) => sum + loan.monthlyPayment, 0) / 1000).toFixed(1)}K
+            </div>
+            <p className="text-xs text-muted-foreground">
+              +8% from last month
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Interest Rate</CardTitle>
+            <Calculator className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loans.length > 0 
+                ? (loans.reduce((sum, loan) => sum + loan.interestRate, 0) / loans.length).toFixed(2)
+                : '0.00'
+              }%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              -0.15% from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="loans">Loans</TabsTrigger>
           <TabsTrigger value="calculator">Calculator</TabsTrigger>
-          <TabsTrigger value="payments">Payment History</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="loans" className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search loans..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border rounded-md"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="defaulted">Defaulted</option>
-            </select>
-          </div>
-
-          <div className="grid gap-4">
-            {Array.isArray(filteredLoans) && filteredLoans.length > 0 ? (
-              filteredLoans.map((loan) => loan && (
-              <Card key={loan?.id || Math.random().toString()}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      {loan?.customerName || 'Unknown Customer'}
-                    </CardTitle>
-                    <Badge variant={loan?.status === 'active' ? 'default' : 'secondary'}>
-                      {loan?.status || 'Unknown'}
-                    </Badge>
-                  </div>
-                  <CardDescription>{loan?.vehicleInfo || 'No vehicle information'}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Loan Amount</p>
-                      <p className="text-lg font-semibold">{formatCurrency(loan?.amount || 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
-                      <p className="text-lg font-semibold">{formatCurrency(loan?.paymentAmount || 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Payments</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-lg font-semibold">{Array.isArray(loan?.payments) ? loan.payments.length : 0}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm"  
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (loan) handleViewPaymentHistory(loan);
-                          }}
-                        >
-                          View History
-                        </Button>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="ri-content-grid">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Loans</CardTitle>
+                <CardDescription>
+                  Latest loan applications and approvals
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loans.length > 0 ? (
+                  <div className="space-y-4">
+                    {loans.slice(0, 5).map((loan) => (
+                      <div 
+                        key={loan.id} 
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => handleEditLoan(loan)}
+                      >
+                        <div>
+                          <h4 className="font-semibold">
+                            {loan.customerName} - {loan.vehicleInfo || 'Loan'}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            ${loan.loanAmount.toLocaleString()} • {loan.interestRate}% • {loan.termMonths} months
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge>{loan.status.replace('_', ' ').toUpperCase()}</Badge>
+                          {loan.isPortalVisible && (
+                            <Badge variant="outline">Portal</Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Next Payment</p>
-                      <p className="text-lg font-semibold flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {loan?.nextPaymentDate ? loan.nextPaymentDate.toLocaleDateString() : 'Not scheduled'}
-                      </p>
-                    </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))) : (
-              <div className="text-center p-8 border border-dashed rounded-lg">
-                <p className="text-muted-foreground">No loans found</p>
-              </div>
-            )}
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No loans created yet</p>
+                    <p className="text-sm">Create your first loan to get started</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Activity</CardTitle>
+                <CardDescription>
+                  Recent payment transactions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <h4 className="font-semibold">Payment Received</h4>
+                      <p className="text-sm text-muted-foreground">John Smith - $372.86</p>
+                    </div>
+                    <Badge variant="outline">Today</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <h4 className="font-semibold">Payment Received</h4>
+                      <p className="text-sm text-muted-foreground">Maria Rodriguez - $485.20</p>
+                    </div>
+                    <Badge variant="outline">Yesterday</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="calculator">
+        <TabsContent value="loans" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>All Loans</CardTitle>
+                  <CardDescription>
+                    Manage all loans and their portal visibility
+                  </CardDescription>
+                </div>
+                <Button onClick={handleCreateLoan}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Loan
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loans.length > 0 ? (
+                <div className="space-y-4">
+                  {loans.map((loan) => (
+                    <div 
+                      key={loan.id} 
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => handleEditLoan(loan)}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h4 className="font-semibold">
+                            {loan.customerName}
+                          </h4>
+                          <Badge>{loan.status.replace('_', ' ').toUpperCase()}</Badge>
+                          {loan.isPortalVisible && (
+                            <Badge variant="outline">Portal Visible</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {loan.vehicleInfo || `Loan #${loan.id.slice(-6).toUpperCase()}`}
+                        </p>
+                        <div className="grid gap-4 md:grid-cols-4 mt-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Amount: </span>
+                            <span className="font-medium">${loan.loanAmount.toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Balance: </span>
+                            <span className="font-medium">${loan.remainingBalance.toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Rate: </span>
+                            <span className="font-medium">{loan.interestRate}%</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Payment: </span>
+                            <span className="font-medium">${loan.monthlyPayment.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p>No loans created yet</p>
+                  <p className="text-sm">Create your first loan to get started</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="calculator" className="space-y-4">
           <LoanCalculator />
         </TabsContent>
 
@@ -313,21 +496,8 @@ export const FinanceModule: React.FC = () => {
           onRecordPayment={handleRecordPayment}
         />
       )}
-
-      {showNewLoanForm && (
-        <NewLoanForm
-          onClose={() => setShowNewLoanForm(false)}
-          onSave={async (loanData) => {
-            // Handle loan creation
-            toast({
-              title: "Loan Created",
-              description: "New loan has been successfully created.",
-            })
-            setShowNewLoanForm(false)
-          }}
-          onAddNewCustomer={() => {}}
-        />
-      )}
     </div>
   )
 }
+
+export const FinanceModule = FinanceModulePage
