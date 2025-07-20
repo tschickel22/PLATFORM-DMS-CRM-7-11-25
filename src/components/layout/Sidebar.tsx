@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useTenant } from '@/contexts/TenantContext'
 import { cn } from '@/lib/utils'
 import { 
   Users, 
@@ -89,6 +90,7 @@ const navigationItems = [
 ]
 
 export default function Sidebar() {
+  const { tenant } = useTenant()
   const location = useLocation()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
@@ -98,12 +100,31 @@ export default function Sidebar() {
     setExpandedSection(expandedSection === sectionId ? null : sectionId)
   }
 
+  // Get sidebar background color from tenant branding
+  const getSidebarStyle = () => {
+    const branding = tenant?.branding
+    if (!branding) return {}
+
+    // If useDefaultSideMenuColor is true or sideMenuColor is null, use default
+    if (branding.sideMenuColor === null || branding.sideMenuColor === undefined) {
+      return {} // Use default CSS classes
+    }
+
+    // Use custom side menu color
+    return {
+      backgroundColor: branding.sideMenuColor
+    }
+  }
+
   const isActive = (href: string) => {
     return location.pathname === href || location.pathname.startsWith(href + '/')
   }
 
   return (
-    <div className="flex h-full w-64 flex-col bg-slate-900 text-white">
+    <div 
+      className="flex h-full w-64 flex-col bg-slate-900 text-white"
+      style={getSidebarStyle()}
+    >
       {/* Logo/Brand */}
       <div className="flex h-16 items-center justify-center border-b border-slate-700 px-4">
         <Link to="/" className="flex items-center space-x-2">
