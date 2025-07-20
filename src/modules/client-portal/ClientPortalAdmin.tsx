@@ -23,7 +23,7 @@ function ClientPortalAdminDashboard() {
   
   const handleImpersonateUser = (userId: string, userName: string) => {
     // Open customer portal in a new tab with impersonation parameter
-    const customerPortalUrl = `/customer-portal?impersonateClientId=${userId}`
+    const customerPortalUrl = `/portalclient?impersonateClientId=${userId}`
     window.open(customerPortalUrl, '_blank')
   }
 
