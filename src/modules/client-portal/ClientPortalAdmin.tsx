@@ -13,7 +13,7 @@ import { PortalAdminSettings } from './components/PortalAdminSettings'
 import { ClientAgreements } from './components/ClientAgreements'
 import { ClientAgreementSign } from './components/ClientAgreementSign'
 
-function ClientPortalDashboard() {
+function ClientPortalAdminDashboard() {
   const [activeTab, setActiveTab] = useState('users')
   const [showUserForm, setShowUserForm] = useState(false)
   
@@ -95,13 +95,13 @@ function ClientPortalDashboard() {
   )
 }
 
-export default function ClientPortal() {
+export default function ClientPortalAdmin() {
   return (
     <Routes>
-      <Route path="/" element={<ClientPortalDashboard />} />
+      <Route path="/" element={<ClientPortalAdminDashboard />} />
       <Route path="/agreements" element={<ClientAgreements />} />
       <Route path="/agreements/:agreementId/sign" element={<ClientAgreementSign />} />
-      <Route path="/*" element={<ClientPortalDashboard />} />
+      <Route path="/*" element={<ClientPortalAdminDashboard />} />
     </Routes>
   )
 }
