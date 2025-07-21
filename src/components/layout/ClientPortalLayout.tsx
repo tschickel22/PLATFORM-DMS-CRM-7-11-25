@@ -1,19 +1,12 @@
 import React from 'react'
-import { Routes, Route, useSearchParams, Navigate, useNavigate } from 'react-router-dom'
-import { PortalProvider, usePortal } from '@/contexts/PortalContext'
+import { Routes, Route, useSearchParams, Navigate } from 'react-router-dom'
+import { PortalProvider } from '@/contexts/PortalContext'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import ClientPortal from '@/modules/client-portal/ClientPortal'
 import { ClientLoansView } from '@/modules/client-portal/components/ClientLoansView'
 import { ClientAgreements } from '@/modules/client-portal/components/ClientAgreements'
 import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
 import { mockUsers } from '@/mocks/usersMock'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { DollarSign, FileText, Calendar, X } from 'lucide-react'
-import { mockFinance } from '@/mocks/financeMock'
-import { mockAgreements } from '@/mocks/agreementsMock'
-import { mockServiceOps } from '@/mocks/serviceOpsMock'
-import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
 
 function ClientDashboard() {
   return <ClientPortal />
@@ -60,3 +53,5 @@ export default function ClientPortalLayout() {
     </ProtectedRoute>
   )
 }
+
+export default ClientPortalLayout
