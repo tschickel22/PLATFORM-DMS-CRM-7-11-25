@@ -298,10 +298,12 @@ export default function ClientPortal() {
   const { user: authUser } = useAuth()
   const [searchParams] = useSearchParams()
   
-  // Extract impersonation parameter and find the impersonated user
+  // Extract impersonation parameter from URL
   const impersonateClientId = searchParams.get('impersonateClientId')
-  const impersonatedUser = impersonateClientId
-    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
+  
+  // Find the impersonated user from mock data (supports any user ID)
+  const impersonatedUser = impersonateClientId 
+    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId) 
     : null
   
   return (
