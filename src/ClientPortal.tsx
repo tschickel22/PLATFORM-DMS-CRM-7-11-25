@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -277,9 +277,9 @@ function ClientPortalContent() {
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
         {navigation.map((item) => (
-          <a
+          <Link
             key={item.name}
-            href={item.href}
+            to={item.href}
             className={`
               group flex items-center px-2 py-2 text-sm font-medium rounded-md
               ${item.current
@@ -294,7 +294,7 @@ function ClientPortalContent() {
               }`}
             />
             {item.name}
-          </a>
+          </Link>
         ))}
       </nav>
 
