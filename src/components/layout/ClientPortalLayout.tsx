@@ -9,8 +9,6 @@ import { ClientAgreements } from '@/modules/client-portal/components/ClientAgree
 import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
 import { ClientServiceTickets } from '@/modules/client-portal/components/ClientServiceTickets'
 import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
-import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
-import { ClientServiceTickets } from '@/modules/client-portal/components/ClientServiceTickets'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
