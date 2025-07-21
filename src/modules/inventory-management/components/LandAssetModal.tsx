@@ -280,17 +280,17 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
                   </Select>
                 </div>
               </div>
+                </div>
             </form>
           </div>
 
           {/* Sticky Footer */}
           <div className="shrink-0 border-t bg-white p-4">
             <div className="flex flex-col sm:flex-row justify-end gap-3">
-                className="w-full sm:w-auto"
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={loading}>
+              <Button onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -300,7 +300,6 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
                   <>
                     <Save className="h-4 w-4 mr-2" />
                     {asset ? 'Update' : 'Create'} Asset
-                className="w-full sm:w-auto"
                   </>
                 )}
               </Button>
