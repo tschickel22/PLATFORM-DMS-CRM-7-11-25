@@ -150,40 +150,6 @@ export function useLandInventory() {
     return false
   }
 
-  const bundleToInventory = (inventoryId: string, landId: string) => {
-    // Update land asset to bundled status
-    setLandAssets(prev => prev.map(asset => 
-      asset.id === landId 
-        ? { ...asset, linkedInventoryId: inventoryId, status: 'Bundled' as const }
-        : asset
-    ))
-    
-    // In a real app, you would also update the inventory item status
-    // This would typically involve calling an inventory update function
-    console.log(`Bundled land asset ${landId} with inventory ${inventoryId}`)
-    
-    return true
-  }
-
-  const unbundleLandAsset = (landId: string) => {
-    setLandAssets(prev => prev.map(asset => 
-      asset.id === landId 
-        ? { ...asset, linkedInventoryId: undefined, status: 'Available' as const }
-        : asset
-    ))
-    
-    console.log(`Unbundled land asset ${landId}`)
-    return true
-  }
-
-  const getLandAssetByInventoryId = (inventoryId: string) => {
-    return landAssets.find(asset => asset.linkedInventoryId === inventoryId)
-  }
-
-  const getAvailableLandAssets = () => {
-    return landAssets.filter(asset => asset.status === 'Available')
-  }
-
   return {
     landAssets,
     loading,
