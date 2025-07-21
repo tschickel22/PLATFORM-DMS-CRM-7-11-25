@@ -503,6 +503,7 @@ function InventoryManagementPage() {
       {/* Land Asset Modal */}
       {showLandAssetModal && (
         <LandAssetModal
+          isOpen={true}
           asset={editingLandAsset}
           onSave={handleSaveLandAsset}
           onClose={() => {
