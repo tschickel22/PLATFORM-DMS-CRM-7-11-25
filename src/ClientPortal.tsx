@@ -372,10 +372,10 @@ function ClientPortalContent() {
         <main className="flex-1 overflow-y-auto p-6">
           <Routes>
             <Route path="/" element={<ClientDashboard />} />
-            <Route path="/loans" element={<ClientLoansView />} />
-            <Route path="/agreements" element={<ClientAgreements />} />
-            <Route path="/finance-applications" element={<PortalApplicationView />} />
-            <Route path="/settings" element={<ClientSettings />} />
+            <Route path="loans" element={<ClientLoansView />} />
+            <Route path="agreements" element={<ClientAgreements />} />
+            <Route path="finance-applications" element={<PortalApplicationView />} />
+            <Route path="settings" element={<ClientSettingsPage />} />
           </Routes>
         </main>
       </div>
