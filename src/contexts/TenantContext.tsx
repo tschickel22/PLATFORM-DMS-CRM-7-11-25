@@ -66,7 +66,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
             invoices: true,
             reports: true,
             landManagement: true
-          }
+          },
+          platformType: 'both'
         },
         customFields: [],
         branding: {
