@@ -371,6 +371,9 @@ function ClientPortalContent() {
     </div>
   )
 
+  const portalName = tenant?.branding?.portalName || 'Customer Portal'
+  const portalLogo = tenant?.branding?.portalLogo || tenant?.branding?.logo
+
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop sidebar */}
