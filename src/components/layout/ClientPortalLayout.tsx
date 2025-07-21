@@ -40,42 +40,6 @@ function ClientDashboard() {
   )
 }
 
-function ClientSettings() {
-  const { getDisplayName, getDisplayEmail } = usePortal()
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Account Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account preferences
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>
-            Your account details
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Name</label>
-            <p className="text-sm text-muted-foreground">{getDisplayName()}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium">Email</label>
-            <p className="text-sm text-muted-foreground">{getDisplayEmail()}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function ClientPortalLayout() {
-  const [searchParams, setSearchParams] = useSearchParams()
   const impersonateClientId = searchParams.get('impersonateClientId')
   const impersonatedUser = mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
 
