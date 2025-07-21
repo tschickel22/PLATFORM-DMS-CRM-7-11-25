@@ -28,11 +28,6 @@ function InventoryList() {
   const [showVehicleDetail, setShowVehicleDetail] = useState(false)
   const [showCSVImport, setShowCSVImport] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [locationFilter, setLocationFilter] = useState('all')
 
   // Check if land management feature is enabled
   const isLandManagementEnabled = tenant?.settings?.features?.landManagement

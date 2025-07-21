@@ -33,8 +33,22 @@ export function TenantProvider({ children }: TenantProviderProps) {
     const savedTenant = loadFromLocalStorage<Tenant | null>('tenant', null)
     
     if (savedTenant) {
-      // Use saved tenant data
-      setTenant(savedTenant)
+      // Use saved tenant data but ensure land management is enabled
+      const updatedTenant = {
+        ...savedTenant,
+        settings: {
+          ...savedTenant.settings,
+          platformType: 'both',
+          features: {
+            ...savedTenant.settings.features,
+            landManagement: true
+          }
+        },
+        updatedAt: new Date()
+      }
+      setTenant(updatedTenant)
+      // Save the updated tenant back to localStorage
+      saveToLocalStorage('tenant', updatedTenant)
     } else {
       // Fall back to mock tenant data
       const mockTenant: Tenant = {
@@ -65,7 +79,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
             portal: true,
             invoices: true,
             reports: true,
-            landManagement: true
+            landManagement: true,
+            platformType: 'both'
           },
           platformType: 'both'
         },
