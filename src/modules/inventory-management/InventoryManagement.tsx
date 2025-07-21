@@ -31,6 +31,10 @@ import { LandAsset } from './models/LandAsset'
 const RV_VEHICLE_TYPES = [VehicleType.RV, VehicleType.MOTORHOME, VehicleType.TRAVEL_TRAILER, VehicleType.FIFTH_WHEEL, VehicleType.TOY_HAULER]
 const MANUFACTURED_HOME_TYPES = [VehicleType.SINGLE_WIDE, VehicleType.DOUBLE_WIDE, VehicleType.TRIPLE_WIDE, VehicleType.PARK_MODEL, VehicleType.MODULAR_HOME]
 
+// Define features specific to each category
+const RV_FEATURES = ['AC', 'Solar Prep', 'Appliances Included', 'Generator Ready', 'Slide Outs', 'Awning']
+const MH_FEATURES = ['Washer/Dryer', 'Porch', 'Skirting', 'Appliances Included', 'Central Air', 'Fireplace']
+
 // Helper function to get filtered inventory based on tab
 const getFilteredInventory = (mode: 'vehicles' | 'homes') => {
   const typeFilter = mode === 'vehicles' ? RV_VEHICLE_TYPES : MANUFACTURED_HOME_TYPES
