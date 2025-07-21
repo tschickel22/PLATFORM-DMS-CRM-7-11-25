@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, useSearchParams } from 'react-router-dom'
+import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom'
 import { PortalProvider } from '@/contexts/PortalContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { mockUsers } from '@/mocks/usersMock'
@@ -24,9 +24,11 @@ import { mockFinance } from '@/mocks/financeMock'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { mockServiceOps } from '@/mocks/serviceOpsMock'
 import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
+import { useMockDataDiscovery, getPortalSectionsWithCounts } from '@/utils/mockDataDiscovery'
 
-function ClientDashboard() {
+function ClientDashboard({ searchParams }: { searchParams: URLSearchParams }) {
   const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
+  const navigate = useNavigate()
   
   // Get customer-specific data based on the current customer ID
   const customerId = getCustomerId()
@@ -258,9 +260,6 @@ function ClientPortalLayout() {
     setSearchParams(newSearchParams)
   }
 
-  const [searchParams] = useSearchParams()
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  
   // Find the impersonated user if ID is provided
   const impersonatedUser = impersonateClientId 
     ? mockUsers.sampleUsers.find(user => user.id === impersonateClientId)
@@ -294,7 +293,7 @@ function ClientPortalLayout() {
         )}
 
         <Routes>
-          <Route path="/" element={<ClientDashboard />} />
+          <Route path="/" element={<ClientDashboard searchParams={searchParams} />} />
           <Route path="/loans" element={<ClientLoansView />} />
           <Route path="/agreements" element={<ClientAgreements />} />
           <Route path="/finance-applications" element={<PortalApplicationView />} />
