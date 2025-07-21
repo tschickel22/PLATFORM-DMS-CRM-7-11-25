@@ -540,7 +540,48 @@ function InventoryManagementPage() {
       </div>
       </Card>
 
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Vehicle/Home Modal */}
+      {showVehicleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>
+                    {vehicleModalType === 'home' ? 'Add New Home' : 'Add New Vehicle'}
+                  </CardTitle>
+                  <CardDescription>
+                    {vehicleModalType === 'home' 
+                      ? 'Add a new manufactured home to inventory'
+                      : 'Add a new vehicle to inventory'
+                    }
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowVehicleModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <VehicleForm
+                mode={vehicleModalType}
+                onSave={(vehicleData) => {
+                  console.log('Vehicle saved:', vehicleData)
+                  setShowVehicleModal(false)
+                  toast({
+                    title: 'Success',
+                    description: `${vehicleModalType === 'home' ? 'Home' : 'Vehicle'} added successfully`,
+                  })
+                }}
+                onCancel={() => setShowVehicleModal(false)}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </>
+  )
+}
       {showVehicleModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
