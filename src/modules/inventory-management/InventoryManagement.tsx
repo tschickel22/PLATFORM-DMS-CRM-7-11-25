@@ -23,6 +23,8 @@ import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockInventory } from '@/mocks/inventoryMock'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
+import { LandAssetModal } from './components/LandAssetModal'
+import { LandAsset } from './models/LandAsset'
 
 function InventoryManagementPage() {
   const { tenant } = useTenant()
@@ -32,6 +34,9 @@ function InventoryManagementPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [locationFilter, setLocationFilter] = useState('all')
+  const [showLandAssetModal, setShowLandAssetModal] = useState(false)
+  const [landAssets, setLandAssets] = useState<LandAsset[]>(mockLandAssets.sampleLandAssets)
+  const [editingLandAsset, setEditingLandAsset] = useState<LandAsset | null>(null)
 
   // Check if land management is enabled
   const isLandManagementEnabled = tenant?.settings?.features?.landManagement === true
@@ -82,8 +87,6 @@ function InventoryManagementPage() {
     }
   ]
 
-  const landAssets = mockLandAssets.sampleLandAssets
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'available':
@@ -108,10 +111,55 @@ function InventoryManagementPage() {
   }
 
   const handleAddLandAsset = () => {
-    toast({
-      title: 'Add Land Asset',
-      description: 'Land asset form would open here'
-    })
+    setEditingLandAsset(null)
+    setShowLandAssetModal(true)
+  }
+
+  const handleEditLandAsset = (landAsset: LandAsset) => {
+    setEditingLandAsset(landAsset)
+    setShowLandAssetModal(true)
+  }
+
+  const handleSaveLandAsset = (landAssetData: Partial<LandAsset>) => {
+    if (editingLandAsset) {
+      // Update existing land asset
+      setLandAssets(landAssets.map(asset => 
+        asset.id === editingLandAsset.id 
+          ? { ...asset, ...landAssetData, updatedAt: new Date().toISOString() }
+          : asset
+      ))
+      toast({
+        title: 'Land Asset Updated',
+        description: 'Land asset has been updated successfully.'
+      })
+    } else {
+      // Create new land asset
+      const newLandAsset: LandAsset = {
+        id: `land-${Date.now()}`,
+        ...mockLandAssets.formDefaults,
+        ...landAssetData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      } as LandAsset
+      
+      setLandAssets([newLandAsset, ...landAssets])
+      toast({
+        title: 'Land Asset Created',
+        description: 'New land asset has been created successfully.'
+      })
+    }
+    setShowLandAssetModal(false)
+    setEditingLandAsset(null)
+  }
+
+  const handleDeleteLandAsset = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this land asset?')) {
+      setLandAssets(landAssets.filter(asset => asset.id !== id))
+      toast({
+        title: 'Land Asset Deleted',
+        description: 'Land asset has been deleted successfully.'
+      })
+    }
   }
 
   const renderVehiclesTab = () => (
@@ -380,68 +428,72 @@ function InventoryManagementPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <input type="checkbox" className="rounded" />
-                </TableHead>
-                <TableHead>Label</TableHead>
-                <TableHead>Parcel Number</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Size (sq ft)</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ownership</TableHead>
-                <TableHead>Sale Price</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {landAssets.map((asset) => (
-                <TableRow key={asset.id}>
-                  <TableCell>
-                    <input type="checkbox" className="rounded" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{asset.label}</div>
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">{asset.parcelNumber}</TableCell>
-                  <TableCell>
-                    <div className="max-w-xs truncate" title={asset.address}>
-                      {asset.address}
-                    </div>
-                  </TableCell>
-                  <TableCell>{asset.lotSizeSqFt.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge className={mockLandAssets.statusColors[asset.status]}>
-                      {asset.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]} variant="outline">
-                      {asset.ownershipStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {asset.pricing.salePrice ? `$${asset.pricing.salePrice.toLocaleString()}` : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="space-y-4">
+            {/* Land Assets Table */}
+            {landAssets.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Label</TableHead>
+                    <TableHead>Parcel Number</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Lot Size</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ownership</TableHead>
+                    <TableHead>Sale Price</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {landAssets.map((asset) => (
+                    <TableRow key={asset.id}>
+                      <TableCell className="font-medium">{asset.label}</TableCell>
+                      <TableCell>{asset.parcelNumber}</TableCell>
+                      <TableCell className="max-w-xs truncate">{asset.address}</TableCell>
+                      <TableCell>{asset.lotSizeSqFt?.toLocaleString()} sq ft</TableCell>
+                      <TableCell>
+                        <Badge className={mockLandAssets.statusColors[asset.status]}>
+                          {asset.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]}>
+                          {asset.ownershipStatus}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {asset.pricing.salePrice ? `$${asset.pricing.salePrice.toLocaleString()}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditLandAsset(asset)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteLandAsset(asset.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p>No land assets found</p>
+                <p className="text-sm">Add your first land asset to get started</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -449,6 +501,18 @@ function InventoryManagementPage() {
 
   return (
     <div className="space-y-6">
+      {/* Land Asset Modal */}
+      {showLandAssetModal && (
+        <LandAssetModal
+          landAsset={editingLandAsset}
+          onSave={handleSaveLandAsset}
+          onCancel={() => {
+            setShowLandAssetModal(false)
+            setEditingLandAsset(null)
+          }}
+        />
+      )}
+
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
