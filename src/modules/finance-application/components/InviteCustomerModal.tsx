@@ -9,6 +9,7 @@ import { X, Send, Plus, Search } from 'lucide-react'
 import { CustomerInvite } from '../types'
 import { useToast } from '@/hooks/use-toast'
 import { useFinanceApplications } from '../hooks/useFinanceApplications'
+import { mockUsers } from '@/mocks/usersMock'
 
 interface InviteCustomerModalProps {
   onClose: () => void
@@ -33,30 +34,14 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
   const [customMessage, setCustomMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Mock existing customers - in real app, this would come from CRM
-  const existingCustomers: CustomerInvite[] = [
-    {
-      id: 'cust-001',
-      name: 'John Smith',
-      email: 'john.smith@email.com',
-      phone: '(555) 123-4567',
-      source: 'website'
-    },
-    {
-      id: 'cust-002',
-      name: 'Maria Rodriguez',
-      email: 'maria.rodriguez@email.com',
-      phone: '(555) 987-6543',
-      source: 'referral'
-    },
-    {
-      id: 'cust-003',
-      name: 'David Johnson',
-      email: 'david.johnson@email.com',
-      phone: '(555) 456-7890',
-      source: 'trade_show'
-    }
-  ]
+  // Use shared mock users - in real app, this would come from CRM
+  const existingCustomers: CustomerInvite[] = mockUsers.sampleUsers.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    source: 'website' // Default source for mock data
+  }))
 
   const filteredCustomers = existingCustomers.filter(customer =>
     customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
