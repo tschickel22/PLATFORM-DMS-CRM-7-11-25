@@ -387,19 +387,26 @@ export default function ClientPortal() {
   const { user: authUser } = useAuth()
   const location = useLocation()
   
-  // Extract impersonation parameter from URL using URLSearchParams
+  // Debug logging for URL parameters
+  console.log('=== ClientPortal Debug ===')
+  console.log('Current location:', location)
+  console.log('location.search:', location.search)
+  console.log('location.pathname:', location.pathname)
+  
+  // Extract impersonation parameter from URL
   const searchParams = new URLSearchParams(location.search)
   const impersonateClientId = searchParams.get('impersonateClientId')
+  
+  console.log('Extracted impersonateClientId:', impersonateClientId)
   
   // Find the impersonated user from mock data (supports any user ID)
   const impersonatedUser = impersonateClientId 
     ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId) 
     : null
   
-  // Debug logging to help troubleshoot
-  console.log('URL search params:', location.search)
-  console.log('Impersonate Client ID:', impersonateClientId)
   console.log('Found impersonated user:', impersonatedUser)
+  console.log('Available mock users:', mockUsers.sampleUsers)
+  console.log('=== End ClientPortal Debug ===')
   
   return (
     <PortalProvider 
