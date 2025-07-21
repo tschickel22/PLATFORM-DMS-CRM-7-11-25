@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,7 +19,8 @@ import {
   DollarSign,
   Package,
   Users,
-  TrendingUp
+  TrendingUp,
+  Building
 } from 'lucide-react'
 import { useLandInventory } from '../hooks/useLandInventory'
 import { useTenant } from '@/contexts/TenantContext'
@@ -257,7 +258,7 @@ export function LandInventoryDashboard() {
               Land Management
             </h1>
             <p className="ri-page-description">
-          <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+              Manage your land inventory and bundle with homes
             </p>
           </div>
           <Button onClick={handleCreateAsset}>
@@ -267,59 +268,61 @@ export function LandInventoryDashboard() {
         </div>
       </div>
 
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      {/* Stats Grid */}
       <div className="ri-stats-grid">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Land Assets</CardTitle>
-            <Layers className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              Land parcels in system
-            </p>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Land Assets</CardTitle>
+              <Layers className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">
+                Land parcels in system
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.available}</div>
-            <p className="text-xs text-muted-foreground">
-              Ready for bundling
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Available</CardTitle>
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.available}</div>
+              <p className="text-xs text-muted-foreground">
+                Ready for bundling
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bundled Assets</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.bundled}</div>
-            <p className="text-xs text-muted-foreground">
-              Land + Home packages
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bundled Assets</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.bundled}</div>
+              <p className="text-xs text-muted-foreground">
+                Land + Home packages
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Combined land value
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
+              <p className="text-xs text-muted-foreground">
+                Combined land value
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -392,228 +395,187 @@ export function LandInventoryDashboard() {
           <CardDescription>
             Manage your land inventory and bundle with homes
           </CardDescription>
-            <div className="space-y-4 overflow-x-auto">
-              {/* Desktop Table View */}
-              <div className="hidden lg:block">
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="grid grid-cols-8 gap-4 p-4 bg-muted/50 font-medium text-sm">
-                    <div>Label</div>
-                    <div>Address</div>
-                    <div>Size (sq ft)</div>
-                    <div>Zoning</div>
-                    <div>Ownership</div>
-                    <div>Status</div>
-                    <div>Price</div>
-                    <div>Actions</div>
-                  </div>
-                  {filteredAssets.map((asset) => (
-                    <div key={asset.id} className="grid grid-cols-8 gap-4 p-4 border-t hover:bg-accent/50 transition-colors">
-                      <div className="font-medium">{asset.label}</div>
-                      <div className="text-sm text-muted-foreground truncate">{asset.address}</div>
-                      <div className="text-sm">{asset.lotSizeSqFt?.toLocaleString()}</div>
-                      <div className="text-sm">{asset.zoningType}</div>
-                      <div>
-                        <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]} variant="secondary">
-                          {asset.ownershipStatus}
-                        </Badge>
-                      </div>
-                      <div>
-                        <Badge className={mockLandAssets.statusColors[asset.status]} variant="secondary">
-                          {asset.status}
-                        </Badge>
-                      </div>
-                      <div className="text-sm">
-                        {asset.pricing.salePrice ? formatCurrency(asset.pricing.salePrice) : 'Lease Only'}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditAsset(asset)}
-                        >
-                          Edit
-                        </Button>
-                        {asset.status === 'Available' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleBundleAsset(asset)}
-                          >
-                            <Link className="h-4 w-4 mr-1" />
-                            Bundle
-                          </Button>
-                        )}
-                        {asset.status === 'Bundled' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUnbundleAsset(asset.id)}
-                          >
-                            Unlink
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteAsset(asset.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mobile/Tablet Card View */}
-              <div className="lg:hidden space-y-4">
+        </CardHeader>
         <CardContent>
+          <div className="space-y-4 overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="border rounded-lg overflow-hidden">
+                <div className="grid grid-cols-8 gap-4 p-4 bg-muted/50 font-medium text-sm">
+                  <div>Label</div>
+                  <div>Address</div>
+                  <div>Size (sq ft)</div>
+                  <div>Zoning</div>
+                  <div>Ownership</div>
+                  <div>Status</div>
+                  <div>Price</div>
+                  <div>Actions</div>
+                </div>
+                {filteredAssets.map((asset) => (
+                  <div key={asset.id} className="grid grid-cols-8 gap-4 p-4 border-t hover:bg-accent/50 transition-colors">
+                    <div className="font-medium">{asset.label}</div>
+                    <div className="text-sm text-muted-foreground truncate">{asset.address}</div>
+                    <div className="text-sm">{asset.lotSizeSqFt?.toLocaleString()}</div>
+                    <div className="text-sm">{asset.zoningType}</div>
+                    <div>
+                      <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]} variant="secondary">
+                        {asset.ownershipStatus}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Badge className={mockLandAssets.statusColors[asset.status]} variant="secondary">
+                        {asset.status}
+                      </Badge>
+                    </div>
+                    <div className="text-sm">
+                      {asset.pricing.salePrice ? formatCurrency(asset.pricing.salePrice) : 'Lease Only'}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditAsset(asset)}
+                      >
+                        Edit
+                      </Button>
+                      {asset.status === 'Available' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleBundle(asset)}
+                        >
+                          <Link className="h-4 w-4 mr-1" />
+                          Bundle
+                        </Button>
+                      )}
+                      {asset.status === 'Bundled' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnbundle(asset)}
+                        >
+                          Unlink
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteAsset(asset)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile/Tablet Card View */}
+            <div className="lg:hidden space-y-4">
+              {filteredAssets.map((asset) => (
                 <Card key={asset.id} className="overflow-hidden">
                   <CardContent className="p-4">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Label</TableHead>
-                  <TableHead>Address</TableHead>
-                          <h4 className="font-semibold text-sm sm:text-base">{asset.label}</h4>
-                  <TableHead>Zoning</TableHead>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm sm:text-base">{asset.label}</h4>
                         <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">{asset.address}</p>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sale Price</TableHead>
-                  <TableHead>Linked Unit</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAssets.map((asset) => (
-                  <TableRow key={asset.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm mb-4">
                         {asset.parcelNumber && (
                           <div className="text-sm text-muted-foreground">
                             {asset.parcelNumber}
                           </div>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-[200px] truncate" title={asset.address}>
-                        {asset.address}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm mb-4">
+                      <div>
+                        <span className="text-xs sm:text-sm font-medium text-blue-900">
+                          {asset.lotSizeSqFt?.toLocaleString()} sq ft
+                        </span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {asset.lotSizeSqFt ? asset.lotSizeSqFt.toLocaleString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>
                       <div className="text-sm">{asset.zoningType || 'N/A'}</div>
-                    </TableCell>
-                          <span className="text-xs sm:text-sm font-medium text-blue-900">
-                      <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]}>
-                        {asset.ownershipStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={mockLandAssets.statusColors[asset.status]}>
+                    </div>
+                    
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                      {asset.linkedInventoryId && (
-                        <Badge variant="outline" className="ml-2">
-                          <Link className="h-3 w-3 mr-1" />
-                          Linked
-                          className="flex-1 sm:flex-none"
+                        <Badge 
+                          className={mockLandAssets.statusColors[asset.status]}
+                          variant="secondary"
+                        >
+                          {asset.status}
                         </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {asset.pricing?.salePrice 
-                        ? formatCurrency(asset.pricing.salePrice)
-                        : 'N/A'
-                      }
-                            className="flex-1 sm:flex-none"
-                    </TableCell>
-                    <TableCell>
-                            <span className="hidden sm:inline">Bundle</span>
-                        <div className="flex items-center text-sm">
-                          <Link className="h-3 w-3 mr-1 text-blue-600" />
-                          <span className="text-blue-600">{asset.linkedInventoryId}</span>
-              <CardTitle className="text-xs sm:text-sm font-medium">Total Assets</CardTitle>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">None</span>
-                      )}
-                            className="flex-1 sm:flex-none"
-              <div className="text-xl sm:text-2xl font-bold">{stats.totalAssets}</div>
-              <p className="text-xs text-muted-foreground hidden sm:block">
-                      <div className="ri-action-buttons">
+                        <Badge 
+                          className={mockLandAssets.ownershipColors[asset.ownershipStatus]}
+                          variant="secondary"
+                        >
+                          {asset.ownershipStatus}
+                        </Badge>
+                        {asset.linkedInventoryId && (
+                          <Badge variant="outline" className="ml-2">
+                            <Link className="h-3 w-3 mr-1" />
+                            Linked
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         {asset.status === 'Available' && (
                           <Button
                             variant="outline"
-                      <div className="flex space-x-2 w-full sm:w-auto justify-end">
+                            size="sm"
                             onClick={() => handleBundle(asset)}
+                            className="flex-1 sm:flex-none"
                           >
-              <CardTitle className="text-xs sm:text-sm font-medium">Available</CardTitle>
-                            Bundle
+                            <Link className="h-3 w-3 mr-1" />
+                            <span className="hidden sm:inline">Bundle</span>
                           </Button>
-                          title="Coming soon - CRM integration"
-                          className="text-xs"
-              <div className="text-xl sm:text-2xl font-bold">{stats.availableAssets}</div>
-              <p className="text-xs text-muted-foreground hidden sm:block">
+                        )}
+                        {asset.status === 'Bundled' && (
+                          <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleUnbundle(asset)}
+                            className="flex-1 sm:flex-none"
                           >
-                            <Package className="h-4 w-4 mr-1" />
-                            Unbundle
+                            <Package className="h-3 w-3 mr-1" />
+                            <span className="hidden sm:inline">Unbundle</span>
                           </Button>
-                            className="text-xs"
-              <CardTitle className="text-xs sm:text-sm font-medium">Bundled</CardTitle>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
-              <div className="text-xl sm:text-2xl font-bold">{stats.bundledAssets}</div>
-              <p className="text-xs text-muted-foreground hidden sm:block">
+                          onClick={() => handleEditAsset(asset)}
+                          className="flex-1 sm:flex-none"
+                        >
                           <Edit className="h-3 w-3" />
                         </Button>
-                          className="text-red-600 hover:text-red-700"
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteAsset(asset)}
                           disabled={asset.status === 'Bundled'}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
-                        </Button>
-              </div>
-                      </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <div className="text-center py-8 sm:py-12 text-muted-foreground">
-                ))}
-              </TableBody>
-            </Table>
+              ))}
+            </div>
 
             {filteredAssets.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-        <Card className="overflow-hidden">
+                {landAssets.length === 0 ? (
                   <>
-            {/* Mobile Filter Toggle */}
-            <div className="flex items-center justify-between mb-4 sm:hidden">
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowMobileFilters(!showMobileFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-            </div>
-
-            {/* Desktop Filters - Always Visible */}
-              <Select value={zoningFilter} onValueChange={setZoningFilter}>
+                    <h3 className="text-lg font-semibold mb-2">No Land Assets Yet</h3>
                     <p className="text-sm">Add your first land asset to get started</p>
                   </>
                 ) : (
                   <>
+                    <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
                     <p>No land assets found</p>
                     <p className="text-sm">Try adjusting your search or filters</p>
                   </>
