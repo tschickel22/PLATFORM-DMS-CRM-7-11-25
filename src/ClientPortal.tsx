@@ -18,10 +18,14 @@ import {
 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { mockUsers } from '@/mocks/usersMock'
 import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
 import { ClientLoansView } from './components/ClientLoansView'
 import { ClientAgreements } from './components/ClientAgreements'
+import { mockUsers } from '@/mocks/usersMock'
+import { mockFinance } from '@/mocks/financeMock'
+import { mockAgreements } from '@/mocks/agreementsMock'
+import { mockServiceOps } from '@/mocks/serviceOpsMock'
+import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
 
 // Mock components for routes that aren't implemented yet
 function ClientSettings() {
@@ -44,7 +48,89 @@ function ClientSettings() {
 }
 
 function ClientDashboard() {
-  const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
+  const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
+  
+  // Get customer-specific data based on the current customer ID
+  const customerId = getCustomerId()
+  
+  // Filter data for the current customer
+  const customerLoans = mockFinance.sampleLoans.filter(loan => 
+    loan.customerId === customerId || loan.customerName === getDisplayName()
+  )
+  
+  const customerAgreements = mockAgreements.sampleAgreements.filter(agreement => 
+    agreement.customerId === customerId || agreement.customerName === getDisplayName()
+  )
+  
+  const customerApplications = mockFinanceApplications.sampleApplications.filter(app => 
+    app.customerId === customerId || app.customerName === getDisplayName()
+  )
+  
+  const customerServiceTickets = mockServiceOps.sampleTickets.filter(ticket => 
+    ticket.customerId === customerId || ticket.customerName === getDisplayName()
+  )
+  
+  // Calculate dynamic stats
+  const activeLoans = customerLoans.filter(loan => ['Current', 'Active'].includes(loan.status))
+  const paidOffLoans = customerLoans.filter(loan => loan.status === 'Paid Off')
+  const pendingAgreements = customerAgreements.filter(agreement => agreement.status === 'PENDING')
+  const inProgressTickets = customerServiceTickets.filter(ticket => ticket.status === 'In Progress')
+  
+  // Get recent activity from various sources
+  const recentActivity = [
+    // Recent loan payments
+    ...mockFinance.samplePayments
+      .filter(payment => {
+        const loan = customerLoans.find(l => l.id === payment.loanId)
+        return loan && payment.status === 'Completed'
+      })
+      .slice(0, 2)
+      .map(payment => {
+        const loan = customerLoans.find(l => l.id === payment.loanId)
+        return {
+          id: `payment-${payment.id}`,
+          type: 'payment',
+          title: 'Loan payment processed',
+          description: `Your monthly payment of $${payment.amount.toFixed(2)} was successfully processed.`,
+          time: new Date(payment.paymentDate).toLocaleDateString()
+        }
+      }),
+    
+    // Recent agreements
+    ...customerAgreements
+      .filter(agreement => agreement.status === 'PENDING')
+      .slice(0, 1)
+      .map(agreement => ({
+        id: `agreement-${agreement.id}`,
+        type: 'agreement',
+        title: 'New agreement available',
+        description: `A new ${agreement.type.toLowerCase()} agreement is available for your review and signature.`,
+        time: new Date(agreement.createdAt).toLocaleDateString()
+      })),
+    
+    // Recent service tickets
+    ...customerServiceTickets
+      .slice(0, 1)
+      .map(ticket => ({
+        id: `ticket-${ticket.id}`,
+        type: 'service',
+        title: 'Service ticket update',
+        description: `Service ticket "${ticket.title}" status: ${ticket.status}.`,
+        time: new Date(ticket.updatedAt).toLocaleDateString()
+      })),
+    
+    // Recent applications
+    ...customerApplications
+      .filter(app => ['submitted', 'under_review', 'approved'].includes(app.status))
+      .slice(0, 1)
+      .map(app => ({
+        id: `app-${app.id}`,
+        type: 'application',
+        title: 'Finance application update',
+        description: `Your finance application status: ${app.status.replace('_', ' ')}.`,
+        time: new Date(app.updatedAt).toLocaleDateString()
+      }))
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 3)
 
   return (
     <div className="space-y-6">
@@ -66,7 +152,6 @@ function ClientDashboard() {
       </div>
 
       {/* Quick Stats */}
-      {/* TODO: Update these stats to fetch dynamic data based on the customer ID from getCustomerId() for full implementation */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -74,9 +159,9 @@ function ClientDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{customerLoans.length}</div>
             <p className="text-xs text-muted-foreground">
-              2 active, 1 paid off
+              {activeLoans.length} active, {paidOffLoans.length} paid off
             </p>
           </CardContent>
         </Card>
@@ -86,9 +171,9 @@ function ClientDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{customerAgreements.length}</div>
             <p className="text-xs text-muted-foreground">
-              1 pending signature
+              {pendingAgreements.length} pending signature
             </p>
           </CardContent>
         </Card>
@@ -98,16 +183,15 @@ function ClientDashboard() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{customerServiceTickets.length}</div>
             <p className="text-xs text-muted-foreground">
-              In progress
+              {inProgressTickets.length} in progress
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Recent Activity */}
-      {/* TODO: Update this section to fetch dynamic data based on the customer ID from getCustomerId() for full implementation */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
@@ -116,40 +200,33 @@ function ClientDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="h-2 w-2 bg-primary rounded-full mt-2"></div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  Loan payment processed
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Your monthly payment of $450.00 was successfully processed.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  1 hour ago
-                </p>
-              </div>
+          {recentActivity.length > 0 ? (
+            <div className="space-y-4">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="h-2 w-2 bg-primary rounded-full mt-2"></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {activity.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {activity.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {activity.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="h-2 w-2 bg-primary rounded-full mt-2"></div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  New agreement available
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  A new service agreement is available for your review and signature.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  3 days ago
-                </p>
-              </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No recent activity</p>
+              <p className="text-sm">Activity will appear here as you use the portal</p>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
