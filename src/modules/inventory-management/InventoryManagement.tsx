@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button' 
-import { Package, Plus, Upload, Download, QrCode, TrendingUp, DollarSign } from 'lucide-react'
+import { Package, Plus, Upload, Download, QrCode, TrendingUp, DollarSign, MapPin } from 'lucide-react'
 import { Vehicle, VehicleStatus, VehicleType } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { useInventoryManagement } from './hooks/useInventoryManagement'
@@ -12,6 +12,7 @@ import { VehicleForm } from './components/VehicleForm'
 import { VehicleDetail } from './components/VehicleDetail'
 import { CSVImport } from './components/CSVImport'
 import { BarcodeScanner } from './components/BarcodeScanner'
+import { LandInventoryDashboard } from './components/LandInventoryDashboard'
 
 function InventoryList() {
   const { vehicles, createVehicle, updateVehicleStatus, deleteVehicle } = useInventoryManagement()
