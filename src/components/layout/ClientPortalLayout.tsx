@@ -258,10 +258,6 @@ function ClientPortalLayout() {
     setSearchParams(newSearchParams)
   }
 
-  const [searchParams] = useSearchParams()
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  
-  // Find the impersonated user if ID is provided
   const impersonatedUser = impersonateClientId 
     ? mockUsers.sampleUsers.find(user => user.id === impersonateClientId)
     : null
