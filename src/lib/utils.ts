@@ -34,9 +34,9 @@ export function generateId(): string {
   return Math.random().toString(36).substr(2, 9)
 }
 
-// Capture timer functions at module level to avoid conflicts
-const setTimeoutFn = window.setTimeout.bind(window)
-const clearTimeoutFn = window.clearTimeout.bind(window)
+// Use global timer functions directly
+const setTimeoutFn = setTimeout
+const clearTimeoutFn = clearTimeout
 
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
