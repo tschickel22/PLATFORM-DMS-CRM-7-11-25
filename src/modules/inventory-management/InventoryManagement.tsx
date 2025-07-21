@@ -26,10 +26,6 @@ import { useToast } from '@/hooks/use-toast'
 import { mockInventory } from '@/mocks/inventoryMock'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
 import { LandAsset } from './models/LandAsset'
-import { useToast } from '@/hooks/use-toast'
-import { mockLandAssets } from '@/mocks/mockLandAssets'
-import { LandAssetModal } from './components/LandAssetModal'
-import { LandAsset } from './models/LandAsset'
 
 function InventoryManagementPage() {
   const { tenant } = useTenant()
