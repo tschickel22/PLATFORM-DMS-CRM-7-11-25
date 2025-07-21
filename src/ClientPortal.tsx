@@ -228,7 +228,11 @@ function ClientDashboard() {
   )
 }
 
-function ClientPortalContent() {
+interface ClientPortalContentProps {
+  children: React.ReactNode
+}
+
+function ClientPortalContent({ children }: ClientPortalContentProps) {
   const { tenant } = useTenant()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -236,11 +240,11 @@ function ClientPortalContent() {
 
   // Define navigation items with relative paths
   const navigationItems = [
-    { name: 'Dashboard', path: '/portalclient/', icon: Home },
-    { name: 'Loans', path: '/portalclient/loans', icon: DollarSign },
-    { name: 'Agreements', path: '/portalclient/agreements', icon: FileText },
-    { name: 'Finance Applications', path: '/portalclient/finance-applications', icon: CreditCard },
-    { name: 'Settings', path: '/portalclient/settings', icon: Settings },
+    { name: 'Dashboard', path: '', icon: Home },
+    { name: 'Loans', path: 'loans', icon: DollarSign },
+    { name: 'Agreements', path: 'agreements', icon: FileText },
+    { name: 'Finance Applications', path: 'finance-applications', icon: CreditCard },
+    { name: 'Settings', path: 'settings', icon: Settings },
   ]
 
   const SidebarContent = () => {
@@ -261,7 +265,10 @@ function ClientPortalContent() {
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
         {navigationItems.map((item) => {
-          const current = location.pathname === item.path
+          // For relative paths, we need to construct the full path for comparison
+          const fullPath = item.path === '' ? '/portalclient' : `/portalclient/${item.path}`
+          const current = location.pathname === fullPath || 
+                         (item.path === '' && location.pathname === '/portalclient/')
           
           return (
           <Link
@@ -359,13 +366,13 @@ function ClientPortalContent() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">
-          <ClientDashboard />
+          {children}
         </main>
       </div>
     </div>
   )
 }
 
-export default function ClientPortal() {
-  return <ClientPortalContent />
+export default function ClientPortal({ children }: { children: React.ReactNode }) {
+  return <ClientPortalContent>{children}</ClientPortalContent>
 }
