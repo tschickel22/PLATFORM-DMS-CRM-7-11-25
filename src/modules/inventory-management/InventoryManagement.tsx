@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LandAssetModal } from './components/LandAssetModal'
+import { VehicleForm } from './components/VehicleForm'
 import { useLandInventory } from './hooks/useLandInventory'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { 
@@ -123,6 +124,22 @@ function InventoryManagementPage() {
   const handleAddHome = () => {
     setVehicleModalType('home')
     setShowVehicleModal(true)
+  }
+
+  const handleSaveVehicle = (vehicleData: any) => {
+    // Mock save - in real app this would persist to database
+    const itemType = vehicleModalType === 'home' ? 'Home' : 'Vehicle'
+    toast({
+      title: `${itemType} Added`,
+      description: `New ${itemType.toLowerCase()} has been added successfully.`
+    })
+    setShowVehicleModal(false)
+    setVehicleModalType(null)
+  }
+
+  const handleCancelVehicle = () => {
+    setShowVehicleModal(false)
+    setVehicleModalType(null)
   }
 
   const handleAddLandAsset = () => {
