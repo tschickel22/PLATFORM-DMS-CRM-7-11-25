@@ -1,12 +1,17 @@
 import React from 'react'
 import { Routes, Route, useSearchParams } from 'react-router-dom'
 import { PortalProvider } from '@/contexts/PortalContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { mockUsers } from '@/mocks/usersMock'
 import { mockUsers } from '@/mocks/usersMock'
 import ClientPortal from '@/ClientPortal'
 import { ClientLoansView } from '@/modules/client-portal/components/ClientLoansView'
 import { ClientAgreements } from '@/modules/client-portal/components/ClientAgreements'
 import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
+import { ClientLoansView } from '@/modules/client-portal/components/ClientLoansView'
+import { ClientAgreements } from '@/modules/client-portal/components/ClientAgreements'
+import { ClientServiceTickets } from '@/modules/client-portal/components/ClientServiceTickets'
+import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
 import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
 import { ClientServiceTickets } from '@/modules/client-portal/components/ClientServiceTickets'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -296,13 +301,19 @@ function ClientPortalLayout() {
         <Routes>
           <Route path="/" element={<ClientDashboard />} />
           <Route path="/loans" element={<ClientLoansView />} />
-          <Route path="/agreements" element={<ClientAgreements />} />
-          <Route path="/finance-applications" element={<PortalApplicationView />} />
-          <Route path="/service-tickets" element={<ClientServiceTickets />} />
-          <Route path="/settings" element={<ClientSettings />} />
-          <Route path="*" element={<Navigate to="/portalclient/" replace />} />
-        </Routes>
-      </ClientPortal>
+      <ErrorBoundary>
+        <ClientPortal>
+          <Routes>
+            <Route path="/" element={<div>Portal Dashboard</div>} />
+            <Route path="/loans" element={<ClientLoansView />} />
+            <Route path="/agreements" element={<ClientAgreements />} />
+            <Route path="/finance-applications" element={<PortalApplicationView />} />
+            <Route path="/service-tickets" element={<ClientServiceTickets />} />
+            <Route path="/settings" element={<ClientSettings />} />
+            <Route path="/*" element={<div>Portal Dashboard</div>} />
+          </Routes>
+        </ClientPortal>
+      </ErrorBoundary>
     </PortalProvider>
   )
 }

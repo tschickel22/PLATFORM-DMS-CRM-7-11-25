@@ -43,7 +43,16 @@ export const MOCK_DATA_REGISTRY: Record<string, PortalSection> = {
         description: 'Customer loan accounts',
         customerIdField: 'customerId',
         customerNameField: 'customerName'
-      },
+      }
+    ]
+  },
+  
+  loanPayments: {
+    id: 'loanPayments',
+    name: 'Loan Payments',
+    description: 'Customer loan payment history',
+    component: 'ClientLoansView',
+    mockDataSources: [
       {
         path: '@/mocks/financeMock',
         exportName: 'mockFinance',
