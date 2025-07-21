@@ -1,372 +1,355 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { X, Edit, Package, DollarSign, Calendar, Truck, Wrench, FileText, Image as ImageIcon, Video } from 'lucide-react'
-import { Vehicle, VehicleStatus, VehicleType } from '@/types'
-import { formatCurrency } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { 
+  MapPin, 
+  Home, 
+  Link, 
+  Package, 
+  DollarSign, 
+  Calendar, 
+  Settings,
+  Unlink,
+  Eye
+} from 'lucide-react'
+import { Vehicle } from '@/types'
+import { useLandInventory } from '../hooks/useLandInventory'
+import { mockLandAssets } from '@/mocks/mockLandAssets'
 
 interface VehicleDetailProps {
   vehicle: Vehicle
+  onEdit: () => void
   onClose: () => void
-  onEdit: (vehicle: Vehicle) => void
 }
 
-export function VehicleDetail({ vehicle, onClose, onEdit }: VehicleDetailProps) {
-  const getStatusColor = (status: VehicleStatus) => {
-    switch (status) {
-      case VehicleStatus.AVAILABLE:
-        return 'bg-green-50 text-green-700 border-green-200'
-      case VehicleStatus.RESERVED:
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-      case VehicleStatus.SOLD:
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case VehicleStatus.SERVICE:
-        return 'bg-orange-50 text-orange-700 border-orange-200'
-      case VehicleStatus.DELIVERED:
-        return 'bg-purple-50 text-purple-700 border-purple-200'
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
+export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) {
+  const {
+    bundleToInventory,
+    unbundleLandAsset,
+    getLandAssetByInventoryId,
+    getAvailableLandAssets
+  } = useLandInventory()
+  
+  const [selectedLandId, setSelectedLandId] = useState('')
+  const [showLandLinking, setShowLandLinking] = useState(false)
+
+  // Check if this vehicle type supports land bundling
+  const supportsLandBundling = [
+    'Single Wide',
+    'Double Wide', 
+    'Triple Wide',
+    'Park Model',
+    'Modular Home'
+  ].includes(vehicle.type)
+
+  // Get linked land asset if any
+  const linkedLandAsset = getLandAssetByInventoryId(vehicle.id)
+  
+  // Get available land assets for bundling
+  const availableLandAssets = getAvailableLandAssets()
+
+  const handleLinkToLand = () => {
+    if (selectedLandId && vehicle.id) {
+      bundleToInventory(vehicle.id, selectedLandId)
+      setShowLandLinking(false)
+      setSelectedLandId('')
     }
   }
 
-  const getTypeLabel = (type: VehicleType) => {
-    return type.replace('_', ' ').toUpperCase()
+  const handleUnlinkFromLand = () => {
+    if (linkedLandAsset && window.confirm('Are you sure you want to unlink this land asset?')) {
+      unbundleLandAsset(linkedLandAsset.id)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount)
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">
+            {vehicle.year} {vehicle.make} {vehicle.model}
+          </h2>
+          <p className="text-muted-foreground">
+            Stock #{vehicle.vin} • {vehicle.type}
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" onClick={onEdit}>
+            <Settings className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+
+      {/* Vehicle Information */}
+      <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">{vehicle.year} {vehicle.make} {vehicle.model}</CardTitle>
-              <CardDescription>
-                VIN: {vehicle.vin}
-              </CardDescription>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button onClick={() => {
-                onClose();
-                onEdit(vehicle);
-              }} size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Home/RV
-              </Button>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Vehicle Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Vehicle Header */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className={cn("ri-badge-status", getStatusColor(vehicle.status))}>
-              {vehicle.status.toUpperCase()}
-            </Badge>
-            <Badge variant="outline">
-              {getTypeLabel(vehicle.type)}
-            </Badge>
-            <div className="ml-auto font-bold text-lg text-primary">
-              {formatCurrency(vehicle.price)}
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">VIN</label>
+              <p className="text-sm">{vehicle.vin}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Status</label>
+              <div>
+                <Badge className={
+                  vehicle.status === 'Available' ? 'bg-green-100 text-green-800' :
+                  vehicle.status === 'Reserved' ? 'bg-yellow-100 text-yellow-800' :
+                  vehicle.status === 'Sold' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-800'
+                }>
+                  {vehicle.status}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Price</label>
+              <p className="text-sm font-semibold">{formatCurrency(vehicle.price)}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Location</label>
+              <p className="text-sm">{vehicle.location}</p>
             </div>
           </div>
 
-          {/* Vehicle Tabs */}
-          <Tabs defaultValue="details" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="images">Images</TabsTrigger>
-              <TabsTrigger value="features">Features</TabsTrigger>
-              <TabsTrigger value="videos">Videos</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-            </TabsList>
+          {vehicle.features && vehicle.features.length > 0 && (
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Features</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {vehicle.features.map((feature, index) => (
+                  <Badge key={index} variant="outline">
+                    {feature}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-            <TabsContent value="details" className="space-y-4">
-              {/* Basic Details */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Make</label>
-                  <p className="font-medium">{vehicle.make}</p>
+      {/* Land Bundling Section - Only show for supported vehicle types */}
+      {supportsLandBundling && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <MapPin className="h-5 w-5 mr-2" />
+              Land Asset Bundling
+            </CardTitle>
+            <CardDescription>
+              Bundle this {vehicle.type.toLowerCase()} with a land asset
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {linkedLandAsset ? (
+              // Show linked land asset
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-green-50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <Package className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-green-900">Bundled with Land</h4>
+                      <p className="text-sm text-green-700">{linkedLandAsset.label}</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">
+                    <Link className="h-3 w-3 mr-1" />
+                    Bundled
+                  </Badge>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Model</label>
-                  <p className="font-medium">{vehicle.model}</p>
+
+                {/* Land Asset Details */}
+                <div className="grid gap-4 md:grid-cols-2 p-4 bg-muted/30 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Address</label>
+                    <p className="text-sm">{linkedLandAsset.address}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Lot Size</label>
+                    <p className="text-sm">
+                      {linkedLandAsset.lotSizeSqFt?.toLocaleString()} sq ft
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Zoning</label>
+                    <p className="text-sm">{linkedLandAsset.zoningType}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Utilities</label>
+                    <p className="text-sm">{linkedLandAsset.utilityStatus}</p>
+                  </div>
+                  {linkedLandAsset.pricing?.salePrice && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Land Price</label>
+                      <p className="text-sm font-semibold">
+                        {formatCurrency(linkedLandAsset.pricing.salePrice)}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Total Package</label>
+                    <p className="text-lg font-bold text-primary">
+                      {formatCurrency(vehicle.price + (linkedLandAsset.pricing?.salePrice || 0))}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Year</label>
-                  <p className="font-medium">{vehicle.year}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">VIN</label>
-                  <p className="font-medium font-mono">{vehicle.vin}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Type</label>
-                  <p className="font-medium">{getTypeLabel(vehicle.type)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Location</label>
-                  <p className="font-medium">{vehicle.location}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Price</label>
-                  <p className="font-medium text-primary">{formatCurrency(vehicle.price)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Cost</label>
-                  <p className="font-medium">{formatCurrency(vehicle.cost)}</p>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Land Details
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleUnlinkFromLand}
+                  >
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Unlink Land
+                  </Button>
                 </div>
               </div>
+            ) : (
+              // Show land linking options
+              <div className="space-y-4">
+                {!showLandLinking ? (
+                  <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                    <Home className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h4 className="font-semibold mb-2">No Land Asset Linked</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Bundle this {vehicle.type.toLowerCase()} with a land asset to create a complete package
+                    </p>
+                    <Button onClick={() => setShowLandLinking(true)}>
+                      <Link className="h-4 w-4 mr-2" />
+                      Link to Land
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Select Land Asset</label>
+                      <Select value={selectedLandId} onValueChange={setSelectedLandId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a land asset to bundle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableLandAssets.map((asset) => (
+                            <SelectItem key={asset.id} value={asset.id}>
+                              <div className="flex flex-col">
+                                <span>{asset.label}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {asset.address} • {asset.lotSizeSqFt?.toLocaleString()} sq ft
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              {/* Specifications */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Specifications</h3>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {vehicle.customFields?.exteriorColor && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Exterior Color</label>
-                      <p className="font-medium">{vehicle.customFields.exteriorColor}</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.interiorColor && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Interior Color</label>
-                      <p className="font-medium">{vehicle.customFields.interiorColor}</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.length && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Length</label>
-                      <p className="font-medium">{vehicle.customFields.length} ft</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.weight && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Weight</label>
-                      <p className="font-medium">{vehicle.customFields.weight} lbs</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.sleeps && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Sleeps</label>
-                      <p className="font-medium">{vehicle.customFields.sleeps}</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.slideouts && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Slideouts</label>
-                      <p className="font-medium">{vehicle.customFields.slideouts}</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.fuelType && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Fuel Type</label>
-                      <p className="font-medium">{vehicle.customFields.fuelType}</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.mileage && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Mileage</label>
-                      <p className="font-medium">{vehicle.customFields.mileage}</p>
-                    </div>
-                  )}
-                  {vehicle.customFields?.condition && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Condition</label>
-                      <p className="font-medium">{vehicle.customFields.condition}</p>
-                    </div>
-                  )}
-                  
-                  {/* MH-specific fields */}
-                  {(vehicle.type === VehicleType.SINGLE_WIDE || 
-                    vehicle.type === VehicleType.DOUBLE_WIDE || 
-                    vehicle.type === VehicleType.TRIPLE_WIDE || 
-                    vehicle.type === VehicleType.PARK_MODEL || 
-                    vehicle.type === VehicleType.MODULAR_HOME) && (
-                    <>
-                      {vehicle.customFields?.squareFootage && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Square Footage</label>
-                          <p className="font-medium">{vehicle.customFields.squareFootage} sq ft</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.bedrooms && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Bedrooms</label>
-                          <p className="font-medium">{vehicle.customFields.bedrooms}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.bathrooms && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Bathrooms</label>
-                          <p className="font-medium">{vehicle.customFields.bathrooms}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.constructionType && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
-                          <p className="font-medium">{vehicle.customFields.constructionType}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.exteriorSiding && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Exterior Siding</label>
-                          <p className="font-medium">{vehicle.customFields.exteriorSiding}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.roofType && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Roof Type</label>
-                          <p className="font-medium">{vehicle.customFields.roofType}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  
-                  {/* MH-specific fields */}
-                  {(vehicle.type === VehicleType.SINGLE_WIDE || 
-                    vehicle.type === VehicleType.DOUBLE_WIDE || 
-                    vehicle.type === VehicleType.TRIPLE_WIDE || 
-                    vehicle.type === VehicleType.PARK_MODEL || 
-                    vehicle.type === VehicleType.MODULAR_HOME) && (
-                    <>
-                      {vehicle.customFields?.squareFootage && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Square Footage</label>
-                          <p className="font-medium">{vehicle.customFields.squareFootage} sq ft</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.bedrooms && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Bedrooms</label>
-                          <p className="font-medium">{vehicle.customFields.bedrooms}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.bathrooms && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Bathrooms</label>
-                          <p className="font-medium">{vehicle.customFields.bathrooms}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.constructionType && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
-                          <p className="font-medium">{vehicle.customFields.constructionType}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.exteriorSiding && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Exterior Siding</label>
-                          <p className="font-medium">{vehicle.customFields.exteriorSiding}</p>
-                        </div>
-                      )}
-                      {vehicle.customFields?.roofType && (
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Roof Type</label>
-                          <p className="font-medium">{vehicle.customFields.roofType}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="images">
-              {vehicle.images && vehicle.images.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {vehicle.images.map((image, index) => (
-                    <div key={index} className="overflow-hidden rounded-md">
-                      <img 
-                        src={image} 
-                        alt={`${vehicle.make} ${vehicle.model} ${index + 1}`} 
-                        className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No images available</p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="features">
-              {vehicle.features && vehicle.features.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {vehicle.features.map((feature, index) => (
-                    <div key={index} className="flex items-center p-2 bg-muted/30 rounded-md">
-                      <Package className="h-4 w-4 mr-2 text-primary" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No features listed</p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="videos">
-              {vehicle.customFields?.videos && vehicle.customFields.videos.length > 0 ? (
-                <div className="space-y-4">
-                  {vehicle.customFields.videos.map((video, index) => (
-                    <div key={index} className="p-3 bg-muted/30 rounded-md">
-                      <div className="flex items-center mb-2">
-                        <Video className="h-4 w-4 mr-2 text-primary" />
-                        <a 
-                          href={video} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          Video {index + 1}
-                        </a>
+                    {selectedLandId && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        {(() => {
+                          const selectedAsset = availableLandAssets.find(a => a.id === selectedLandId)
+                          if (!selectedAsset) return null
+                          
+                          return (
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-blue-900">Bundle Preview</h4>
+                              <div className="grid gap-2 md:grid-cols-2 text-sm">
+                                <div>
+                                  <span className="text-blue-700">Home: </span>
+                                  {vehicle.year} {vehicle.make} {vehicle.model}
+                                </div>
+                                <div>
+                                  <span className="text-blue-700">Land: </span>
+                                  {selectedAsset.label}
+                                </div>
+                                <div>
+                                  <span className="text-blue-700">Home Price: </span>
+                                  {formatCurrency(vehicle.price)}
+                                </div>
+                                <div>
+                                  <span className="text-blue-700">Land Price: </span>
+                                  {formatCurrency(selectedAsset.pricing?.salePrice || 0)}
+                                </div>
+                              </div>
+                              <Separator />
+                              <div className="text-lg font-bold text-blue-900">
+                                Total Package: {formatCurrency(vehicle.price + (selectedAsset.pricing?.salePrice || 0))}
+                              </div>
+                            </div>
+                          )
+                        })()}
                       </div>
-                      {/* In a real app, you might embed the video here */}
+                    )}
+
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowLandLinking(false)
+                          setSelectedLandId('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleLinkToLand}
+                        disabled={!selectedLandId}
+                      >
+                        <Link className="h-4 w-4 mr-2" />
+                        Create Bundle
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <Video className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No videos available</p>
-                </div>
-              )}
-            </TabsContent>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-            <TabsContent value="notes">
-              {vehicle.customFields?.notes ? (
-                <div className="p-4 bg-muted/30 rounded-md whitespace-pre-wrap">
-                  {vehicle.customFields.notes}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No notes available</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t">
-            <Button variant="outline" onClick={onClose}>
-              Close
+      {/* Integration Placeholders */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer & Marketing</CardTitle>
+          <CardDescription>
+            Integration points for CRM and marketplace features
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Button variant="outline" disabled className="justify-start">
+              <Settings className="h-4 w-4 mr-2" />
+              Assign Customer (CRM)
             </Button>
-            <Button onClick={() => onEdit(vehicle)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Home/RV
+            <Button variant="outline" disabled className="justify-start">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Post to Marketplace
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            These features will be available in future updates
+          </p>
         </CardContent>
       </Card>
     </div>

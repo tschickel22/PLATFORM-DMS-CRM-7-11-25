@@ -16,12 +16,16 @@ import {
   Search, 
   Edit,
   Filter,
-  DollarSign
+  DollarSign,
+  Package,
+  Users,
+  TrendingUp
 } from 'lucide-react'
 import { useLandInventory } from '../hooks/useLandInventory'
 import { LandAsset } from '../models/LandAsset'
 import { LandAssetModal } from './LandAssetModal'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
+import { mockInventory } from '@/mocks/inventoryMock'
 import { formatCurrency } from '@/lib/utils'
 
 export function LandInventoryDashboard() {
@@ -30,7 +34,10 @@ export function LandInventoryDashboard() {
     loading,
     searchLandAssets,
     filterLandAssets,
-    deleteLandAsset
+    deleteLandAsset,
+    bundleToInventory,
+    unbundleLandAsset,
+    getAvailableLandAssets
   } = useLandInventory()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -39,6 +46,9 @@ export function LandInventoryDashboard() {
   const [zoningFilter, setZoningFilter] = useState('all')
   const [showModal, setShowModal] = useState(false)
   const [editingAsset, setEditingAsset] = useState<LandAsset | null>(null)
+  const [showBundleModal, setShowBundleModal] = useState(false)
+  const [selectedAssetForBundle, setSelectedAssetForBundle] = useState<LandAsset | null>(null)
+  const [selectedInventoryId, setSelectedInventoryId] = useState('')
 
   // Apply filters and search
   const filteredAssets = React.useMemo(() => {
@@ -83,6 +93,27 @@ export function LandInventoryDashboard() {
     setEditingAsset(null)
   }
 
+  const handleBundle = (asset: LandAsset) => {
+    setSelectedAssetForBundle(asset)
+    setSelectedInventoryId('')
+    setShowBundleModal(true)
+  }
+
+  const handleUnbundle = (asset: LandAsset) => {
+    if (window.confirm('Are you sure you want to unbundle this land asset?')) {
+      unbundleLandAsset(asset.id)
+    }
+  }
+
+  const handleConfirmBundle = () => {
+    if (selectedAssetForBundle && selectedInventoryId) {
+      bundleToInventory(selectedInventoryId, selectedAssetForBundle.id)
+      setShowBundleModal(false)
+      setSelectedAssetForBundle(null)
+      setSelectedInventoryId('')
+    }
+  }
+
   // Calculate stats
   const stats = React.useMemo(() => {
     const total = landAssets.length
@@ -94,6 +125,11 @@ export function LandInventoryDashboard() {
 
     return { total, available, bundled, totalValue }
   }, [landAssets])
+
+  // Get available inventory items for bundling (mock data for now)
+  const availableInventory = mockInventory.exampleInventory.filter(item => 
+    ['Single Wide', 'Double Wide', 'Triple Wide', 'Park Model'].includes(item.type)
+  )
 
   if (loading) {
     return (
@@ -111,6 +147,62 @@ export function LandInventoryDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Bundle Modal */}
+      {showBundleModal && selectedAssetForBundle && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Bundle Land with Home</CardTitle>
+              <CardDescription>
+                Select a home to bundle with {selectedAssetForBundle.label}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Select Home/Unit</label>
+                <Select value={selectedInventoryId} onValueChange={setSelectedInventoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a home to bundle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableInventory.map((item) => (
+                      <SelectItem key={item.stockNumber} value={item.stockNumber}>
+                        {item.year} {item.make} {item.model} - {item.stockNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="bg-muted/50 p-3 rounded-md">
+                <h4 className="font-medium text-sm mb-2">Bundle Details</h4>
+                <div className="space-y-1 text-sm">
+                  <div>Land: {selectedAssetForBundle.label}</div>
+                  <div>Address: {selectedAssetForBundle.address}</div>
+                  <div>Lot Size: {selectedAssetForBundle.lotSizeSqFt?.toLocaleString()} sq ft</div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowBundleModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleConfirmBundle}
+                  disabled={!selectedInventoryId}
+                >
+                  <Link className="h-4 w-4 mr-2" />
+                  Create Bundle
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Land Asset Modal */}
       {showModal && (
         <LandAssetModal
@@ -168,13 +260,13 @@ export function LandInventoryDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bundled</CardTitle>
-            <PackageCheck className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Bundled Assets</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.bundled}</div>
             <p className="text-xs text-muted-foreground">
-              Linked with inventory
+              Land + Home packages
             </p>
           </CardContent>
         </Card>
@@ -313,6 +405,12 @@ export function LandInventoryDashboard() {
                       <Badge className={mockLandAssets.statusColors[asset.status]}>
                         {asset.status}
                       </Badge>
+                      {asset.linkedInventoryId && (
+                        <Badge variant="outline" className="ml-2">
+                          <Link className="h-3 w-3 mr-1" />
+                          Linked
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {asset.pricing?.salePrice 
@@ -332,6 +430,26 @@ export function LandInventoryDashboard() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="ri-action-buttons">
+                        {asset.status === 'Available' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleBundle(asset)}
+                          >
+                            <Link className="h-4 w-4 mr-1" />
+                            Bundle
+                          </Button>
+                        )}
+                        {asset.status === 'Bundled' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUnbundle(asset)}
+                          >
+                            <Package className="h-4 w-4 mr-1" />
+                            Unbundle
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -371,6 +489,31 @@ export function LandInventoryDashboard() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Integration Placeholders */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Integration Actions</CardTitle>
+          <CardDescription>
+            Future integration points for CRM and marketplace
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Button variant="outline" disabled className="justify-start">
+              <Users className="h-4 w-4 mr-2" />
+              Assign Customer (CRM Integration)
+            </Button>
+            <Button variant="outline" disabled className="justify-start">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Post Bundled Listing (Marketplace)
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            These features will be available in future phases
+          </p>
         </CardContent>
       </Card>
     </div>
