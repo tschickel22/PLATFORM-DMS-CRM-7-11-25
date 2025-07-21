@@ -4,18 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 function ClientPortalAdminDashboard() {
-  const [filteredUsers, setFilteredUsers] = useState([])
-  
-  const getStatusBadgeColor = (status) => {
-    return ''
-  }
-  
-  const handleProxyAsClient = (id, email) => {
-    
-  }
-  
   return (
     <div>
       <Tabs>
@@ -81,14 +72,6 @@ function ClientPortalAdminDashboard() {
       </Tabs>
     </div>
   )
-}
-
-function ClientAgreements() {
-  return <div>Client Agreements</div>
-}
-
-function ClientAgreementSign() {
-  return <div>Client Agreement Sign</div>
 }
 
 export default function ClientPortalAdmin() {
