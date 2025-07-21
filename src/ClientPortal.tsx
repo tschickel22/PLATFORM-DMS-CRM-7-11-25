@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, useSearchParams } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { mockUsers } from '@/mocks/usersMock'
 import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
 import { ClientLoansView } from './components/ClientLoansView'
 import { ClientAgreements } from './components/ClientAgreements'
@@ -44,25 +45,37 @@ function ClientSettings() {
 
 function ClientDashboard() {
   const { tenant } = useTenant()
-  const { user, logout } = useAuth()
+  const { user: authUser, logout } = useAuth()
+  const [searchParams] = useSearchParams()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
 
+  // Check for impersonation
+  const impersonateClientId = searchParams.get('impersonateClientId')
+  const impersonatedUser = impersonateClientId 
+    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
+    : null
+  
+  // Use impersonated user if available, otherwise use authenticated user
+  const user = impersonatedUser || authUser
+  const isImpersonating = !!impersonatedUser
 
   return (
     <div className="space-y-6">
+      {/* Impersonation Banner */}
+      {isImpersonating && impersonatedUser && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+          <p className="text-sm text-blue-700">
+            <strong>Admin View:</strong> You are viewing the portal as {impersonatedUser.name} ({impersonatedUser.email})
+          </p>
+        </div>
+      )}
+      
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Welcome back, {getDisplayName().split(' ')[0] || 'User'}!</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {(user?.name || 'User').split(' ')[0]}!</h1>
         <p className="text-muted-foreground">
           Here's what's happening with your account
         </p>
-        {isProxying && proxiedClient && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <p className="text-sm text-blue-700">
-              <strong>Admin View:</strong> You are viewing the portal as {proxiedClient.name}
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Quick Stats */}
@@ -158,10 +171,21 @@ function ClientDashboard() {
 
 function ClientPortalContent() {
   const { tenant } = useTenant()
-  const { user, logout } = useAuth()
+  const { user: authUser, logout } = useAuth()
+  const [searchParams] = useSearchParams()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+
+  // Check for impersonation
+  const impersonateClientId = searchParams.get('impersonateClientId')
+  const impersonatedUser = impersonateClientId 
+    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
+    : null
+  
+  // Use impersonated user if available, otherwise use authenticated user
+  const user = impersonatedUser || authUser
+  const isImpersonating = !!impersonatedUser
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, current: location.pathname === '/' },
@@ -211,11 +235,11 @@ function ClientPortalContent() {
 
       {/* User section */}
       <div className="border-t p-4">
-        {/* Proxy indicator */}
-        {isProxying && proxiedClient && (
+        {/* Impersonation indicator */}
+        {isImpersonating && impersonatedUser && (
           <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-xs text-blue-700 font-medium">
-              Viewing as: {proxiedClient.name}
+              Viewing as: {impersonatedUser.name}
             </p>
           </div>
         )}
@@ -225,8 +249,8 @@ function ClientPortalContent() {
             <User className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{getDisplayName()}</p>
-            <p className="text-xs text-muted-foreground truncate">{getDisplayEmail()}</p>
+            <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
           </div>
         </div>
         <Button
@@ -295,7 +319,17 @@ function ClientPortalContent() {
 }
 
 export default function ClientPortal() {
-  const { user } = useAuth()
+  const { user: authUser } = useAuth()
+  const [searchParams] = useSearchParams()
+  
+  // Check for impersonation at the top level
+  const impersonateClientId = searchParams.get('impersonateClientId')
+  const impersonatedUser = impersonateClientId 
+    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
+    : null
+  
+  // Use impersonated user if available, otherwise use authenticated user
+  const user = impersonatedUser || authUser
   
   return (
     <PortalProvider fallbackUser={{ name: user?.name || '', email: user?.email || '' }}>
