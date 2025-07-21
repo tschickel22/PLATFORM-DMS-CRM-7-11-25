@@ -240,11 +240,11 @@ function ClientPortalContent() {
   const location = useLocation()
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home, current: location.pathname === '/portalclient/' },
-    { name: 'Loans', href: 'loans', icon: DollarSign, current: location.pathname === '/portalclient/loans' },
-    { name: 'Agreements', href: 'agreements', icon: FileText, current: location.pathname === '/portalclient/agreements' },
-    { name: 'Finance Applications', href: 'finance-applications', icon: CreditCard, current: location.pathname === '/portalclient/finance-applications' },
-    { name: 'Settings', href: 'settings', icon: Settings, current: location.pathname === '/portalclient/settings' },
+    { name: 'Dashboard', href: '/portalclient/', icon: Home, current: location.pathname === '/portalclient/' },
+    { name: 'Loans', href: '/portalclient/loans', icon: DollarSign, current: location.pathname === '/portalclient/loans' },
+    { name: 'Agreements', href: '/portalclient/agreements', icon: FileText, current: location.pathname === '/portalclient/agreements' },
+    { name: 'Finance Applications', href: '/portalclient/finance-applications', icon: CreditCard, current: location.pathname === '/portalclient/finance-applications' },
+    { name: 'Settings', href: '/portalclient/settings', icon: Settings, current: location.pathname === '/portalclient/settings' },
   ]
 
   const SidebarContent = () => (
