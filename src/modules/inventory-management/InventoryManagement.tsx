@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LandAssetModal } from './components/LandAssetModal'
+import { useLandInventory } from './hooks/useLandInventory'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { 
   Package, 
@@ -22,6 +24,9 @@ import {
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockInventory } from '@/mocks/inventoryMock'
+import { mockLandAssets } from '@/mocks/mockLandAssets'
+import { LandAsset } from './models/LandAsset'
+import { useToast } from '@/hooks/use-toast'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
 import { LandAssetModal } from './components/LandAssetModal'
 import { LandAsset } from './models/LandAsset'
@@ -499,9 +504,70 @@ function InventoryManagementPage() {
     </div>
   )
 
+  const { toast } = useToast()
+  const {
+    landAssets,
+    createLandAsset,
+    updateLandAsset,
+    deleteLandAsset
+  } = useLandInventory()
+  
+  const [showLandAssetModal, setShowLandAssetModal] = useState(false)
+  const [editingLandAsset, setEditingLandAsset] = useState<LandAsset | null>(null)
+  
+  const handleCreateLandAsset = () => {
+    setEditingLandAsset(null)
+    setShowLandAssetModal(true)
+  }
+  
+  const handleEditLandAsset = (asset: LandAsset) => {
+    setEditingLandAsset(asset)
+    setShowLandAssetModal(true)
+  }
+  
+  const handleSaveLandAsset = (assetData: Partial<LandAsset>) => {
+    if (editingLandAsset) {
+      updateLandAsset(editingLandAsset.id, assetData)
+      toast({
+        title: 'Land Asset Updated',
+        description: 'Land asset has been updated successfully.'
+      })
+    } else {
+      createLandAsset(assetData)
+      toast({
+        title: 'Land Asset Created',
+        description: 'New land asset has been created successfully.'
+      })
+    }
+    setShowLandAssetModal(false)
+    setEditingLandAsset(null)
+  }
+  
+  const handleDeleteLandAsset = (assetId: string) => {
+    if (window.confirm('Are you sure you want to delete this land asset?')) {
+      deleteLandAsset(assetId)
+      toast({
+        title: 'Land Asset Deleted',
+        description: 'Land asset has been deleted successfully.'
+      })
+    }
+  }
+  
   return (
     <div className="space-y-6">
       {/* Land Asset Modal */}
+      {showLandAssetModal && (
+        <LandAssetModal
+          asset={editingLandAsset}
+          onSave={handleSaveLandAsset}
+          onClose={() => {
+            setShowLandAssetModal(false)
+            setEditingLandAsset(null)
+          }}
+        />
+      )}
+      
+              Available properties
       {showLandAssetModal && (
         <LandAssetModal
           landAsset={editingLandAsset}
@@ -512,9 +578,11 @@ function InventoryManagementPage() {
           }}
         />
       )}
-
+            <div className="text-2xl font-bold">
+              {landAssets.filter(asset => asset.status === 'Available').length}
+            </div>
       {/* Page Header */}
-      <div className="ri-page-header">
+              Ready for development
         <div className="flex items-center justify-between">
           <div>
             <h1 className="ri-page-title">Inventory Management</h1>
@@ -525,20 +593,27 @@ function InventoryManagementPage() {
           <div className="flex items-center space-x-3">
             <Button variant="outline">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Scan Barcode
+            <div className="text-2xl font-bold">
+              {landAssets.filter(asset => asset.status === 'Bundled').length}
+            </div>
             </Button>
-            <Button variant="outline">
+              With inventory
               <Package className="h-4 w-4 mr-2" />
               Import CSV
             </Button>
-            <Button>
+            <Button onClick={handleCreateLandAsset}>
               <Plus className="h-4 w-4 mr-2" />
               Add Home
             </Button>
           </div>
         </div>
       </div>
-
+            <div className="text-2xl font-bold">
+              {landAssets.length > 0 
+                ? Math.round(landAssets.reduce((sum, asset) => sum + asset.lotSizeSqFt, 0) / landAssets.length).toLocaleString()
+                : '0'
+              }
+            </div>
       {/* Tabs */}
       {isLandManagementEnabled ? (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -547,7 +622,7 @@ function InventoryManagementPage() {
               <Car className="h-4 w-4" />
               <span>Vehicles</span>
             </TabsTrigger>
-            <TabsTrigger value="land-assets" className="flex items-center space-x-2">
+            <div className="text-2xl font-bold">{landAssets.length}</div>
               <MapPin className="h-4 w-4" />
               <span>Land Assets</span>
             </TabsTrigger>
@@ -556,11 +631,68 @@ function InventoryManagementPage() {
           <TabsContent value="vehicles">
             {renderVehiclesTab()}
           </TabsContent>
-
-          <TabsContent value="land-assets">
-            {renderLandAssetsTab()}
-          </TabsContent>
-        </Tabs>
+            {landAssets.length > 0 ? (
+              <div className="space-y-4">
+                {landAssets.map((asset) => (
+                  <div
+                    key={asset.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <h4 className="font-semibold">{asset.label}</h4>
+                        <Badge className={mockLandAssets.statusColors[asset.status]}>
+                          {asset.status}
+                        </Badge>
+                        <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]}>
+                          {asset.ownershipStatus}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {asset.address} • {asset.lotSizeSqFt.toLocaleString()} sq ft
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {asset.zoningType} • {asset.utilityStatus}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-right text-sm">
+                        {asset.pricing.salePrice && (
+                          <div className="font-medium">
+                            Sale: ${asset.pricing.salePrice.toLocaleString()}
+                          </div>
+                        )}
+                        {asset.pricing.leaseRate && (
+                          <div className="text-muted-foreground">
+                            Lease: ${asset.pricing.leaseRate.toLocaleString()}/mo
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditLandAsset(asset)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteLandAsset(asset.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p>No land assets found</p>
+                <p className="text-sm">Add your first land asset to get started</p>
+              </div>
+            )}
       ) : (
         renderVehiclesTab()
       )}
