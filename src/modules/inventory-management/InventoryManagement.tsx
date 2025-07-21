@@ -500,7 +500,6 @@ function InventoryManagementPage() {
     </div>
   )
 
-  const { toast } = useToast()
   const {
     landAssets,
     createLandAsset,
