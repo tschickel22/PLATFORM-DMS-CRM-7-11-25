@@ -28,7 +28,7 @@ import { mockServiceOps } from '@/mocks/serviceOpsMock'
 import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
 
 // Mock components for routes that aren't implemented yet
-function ClientSettings() {
+function ClientSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -393,8 +393,8 @@ export default function ClientPortal() {
     <PortalProvider 
       impersonatedUser={impersonatedUser}
       fallbackUser={{ 
-        name: impersonatedUser?.name || authUser?.name || '', 
-        email: impersonatedUser?.email || authUser?.email || '' 
+        name: authUser?.name || '', 
+        email: authUser?.email || '' 
       }}
     >
       <ClientPortalContent />

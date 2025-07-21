@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react'
+import React, { createContext, useContext, ReactNode, useEffect } from 'react'
 import { MockUser } from '@/mocks/usersMock'
 
 interface PortalClient {
@@ -46,6 +46,13 @@ export function PortalProvider({ children, impersonatedUser, fallbackUser }: Por
 
   const isProxying = !!proxiedClient
 
+  // Add useEffect for logging what PortalProvider receives
+  useEffect(() => {
+    console.log('PortalProvider rendered/re-rendered.')
+    console.log('Received impersonatedUser prop:', impersonatedUser)
+    console.log('Calculated proxiedClient:', proxiedClient)
+    console.log('Is proxying:', isProxying)
+  }, [impersonatedUser, proxiedClient, isProxying]) // Dependencies
   const getDisplayName = (): string => {
     if (proxiedClient) {
       return proxiedClient.name
