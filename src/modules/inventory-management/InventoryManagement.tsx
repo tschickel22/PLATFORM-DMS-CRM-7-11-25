@@ -35,17 +35,16 @@ function InventoryManagementPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [locationFilter, setLocationFilter] = useState('all')
+  const [showLandAssetModal, setShowLandAssetModal] = useState(false)
+  const [editingLandAsset, setEditingLandAsset] = useState<LandAsset | null>(null)
 
-  // Land inventory hook
+  // Use the land inventory hook
   const {
     landAssets,
     createLandAsset,
     updateLandAsset,
     deleteLandAsset
   } = useLandInventory()
-  
-  const [showLandAssetModal, setShowLandAssetModal] = useState(false)
-  const [editingLandAsset, setEditingLandAsset] = useState<LandAsset | null>(null)
 
   // Check if land management is enabled
   const isLandManagementEnabled = tenant?.settings?.features?.landManagement === true
@@ -119,7 +118,7 @@ function InventoryManagementPage() {
     })
   }
 
-  const handleCreateLandAsset = () => {
+  const handleAddLandAsset = () => {
     setEditingLandAsset(null)
     setShowLandAssetModal(true)
   }
@@ -167,7 +166,7 @@ function InventoryManagementPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6</div>
+            <div className="text-2xl font-bold">{vehicles.length}</div>
             <p className="text-xs text-muted-foreground">
               +5 units this month
             </p>
@@ -180,7 +179,9 @@ function InventoryManagementPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6</div>
+            <div className="text-2xl font-bold">
+              {vehicles.filter(v => v.status === 'AVAILABLE').length}
+            </div>
             <p className="text-xs text-muted-foreground">
               Ready for sale
             </p>
@@ -193,7 +194,9 @@ function InventoryManagementPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">
+              {vehicles.filter(v => v.status === 'RESERVED').length}
+            </div>
             <p className="text-xs text-muted-foreground">
               Pending sale
             </p>
@@ -206,7 +209,9 @@ function InventoryManagementPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$619,000.00</div>
+            <div className="text-2xl font-bold">
+              ${vehicles.reduce((total, v) => total + v.price, 0).toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
               Inventory value
             </p>
@@ -265,7 +270,7 @@ function InventoryManagementPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Inventory (6)</CardTitle>
+              <CardTitle>Inventory ({vehicles.length})</CardTitle>
               <CardDescription>
                 Manage your RV and motorhome inventory
               </CardDescription>
@@ -416,7 +421,7 @@ function InventoryManagementPage() {
                 Manage your land and property inventory
               </CardDescription>
             </div>
-            <Button onClick={handleCreateLandAsset}>
+            <Button onClick={handleAddLandAsset}>
               <Plus className="h-4 w-4 mr-2" />
               Add Land Asset
             </Button>
@@ -525,7 +530,7 @@ function InventoryManagementPage() {
               <Package className="h-4 w-4 mr-2" />
               Import CSV
             </Button>
-            <Button onClick={handleCreateLandAsset}>
+            <Button onClick={handleAddVehicle}>
               <Plus className="h-4 w-4 mr-2" />
               Add Home
             </Button>
