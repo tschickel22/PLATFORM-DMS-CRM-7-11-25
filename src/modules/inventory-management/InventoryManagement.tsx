@@ -537,8 +537,6 @@ function InventoryManagementPage() {
           }}
         />
       )}
-      </div>
-      </Card>
 
       {/* Vehicle/Home Modal */}
       {showVehicleModal && (
@@ -577,47 +575,6 @@ function InventoryManagementPage() {
               />
             </CardContent>
           </Card>
-        </div>
-      )}
-    </>
-  )
-}
-      {showVehicleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div className="flex flex-col h-full">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b">
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    {vehicleModalType === 'home' ? 'Add New Home' : 'Add New Vehicle'}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {vehicleModalType === 'home' 
-                      ? 'Add a new manufactured home to inventory' 
-                      : 'Add a new vehicle to inventory'
-                    }
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancelVehicle}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <VehicleForm
-                  mode={vehicleModalType}
-                  onSave={handleSaveVehicle}
-                  onCancel={handleCancelVehicle}
-                />
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
