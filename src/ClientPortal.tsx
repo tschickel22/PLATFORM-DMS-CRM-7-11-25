@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation, Link } from 'react-router-dom'
+import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,18 +49,6 @@ function ClientSettingsPage() {
 
 function ClientDashboard() {
   const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
-  
-  // Debug logging for proxy functionality
-  React.useEffect(() => {
-    console.log('=== ClientDashboard Debug ===')
-    console.log('getDisplayName():', getDisplayName())
-    console.log('getDisplayEmail():', getDisplayEmail())
-    console.log('getCustomerId():', getCustomerId())
-    console.log('isProxying:', isProxying)
-    console.log('proxiedClient:', proxiedClient)
-    console.log('window.location.search:', window.location.search)
-    console.log('=== End Debug ===')
-  }, [getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient])
   
   // Get customer-specific data based on the current customer ID
   const customerId = getCustomerId()
@@ -247,17 +235,16 @@ function ClientDashboard() {
 
 function ClientPortalContent() {
   const { tenant } = useTenant()
-  const { logout } = useAuth()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
 
   const navigation = [
-    { name: 'Dashboard', href: '/portalclient/', icon: Home, current: location.pathname === '/portalclient/' },
-    { name: 'Loans', href: '/portalclient/loans', icon: DollarSign, current: location.pathname === '/portalclient/loans' },
-    { name: 'Agreements', href: '/portalclient/agreements', icon: FileText, current: location.pathname === '/portalclient/agreements' },
-    { name: 'Finance Applications', href: '/portalclient/finance-applications', icon: CreditCard, current: location.pathname === '/portalclient/finance-applications' },
-    { name: 'Settings', href: '/portalclient/settings', icon: Settings, current: location.pathname === '/portalclient/settings' },
+    { name: 'Dashboard', href: '/', icon: Home, current: location.pathname === '/portalclient/' },
+    { name: 'Loans', href: 'loans', icon: DollarSign, current: location.pathname === '/portalclient/loans' },
+    { name: 'Agreements', href: 'agreements', icon: FileText, current: location.pathname === '/portalclient/agreements' },
+    { name: 'Finance Applications', href: 'finance-applications', icon: CreditCard, current: location.pathname === '/portalclient/finance-applications' },
+    { name: 'Settings', href: 'settings', icon: Settings, current: location.pathname === '/portalclient/settings' },
   ]
 
   const SidebarContent = () => (
@@ -322,7 +309,7 @@ function ClientPortalContent() {
           variant="ghost"
           size="sm"
           className="w-full justify-start"
-          onClick={logout}
+          onClick={() => window.location.href = '/login'}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
@@ -376,6 +363,7 @@ function ClientPortalContent() {
             <Route path="agreements" element={<ClientAgreements />} />
             <Route path="finance-applications" element={<PortalApplicationView />} />
             <Route path="settings" element={<ClientSettingsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>
@@ -384,39 +372,37 @@ function ClientPortalContent() {
 }
 
 export default function ClientPortal() {
-  const { user: authUser } = useAuth()
   const location = useLocation()
-  
-  // Debug logging for URL parameters
-  console.log('=== ClientPortal Debug ===')
-  console.log('Current location:', location)
-  console.log('location.search:', location.search)
-  console.log('location.pathname:', location.pathname)
   
   // Extract impersonation parameter from URL
   const searchParams = new URLSearchParams(location.search)
   const impersonateClientId = searchParams.get('impersonateClientId')
   
-  console.log('Extracted impersonateClientId:', impersonateClientId)
-  
-  // Find the impersonated user from mock data (supports any user ID)
+  // Find the impersonated user from mock data
   const impersonatedUser = impersonateClientId 
     ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId) 
     : null
   
-  console.log('Found impersonated user:', impersonatedUser)
-  console.log('Available mock users:', mockUsers.sampleUsers)
-  console.log('=== End ClientPortal Debug ===')
+  // Enhanced proxy debugging
+  if (impersonateClientId && !impersonatedUser) {
+    console.warn('⚠️ Impersonated user not found:', impersonateClientId)
+  }
   
   return (
-    <PortalProvider 
-      impersonatedUser={impersonatedUser}
-      fallbackUser={{ 
-        name: authUser?.name || '', 
-        email: authUser?.email || '' 
-      }}
-    >
-      <ClientPortalContent />
-    </PortalProvider>
+    <div>
+      {/* Warning if impersonateClientId doesn't match any known user */}
+      {impersonateClientId && !impersonatedUser && (
+        <div className="bg-yellow-100 border border-yellow-300 p-3 rounded-md text-yellow-900 mb-4">
+          <strong>Warning:</strong> No user found for ID <code>{impersonateClientId}</code>. Displaying limited view.
+        </div>
+      )}
+      
+      <PortalProvider 
+        impersonatedUser={impersonatedUser}
+        fallbackUser={impersonatedUser ?? null}
+      >
+        <ClientPortalContent />
+      </PortalProvider>
+    </div>
   )
 }
