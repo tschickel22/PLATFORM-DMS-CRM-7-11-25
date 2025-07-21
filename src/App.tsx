@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { TenantProvider } from '@/contexts/TenantContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import Login from '@/pages/Login'
 import ClientPortal from '@/modules/client-portal/ClientPortal'
 import MainApp from './MainApp'
 
