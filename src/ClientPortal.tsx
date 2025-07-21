@@ -50,6 +50,18 @@ function ClientSettingsPage() {
 function ClientDashboard() {
   const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
   
+  // Debug logging for proxy functionality
+  React.useEffect(() => {
+    console.log('=== ClientDashboard Debug ===')
+    console.log('getDisplayName():', getDisplayName())
+    console.log('getDisplayEmail():', getDisplayEmail())
+    console.log('getCustomerId():', getCustomerId())
+    console.log('isProxying:', isProxying)
+    console.log('proxiedClient:', proxiedClient)
+    console.log('window.location.search:', window.location.search)
+    console.log('=== End Debug ===')
+  }, [getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient])
+  
   // Get customer-specific data based on the current customer ID
   const customerId = getCustomerId()
   
