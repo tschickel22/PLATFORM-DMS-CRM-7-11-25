@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,12 +13,9 @@ import {
   Settings, 
   LogOut, 
   Menu,
-  User,
-  CreditCard
-  LogOut,
-  Menu,
   X,
-  DollarSign
+  DollarSign,
+  Calendar
 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -147,10 +144,6 @@ function ClientDashboard() {
         time: new Date(app.updatedAt).toLocaleDateString()
       }))
   ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 3)
-import { useTenant } from '@/contexts/TenantContext'
-import { useAuth } from '@/contexts/AuthContext'
-import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
-import { ClientLoansView } from './components/ClientLoansView'
 
 // Mock components for routes that aren't implemented yet
 function ClientProfile() {
@@ -184,25 +177,6 @@ function ClientSettings() {
           <div className="text-center py-12 text-muted-foreground">
             <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p>Account settings coming soon</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function ClientAgreements() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Agreements</h1>
-        <p className="text-muted-foreground">View and manage your agreements</p>
-      </div>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>Agreement management coming soon</p>
           </div>
         </CardContent>
       </Card>
@@ -397,22 +371,6 @@ function ClientPortalContent() {
     </div>
   )
 
-  const { tenant } = useTenant()
-  const { user, logout } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const navigation = [
-    { name: 'Dashboard', href: '/portalclient', icon: Home },
-    { name: 'My Loans', href: '/portalclient/loans', icon: DollarSign },
-    { name: 'Agreements', href: '/portalclient/agreements', icon: FileText },
-    { name: 'Applications', href: '/portalclient/applications', icon: CreditCard },
-    { name: 'Profile', href: '/portalclient/profile', icon: User },
-    { name: 'Settings', href: '/portalclient/settings', icon: Settings },
-  ]
-
-  const portalName = tenant?.branding?.portalName || 'Customer Portal'
-  const portalLogo = tenant?.branding?.portalLogo || tenant?.branding?.logo
-
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop sidebar */}
@@ -460,108 +418,7 @@ function ClientPortalContent() {
             <Route path="/settings" element={<ClientSettingsPage />} />
           </Routes>
         </main>
-                          <Badge variant="secondary">Pending</Badge>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">Service agreement signed</p>
-                            <p className="text-xs text-muted-foreground">1 day ago</p>
-                          </div>
-                          <Badge variant="outline">Completed</Badge>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">Purchase agreement created</p>
-                            <p className="text-xs text-muted-foreground">3 days ago</p>
-                          </div>
-                          <Badge variant="secondary">Action Required</Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Quick Actions */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Quick Actions</CardTitle>
-                      <CardDescription>
-                        Common tasks and shortcuts
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Button variant="outline" className="justify-start h-auto p-4">
-                          <div className="text-left">
-                            <div className="font-medium">View Agreements</div>
-                            <div className="text-sm text-muted-foreground">
-                              Review and sign pending agreements
-                            </div>
-                          </div>
-                        </Button>
-                        <Button variant="outline" className="justify-start h-auto p-4">
-                          <div className="text-left">
-                            <div className="font-medium">Check Application Status</div>
-                            <div className="text-sm text-muted-foreground">
-                              View your finance application progress
-                            </div>
-                          </div>
-                        </Button>
-                        <Button variant="outline" className="justify-start h-auto p-4">
-                          <div className="text-left">
-                            <div className="font-medium">Update Profile</div>
-                            <div className="text-sm text-muted-foreground">
-                              Keep your information current
-                            </div>
-                          </div>
-                        </Button>
-                        <Button variant="outline" className="justify-start h-auto p-4">
-                          <div className="text-left">
-                            <div className="font-medium">Contact Support</div>
-                            <div className="text-sm text-muted-foreground">
-                              Get help with your account
-                            </div>
-                          </div>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              } />
-              <Route path="/loans" element={<ClientLoansView />} />
-              <Route path="/agreements/*" element={<ClientAgreements />} />
-              <Route path="/applications/*" element={<PortalApplicationView />} />
-              <Route path="/profile" element={<ClientProfile />} />
-              <Route path="/settings" element={<ClientSettings />} />
-            </Routes>
-          </main>
-        </div>
       </div>
-
-      {/* Footer */}
-      <footer className="border-t bg-card">
-        <div className="mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <p className="text-sm text-muted-foreground">
-                © 2024 {tenant?.name || 'Your Company'}. All rights reserved.
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Terms of Service
-              </a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Support
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
