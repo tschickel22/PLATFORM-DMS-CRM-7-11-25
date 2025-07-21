@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
+import { Routes, Route, useLocation, Link, Navigate, useResolvedPath } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -239,15 +239,24 @@ function ClientPortalContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
 
-  const navigation = [
-    { name: 'Dashboard', href: '/portalclient/', icon: Home, current: location.pathname === '/portalclient/' },
-    { name: 'Loans', href: '/portalclient/loans', icon: DollarSign, current: location.pathname === '/portalclient/loans' },
-    { name: 'Agreements', href: '/portalclient/agreements', icon: FileText, current: location.pathname === '/portalclient/agreements' },
-    { name: 'Finance Applications', href: '/portalclient/finance-applications', icon: CreditCard, current: location.pathname === '/portalclient/finance-applications' },
-    { name: 'Settings', href: '/portalclient/settings', icon: Settings, current: location.pathname === '/portalclient/settings' },
+  // Define navigation with relative paths
+  const navigationItems = [
+    { name: 'Dashboard', path: '', icon: Home },
+    { name: 'Loans', path: 'loans', icon: DollarSign },
+    { name: 'Agreements', path: 'agreements', icon: FileText },
+    { name: 'Finance Applications', path: 'finance-applications', icon: CreditCard },
+    { name: 'Settings', path: 'settings', icon: Settings },
   ]
 
-  const SidebarContent = () => (
+  const SidebarContent = () => {
+    // Resolve paths relative to current route context
+    const resolvedPaths = navigationItems.map(item => ({
+      ...item,
+      resolvedPath: useResolvedPath(item.path).pathname,
+      current: location.pathname === (item.path === '' ? '/portalclient/' : `/portalclient/${item.path}`)
+    }))
+
+    return (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center px-4 py-6">
@@ -263,10 +272,10 @@ function ClientPortalContent() {
 
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
-        {navigation.map((item) => (
+        {resolvedPaths.map((item) => (
           <Link
             key={item.name}
-            to={item.href}
+            to={item.resolvedPath}
             className={`
               group flex items-center px-2 py-2 text-sm font-medium rounded-md
               ${item.current
@@ -316,7 +325,8 @@ function ClientPortalContent() {
         </Button>
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <div className="flex h-screen bg-background">
