@@ -35,8 +35,8 @@ export function generateId(): string {
 }
 
 // Capture timer functions at module level to avoid conflicts
-const setTimeoutFn = window.setTimeout
-const clearTimeoutFn = window.clearTimeout
+const setTimeoutFn = window.setTimeout.bind(window)
+const clearTimeoutFn = window.clearTimeout.bind(window)
 
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
