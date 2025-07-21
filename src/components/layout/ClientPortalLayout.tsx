@@ -258,10 +258,6 @@ function ClientPortalLayout() {
     setSearchParams(newSearchParams)
   }
 
-  const impersonatedUser = impersonateClientId 
-    ? mockUsers.sampleUsers.find(user => user.id === impersonateClientId)
-    : null
-
   return (
     <PortalProvider 
       impersonatedUser={impersonatedUser}
