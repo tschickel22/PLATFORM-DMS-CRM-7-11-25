@@ -241,7 +241,7 @@ function ClientPortalContent() {
 
   // Define navigation items
   const navigationItems = [
-    { name: 'Dashboard', path: '/portalclient/', icon: Home },
+    { name: 'Dashboard', path: '/', icon: Home },
     { name: 'Loans', path: '/portalclient/loans', icon: DollarSign },
     { name: 'Agreements', path: '/portalclient/agreements', icon: FileText },
     { name: 'Finance Applications', path: '/portalclient/finance-applications', icon: CreditCard },
@@ -266,7 +266,8 @@ function ClientPortalContent() {
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
         {navigationItems.map((item) => {
-          const current = location.pathname === item.path
+          const current = location.pathname === item.path || 
+                         (item.path === '/' && location.pathname === '/portalclient/')
           
           return (
           <Link
