@@ -301,6 +301,13 @@ function ClientPortalLayout() {
         <Routes>
           <Route path="/" element={<ClientDashboard />} />
           <Route path="/loans" element={<ClientLoansView />} />
+          <Route path="/agreements" element={<ClientAgreements />} />
+          <Route path="/finance-applications" element={<PortalApplicationView />} />
+          <Route path="/service-tickets" element={<ClientServiceTickets />} />
+          <Route path="/settings" element={<ClientSettings />} />
+          <Route path="/*" element={<div>Portal Dashboard</div>} />
+        </Routes>
+      </ClientPortal>
       <ErrorBoundary>
         <ClientPortal>
           <Routes>
