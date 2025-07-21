@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation, Link, Navigate, useResolvedPath } from 'react-router-dom'
+import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -239,23 +239,16 @@ function ClientPortalContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
 
-  // Define navigation with relative paths
+  // Define navigation items
   const navigationItems = [
-    { name: 'Dashboard', path: '', icon: Home },
-    { name: 'Loans', path: 'loans', icon: DollarSign },
-    { name: 'Agreements', path: 'agreements', icon: FileText },
-    { name: 'Finance Applications', path: 'finance-applications', icon: CreditCard },
-    { name: 'Settings', path: 'settings', icon: Settings },
+    { name: 'Dashboard', path: '/', icon: Home },
+    { name: 'Loans', path: '/portalclient/loans', icon: DollarSign },
+    { name: 'Agreements', path: '/portalclient/agreements', icon: FileText },
+    { name: 'Finance Applications', path: '/portalclient/finance-applications', icon: CreditCard },
+    { name: 'Settings', path: '/portalclient/settings', icon: Settings },
   ]
 
   const SidebarContent = () => {
-    // Resolve paths relative to current route context
-    const resolvedPaths = navigationItems.map(item => ({
-      ...item,
-      resolvedPath: useResolvedPath(item.path).pathname,
-      current: location.pathname === (item.path === '' ? '/portalclient/' : `/portalclient/${item.path}`)
-    }))
-
     return (
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -272,13 +265,17 @@ function ClientPortalContent() {
 
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
-        {resolvedPaths.map((item) => (
+        {navigationItems.map((item) => {
+          const current = location.pathname === item.path || 
+                         (item.path === '/' && location.pathname === '/portalclient/')
+          
+          return (
           <Link
             key={item.name}
-            to={item.resolvedPath}
+            to={item.path}
             className={`
               group flex items-center px-2 py-2 text-sm font-medium rounded-md
-              ${item.current
+              ${current
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }
@@ -286,12 +283,13 @@ function ClientPortalContent() {
           >
             <item.icon
               className={`mr-3 flex-shrink-0 h-5 w-5 ${
-                item.current ? 'text-primary-foreground' : 'text-muted-foreground'
+                current ? 'text-primary-foreground' : 'text-muted-foreground'
               }`}
             />
             {item.name}
           </Link>
-        ))}
+          )
+        })}
       </nav>
 
       {/* User section */}
