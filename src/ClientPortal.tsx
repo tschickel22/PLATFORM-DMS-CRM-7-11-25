@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
-import { PortalProvider, usePortal } from '@/contexts/PortalContext'
+import { useLocation, Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,41 +14,21 @@ import {
   LogOut, 
   Menu,
   User,
-  CreditCard
+  CreditCard,
+  X
 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
-import { ClientLoansView } from './components/ClientLoansView'
-import { ClientAgreements } from './components/ClientAgreements'
 import { mockUsers } from '@/mocks/usersMock'
 import { mockFinance } from '@/mocks/financeMock'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { mockServiceOps } from '@/mocks/serviceOpsMock'
 import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
 
-// Mock components for routes that aren't implemented yet
-function ClientSettingsPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings</p>
-      </div>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>Settings page coming soon</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 function ClientDashboard() {
   const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   
   // Get customer-specific data based on the current customer ID
   const customerId = getCustomerId()
@@ -132,14 +112,29 @@ function ClientDashboard() {
       }))
   ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 3)
 
+  const clearImpersonation = () => {
+    const newSearchParams = new URLSearchParams(searchParams)
+    newSearchParams.delete('impersonateClientId')
+    navigate({ pathname: '/portalclient', search: newSearchParams.toString() })
+  }
+
   return (
     <div className="space-y-6">
       {/* Impersonation Banner - shown when proxying */}
       {isProxying && proxiedClient && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center justify-between">
           <p className="text-sm text-blue-700">
             <strong>Admin View:</strong> You are viewing the portal as {getDisplayName()} ({getDisplayEmail()})
           </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={clearImpersonation}
+            className="text-blue-700 border-blue-300 hover:bg-blue-100"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Exit Impersonation
+          </Button>
         </div>
       )}
       
@@ -239,9 +234,9 @@ function ClientPortalContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
 
-  // Define navigation items
+  // Define navigation items with relative paths
   const navigationItems = [
-    { name: 'Dashboard', path: '/', icon: Home },
+    { name: 'Dashboard', path: '/portalclient/', icon: Home },
     { name: 'Loans', path: '/portalclient/loans', icon: DollarSign },
     { name: 'Agreements', path: '/portalclient/agreements', icon: FileText },
     { name: 'Finance Applications', path: '/portalclient/finance-applications', icon: CreditCard },
@@ -266,8 +261,7 @@ function ClientPortalContent() {
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
         {navigationItems.map((item) => {
-          const current = location.pathname === item.path || 
-                         (item.path === '/' && location.pathname === '/portalclient/')
+          const current = location.pathname === item.path
           
           return (
           <Link
@@ -365,14 +359,7 @@ function ClientPortalContent() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">
-          <Routes>
-            <Route path="/" element={<ClientDashboard />} />
-            <Route path="loans" element={<ClientLoansView />} />
-            <Route path="agreements" element={<ClientAgreements />} />
-            <Route path="finance-applications" element={<PortalApplicationView />} />
-            <Route path="settings" element={<ClientSettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <ClientDashboard />
         </main>
       </div>
     </div>
@@ -380,37 +367,5 @@ function ClientPortalContent() {
 }
 
 export default function ClientPortal() {
-  const location = useLocation()
-  
-  // Extract impersonation parameter from URL
-  const searchParams = new URLSearchParams(location.search)
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  
-  // Find the impersonated user from mock data
-  const impersonatedUser = impersonateClientId 
-    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId) 
-    : null
-  
-  // Enhanced proxy debugging
-  if (impersonateClientId && !impersonatedUser) {
-    console.warn('⚠️ Impersonated user not found:', impersonateClientId)
-  }
-  
-  return (
-    <div>
-      {/* Warning if impersonateClientId doesn't match any known user */}
-      {impersonateClientId && !impersonatedUser && (
-        <div className="bg-yellow-100 border border-yellow-300 p-3 rounded-md text-yellow-900 mb-4">
-          <strong>Warning:</strong> No user found for ID <code>{impersonateClientId}</code>. Displaying limited view.
-        </div>
-      )}
-      
-      <PortalProvider 
-        impersonatedUser={impersonatedUser}
-        fallbackUser={impersonatedUser ?? null}
-      >
-        <ClientPortalContent />
-      </PortalProvider>
-    </div>
-  )
+  return <ClientPortalContent />
 }

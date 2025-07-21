@@ -9,6 +9,7 @@ import Dashboard from '@/pages/Dashboard'
 import Login from '@/pages/Login'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import PlatformSettings from '@/modules/platform-admin/settings'
+import ClientPortalLayout from '@/components/layout/ClientPortalLayout'
 
 // Module imports
 import CRMProspecting from '@/modules/crm-prospecting/CRMProspecting'
@@ -22,7 +23,6 @@ import DeliveryTracker from '@/modules/delivery-tracker/DeliveryTracker'
 import PDIChecklist from '@/modules/pdi-checklist/PDIChecklist'
 import CommissionEngine from '@/modules/commission-engine/CommissionEngine'
 import ClientPortalAdmin from '@/modules/client-portal/ClientPortalAdmin'
-import ClientPortal from '@/modules/client-portal/ClientPortal'
 import InvoicePayments from '@/modules/invoice-payments/InvoicePayments'
 import CompanySettings from '@/modules/company-settings/CompanySettings'
 import PlatformAdmin from '@/modules/platform-admin/PlatformAdmin'
@@ -39,11 +39,7 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 {/* Client Portal Routes - these will render ClientPortal directly */}
-                <Route path="/portalclient/*" element={
-                  <ProtectedRoute>
-                    <ClientPortal />
-                  </ProtectedRoute>
-                } />
+                <Route path="/portalclient/*" element={<ClientPortalLayout />} />
                 {/* Main Application Routes - these will render the Layout */}
                 <Route path="/*" element={
                   <ProtectedRoute>
