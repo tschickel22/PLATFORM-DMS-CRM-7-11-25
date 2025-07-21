@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { X, Save, MapPin } from 'lucide-react'
 import { LandAsset, LandAssetFormData } from '../models/LandAsset'
 import { useLandInventory } from '../hooks/useLandInventory'
+import { useLandInventory } from '../hooks/useLandInventory'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
 import { useToast } from '@/hooks/use-toast'
 
