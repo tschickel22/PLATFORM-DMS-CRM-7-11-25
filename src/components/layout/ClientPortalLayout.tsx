@@ -11,6 +11,7 @@ import { ClientServiceTickets } from '@/modules/client-portal/components/ClientS
 import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { 
   DollarSign, 
   FileText, 
@@ -24,6 +25,13 @@ import { mockAgreements } from '@/mocks/agreementsMock'
 import { mockServiceOps } from '@/mocks/serviceOpsMock'
 import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
 import { useMockDataDiscovery, getPortalSectionsWithCounts } from '@/utils/mockDataDiscovery'
+
+interface ClientPortalLayoutProps {
+  fallbackUser?: {
+    name: string;
+    email: string;
+  };
+}
 
 function ClientDashboard({ searchParams }: { searchParams: URLSearchParams }) {
   const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
@@ -166,7 +174,7 @@ function ClientLoans() {
   )
 }
 
-function ClientAgreements() {
+function ClientAgreementsComponent() {
   const { getDisplayName, getCustomerId } = usePortal()
   const customerId = getCustomerId()
   
@@ -214,7 +222,7 @@ function ClientAgreements() {
   )
 }
 
-function ClientSettings() {
+function ClientSettingsComponent() {
   const { getDisplayName, getDisplayEmail } = usePortal()
 
   return (
@@ -241,16 +249,16 @@ function ClientSettings() {
           <div>
             <label className="text-sm font-medium">Email</label>
             <p className="text-sm text-muted-foreground">{getDisplayEmail()}</p>
+          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
 
-export default function ClientPortalLayout({ fallbackUser }: ClientPortalLayoutProps) {
+function ClientPortalLayout({ fallbackUser }: ClientPortalLayoutProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const impersonateClientId = searchParams.get('impersonateClientId')
-  const impersonatedUser = mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
 
   const clearImpersonation = () => {
     const newSearchParams = new URLSearchParams(searchParams)
@@ -271,39 +279,28 @@ export default function ClientPortalLayout({ fallbackUser }: ClientPortalLayoutP
         email: 'customer@portal.com'
       }}
     >
-      <ClientPortal>
-        {/* Impersonation Banner */}
-        {impersonatedUser && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center justify-between mb-6">
-            <p className="text-sm text-blue-700">
-              <strong>Admin View:</strong> You are viewing the portal as {impersonatedUser.name} ({impersonatedUser.email})
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={clearImpersonation}
-              className="text-blue-700 border-blue-300 hover:bg-blue-100"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Exit Impersonation
-            </Button>
-          </div>
-        )}
-
-        <Routes>
-          <Route path="/" element={<ClientDashboard searchParams={searchParams} />} />
-          <Route path="/loans" element={<ClientLoansView />} />
-          <Route path="/agreements" element={<ClientAgreements />} />
-          <Route path="/finance-applications" element={<PortalApplicationView />} />
-          <Route path="/service-tickets" element={<ClientServiceTickets />} />
-          <Route path="/settings" element={<ClientSettings />} />
-          <Route path="/*" element={<div>Portal Dashboard</div>} />
-        </Routes>
-      </ClientPortal>
       <ErrorBoundary>
         <ClientPortal>
+          {/* Impersonation Banner */}
+          {impersonatedUser && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center justify-between mb-6">
+              <p className="text-sm text-blue-700">
+                <strong>Admin View:</strong> You are viewing the portal as {impersonatedUser.name} ({impersonatedUser.email})
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearImpersonation}
+                className="text-blue-700 border-blue-300 hover:bg-blue-100"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Exit Impersonation
+              </Button>
+            </div>
+          )}
+
           <Routes>
-            <Route path="/" element={<div>Portal Dashboard</div>} />
+            <Route path="/" element={<ClientDashboard searchParams={searchParams} />} />
             <Route path="/loans" element={<ClientLoansView />} />
             <Route path="/agreements" element={<ClientAgreements />} />
             <Route path="/finance-applications" element={<PortalApplicationView />} />
