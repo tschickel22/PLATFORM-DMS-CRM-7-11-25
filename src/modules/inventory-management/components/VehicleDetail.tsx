@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,8 +26,8 @@ interface VehicleDetailProps {
   onClose: () => void
 }
 
-  const { tenant } = useTenant()
 export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) {
+  const { tenant } = useTenant()
   const {
     bundleToInventory,
     unbundleLandAsset,
@@ -206,18 +206,18 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Zoning</label>
-                <div className="space-y-4 overflow-hidden">
+                    <p className="text-sm">{linkedLandAsset.zoning}</p>
                   </div>
                   <div>
-                      <div className="flex-1 min-w-0">
+                    <label className="text-sm font-medium text-muted-foreground">Utilities</label>
                     <p className="text-sm">{linkedLandAsset.utilityStatus}</p>
                   </div>
                   {linkedLandAsset.pricing?.salePrice && (
                     <div>
-                        <h4 className="font-semibold text-base sm:text-lg mb-2 truncate">{linkedLand.label}</h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{linkedLand.address}</p>
+                      <label className="text-sm font-medium text-muted-foreground">Land Price</label>
+                      <p className="text-sm font-semibold">
                         {formatCurrency(linkedLandAsset.pricing.salePrice)}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
+                      </p>
                     </div>
                   )}
                   <div>
@@ -232,23 +232,17 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                   <Button variant="outline" size="sm">
                     <Eye className="h-4 w-4 mr-2" />
                     View Land Details
-                      <div className="ml-2 sm:ml-4 flex-shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleUnlinkLand}
-                          className="text-xs sm:text-sm"
-                        >
-                          Unlink
-                        </Button>
-                      </div>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleUnlinkFromLand}>
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Unlink
                   </Button>
                 </div>
               </div>
             ) : (
               // Show land linking options
               <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                {!showLandLinking ? (
                   <div className="text-center py-6 border-2 border-dashed rounded-lg">
                     <Home className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <h4 className="font-semibold mb-2">No Land Asset Linked</h4>
@@ -272,12 +266,11 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                           {availableLandAssets.map((asset) => (
                             <SelectItem key={asset.id} value={asset.id}>
                               <div className="flex flex-col">
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+                                <span className="font-medium">{asset.label}</span>
                                 <span className="text-xs text-muted-foreground">
                                   {asset.address} • {asset.lotSizeSqFt?.toLocaleString()} sq ft
                                 </span>
                               </div>
-                      className="w-full sm:w-auto text-xs sm:text-sm"
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -286,7 +279,6 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
 
                     {selectedLandId && (
                       <div className="p-4 bg-blue-50 rounded-lg">
-                      className="w-full sm:w-auto text-xs sm:text-sm"
                         {(() => {
                           const selectedAsset = availableLandAssets.find(a => a.id === selectedLandId)
                           if (!selectedAsset) return null
@@ -312,7 +304,6 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                                   {formatCurrency(selectedAsset.pricing?.salePrice || 0)}
                                 </div>
                               </div>
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                               <div className="text-lg font-bold text-blue-900">
                                 Total Package: {formatCurrency(vehicle.price + (selectedAsset.pricing?.salePrice || 0))}
                               </div>
@@ -348,7 +339,7 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
         </Card>
       )}
 
-        {isManufacturedHome && isLandManagementVisible && (
+      {/* Customer & Marketing */}
       <Card>
         <CardHeader>
           <CardTitle>Customer & Marketing</CardTitle>
