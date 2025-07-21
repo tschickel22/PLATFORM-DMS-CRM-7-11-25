@@ -22,6 +22,7 @@ import {
   TrendingUp
 } from 'lucide-react'
 import { useLandInventory } from '../hooks/useLandInventory'
+import { useTenant } from '@/contexts/TenantContext'
 import { LandAsset } from '../models/LandAsset'
 import { LandAssetModal } from './LandAssetModal'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
@@ -29,6 +30,7 @@ import { mockInventory } from '@/mocks/inventoryMock'
 import { formatCurrency } from '@/lib/utils'
 
 export function LandInventoryDashboard() {
+  const { tenant } = useTenant()
   const {
     landAssets,
     loading,
@@ -49,6 +51,41 @@ export function LandInventoryDashboard() {
   const [showBundleModal, setShowBundleModal] = useState(false)
   const [selectedAssetForBundle, setSelectedAssetForBundle] = useState<LandAsset | null>(null)
   const [selectedInventoryId, setSelectedInventoryId] = useState('')
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
+
+  // Check if land management should be visible based on platform type
+  const isLandManagementVisible = useMemo(() => {
+    const platformType = tenant?.settings?.platformType || 'both'
+    const landFeatureEnabled = tenant?.settings?.features?.landManagement !== false
+    
+    // For RV-only platforms, land management is only visible if manually enabled
+    if (platformType === 'rv') {
+      return landFeatureEnabled
+    }
+    
+    // For MH or mixed platforms, it's enabled by default
+    return true
+  }, [tenant?.settings?.platformType, tenant?.settings?.features?.landManagement])
+
+  // If land management is not visible for this platform, don't render
+  if (!isLandManagementVisible) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Building className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <h3 className="text-lg font-semibold mb-2">Land Management Not Available</h3>
+            <p className="text-muted-foreground mb-4">
+              Land management features are not enabled for your platform type.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Contact your administrator to enable this feature if needed.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   // Apply filters and search
   const filteredAssets = React.useMemo(() => {
@@ -213,14 +250,14 @@ export function LandInventoryDashboard() {
 
       {/* Page Header */}
       <div className="ri-page-header">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="ri-page-title flex items-center">
               <MapPin className="h-8 w-8 mr-3 text-primary" />
               Land Management
             </h1>
             <p className="ri-page-description">
-              Manage land assets and bundle with inventory units
+          <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
             </p>
           </div>
           <Button onClick={handleCreateAsset}>
@@ -230,7 +267,7 @@ export function LandInventoryDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
       <div className="ri-stats-grid">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -355,17 +392,91 @@ export function LandInventoryDashboard() {
           <CardDescription>
             Manage your land inventory and bundle with homes
           </CardDescription>
-        </CardHeader>
+            <div className="space-y-4 overflow-x-auto">
+              {/* Desktop Table View */}
+              <div className="hidden lg:block">
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-8 gap-4 p-4 bg-muted/50 font-medium text-sm">
+                    <div>Label</div>
+                    <div>Address</div>
+                    <div>Size (sq ft)</div>
+                    <div>Zoning</div>
+                    <div>Ownership</div>
+                    <div>Status</div>
+                    <div>Price</div>
+                    <div>Actions</div>
+                  </div>
+                  {filteredAssets.map((asset) => (
+                    <div key={asset.id} className="grid grid-cols-8 gap-4 p-4 border-t hover:bg-accent/50 transition-colors">
+                      <div className="font-medium">{asset.label}</div>
+                      <div className="text-sm text-muted-foreground truncate">{asset.address}</div>
+                      <div className="text-sm">{asset.lotSizeSqFt?.toLocaleString()}</div>
+                      <div className="text-sm">{asset.zoningType}</div>
+                      <div>
+                        <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]} variant="secondary">
+                          {asset.ownershipStatus}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Badge className={mockLandAssets.statusColors[asset.status]} variant="secondary">
+                          {asset.status}
+                        </Badge>
+                      </div>
+                      <div className="text-sm">
+                        {asset.pricing.salePrice ? formatCurrency(asset.pricing.salePrice) : 'Lease Only'}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditAsset(asset)}
+                        >
+                          Edit
+                        </Button>
+                        {asset.status === 'Available' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleBundleAsset(asset)}
+                          >
+                            <Link className="h-4 w-4 mr-1" />
+                            Bundle
+                          </Button>
+                        )}
+                        {asset.status === 'Bundled' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUnbundleAsset(asset.id)}
+                          >
+                            Unlink
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteAsset(asset.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile/Tablet Card View */}
+              <div className="lg:hidden space-y-4">
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
+                <Card key={asset.id} className="overflow-hidden">
+                  <CardContent className="p-4">
               <TableHeader>
                 <TableRow>
                   <TableHead>Label</TableHead>
                   <TableHead>Address</TableHead>
-                  <TableHead>Size (Sq Ft)</TableHead>
+                          <h4 className="font-semibold text-sm sm:text-base">{asset.label}</h4>
                   <TableHead>Zoning</TableHead>
-                  <TableHead>Ownership</TableHead>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">{asset.address}</p>
                   <TableHead>Status</TableHead>
                   <TableHead>Sale Price</TableHead>
                   <TableHead>Linked Unit</TableHead>
@@ -377,7 +488,7 @@ export function LandInventoryDashboard() {
                   <TableRow key={asset.id}>
                     <TableCell className="font-medium">
                       <div>
-                        <div className="font-semibold">{asset.label}</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm mb-4">
                         {asset.parcelNumber && (
                           <div className="text-sm text-muted-foreground">
                             {asset.parcelNumber}
@@ -396,19 +507,20 @@ export function LandInventoryDashboard() {
                     <TableCell>
                       <div className="text-sm">{asset.zoningType || 'N/A'}</div>
                     </TableCell>
-                    <TableCell>
+                          <span className="text-xs sm:text-sm font-medium text-blue-900">
                       <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]}>
                         {asset.ownershipStatus}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className={mockLandAssets.statusColors[asset.status]}>
-                        {asset.status}
-                      </Badge>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                       {asset.linkedInventoryId && (
                         <Badge variant="outline" className="ml-2">
                           <Link className="h-3 w-3 mr-1" />
                           Linked
+                          className="flex-1 sm:flex-none"
                         </Badge>
                       )}
                     </TableCell>
@@ -417,31 +529,34 @@ export function LandInventoryDashboard() {
                         ? formatCurrency(asset.pricing.salePrice)
                         : 'N/A'
                       }
+                            className="flex-1 sm:flex-none"
                     </TableCell>
                     <TableCell>
-                      {asset.linkedInventoryId ? (
+                            <span className="hidden sm:inline">Bundle</span>
                         <div className="flex items-center text-sm">
                           <Link className="h-3 w-3 mr-1 text-blue-600" />
                           <span className="text-blue-600">{asset.linkedInventoryId}</span>
-                        </div>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Assets</CardTitle>
                       ) : (
                         <span className="text-muted-foreground text-sm">None</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
+                            className="flex-1 sm:flex-none"
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalAssets}</div>
+              <p className="text-xs text-muted-foreground hidden sm:block">
                       <div className="ri-action-buttons">
                         {asset.status === 'Available' && (
                           <Button
                             variant="outline"
-                            size="sm"
+                      <div className="flex space-x-2 w-full sm:w-auto justify-end">
                             onClick={() => handleBundle(asset)}
                           >
-                            <Link className="h-4 w-4 mr-1" />
+              <CardTitle className="text-xs sm:text-sm font-medium">Available</CardTitle>
                             Bundle
                           </Button>
-                        )}
-                        {asset.status === 'Bundled' && (
-                          <Button
+                          title="Coming soon - CRM integration"
+                          className="text-xs"
+              <div className="text-xl sm:text-2xl font-bold">{stats.availableAssets}</div>
+              <p className="text-xs text-muted-foreground hidden sm:block">
                             variant="outline"
                             size="sm"
                             onClick={() => handleUnbundle(asset)}
@@ -449,25 +564,28 @@ export function LandInventoryDashboard() {
                             <Package className="h-4 w-4 mr-1" />
                             Unbundle
                           </Button>
-                        )}
+                            className="text-xs"
+              <CardTitle className="text-xs sm:text-sm font-medium">Bundled</CardTitle>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEditAsset(asset)}
-                        >
+              <div className="text-xl sm:text-2xl font-bold">{stats.bundledAssets}</div>
+              <p className="text-xs text-muted-foreground hidden sm:block">
                           <Edit className="h-3 w-3" />
                         </Button>
+                          className="text-red-600 hover:text-red-700"
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteAsset(asset)}
                           disabled={asset.status === 'Bundled'}
-                        >
-                          <Trash2 className="h-3 w-3" />
+                  </CardContent>
+                </Card>
                         </Button>
+              </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <div className="text-center py-8 sm:py-12 text-muted-foreground">
                 ))}
               </TableBody>
             </Table>
@@ -475,9 +593,23 @@ export function LandInventoryDashboard() {
             {filteredAssets.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                {landAssets.length === 0 ? (
+        <Card className="overflow-hidden">
                   <>
-                    <p>No land assets yet</p>
+            {/* Mobile Filter Toggle */}
+            <div className="flex items-center justify-between mb-4 sm:hidden">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </div>
+
+            {/* Desktop Filters - Always Visible */}
+              <Select value={zoningFilter} onValueChange={setZoningFilter}>
                     <p className="text-sm">Add your first land asset to get started</p>
                   </>
                 ) : (

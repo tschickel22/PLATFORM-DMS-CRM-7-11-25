@@ -16,6 +16,7 @@ import {
   Eye
 } from 'lucide-react'
 import { Vehicle } from '@/types'
+import { useTenant } from '@/contexts/TenantContext'
 import { useLandInventory } from '../hooks/useLandInventory'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
 
@@ -25,6 +26,7 @@ interface VehicleDetailProps {
   onClose: () => void
 }
 
+  const { tenant } = useTenant()
 export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) {
   const {
     bundleToInventory,
@@ -35,6 +37,20 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
   
   const [selectedLandId, setSelectedLandId] = useState('')
   const [showLandLinking, setShowLandLinking] = useState(false)
+  // Check if land management should be visible based on platform type
+  const isLandManagementVisible = useMemo(() => {
+    const platformType = tenant?.settings?.platformType || 'both'
+    const landFeatureEnabled = tenant?.settings?.features?.landManagement !== false
+    
+    // For RV-only platforms, land management is only visible if manually enabled
+    if (platformType === 'rv') {
+      return landFeatureEnabled
+    }
+    
+    // For MH or mixed platforms, it's enabled by default
+    return true
+  }, [tenant?.settings?.platformType, tenant?.settings?.features?.landManagement])
+
 
   // Check if this vehicle type supports land bundling
   const supportsLandBundling = [
@@ -190,18 +206,18 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Zoning</label>
-                    <p className="text-sm">{linkedLandAsset.zoningType}</p>
+                <div className="space-y-4 overflow-hidden">
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Utilities</label>
+                      <div className="flex-1 min-w-0">
                     <p className="text-sm">{linkedLandAsset.utilityStatus}</p>
                   </div>
                   {linkedLandAsset.pricing?.salePrice && (
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Land Price</label>
-                      <p className="text-sm font-semibold">
+                        <h4 className="font-semibold text-base sm:text-lg mb-2 truncate">{linkedLand.label}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{linkedLand.address}</p>
                         {formatCurrency(linkedLandAsset.pricing.salePrice)}
-                      </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                     </div>
                   )}
                   <div>
@@ -216,21 +232,23 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                   <Button variant="outline" size="sm">
                     <Eye className="h-4 w-4 mr-2" />
                     View Land Details
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleUnlinkFromLand}
-                  >
-                    <Unlink className="h-4 w-4 mr-2" />
-                    Unlink Land
+                      <div className="ml-2 sm:ml-4 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleUnlinkLand}
+                          className="text-xs sm:text-sm"
+                        >
+                          Unlink
+                        </Button>
+                      </div>
                   </Button>
                 </div>
               </div>
             ) : (
               // Show land linking options
               <div className="space-y-4">
-                {!showLandLinking ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div className="text-center py-6 border-2 border-dashed rounded-lg">
                     <Home className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <h4 className="font-semibold mb-2">No Land Asset Linked</h4>
@@ -254,11 +272,12 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                           {availableLandAssets.map((asset) => (
                             <SelectItem key={asset.id} value={asset.id}>
                               <div className="flex flex-col">
-                                <span>{asset.label}</span>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                                 <span className="text-xs text-muted-foreground">
                                   {asset.address} • {asset.lotSizeSqFt?.toLocaleString()} sq ft
                                 </span>
                               </div>
+                      className="w-full sm:w-auto text-xs sm:text-sm"
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -267,6 +286,7 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
 
                     {selectedLandId && (
                       <div className="p-4 bg-blue-50 rounded-lg">
+                      className="w-full sm:w-auto text-xs sm:text-sm"
                         {(() => {
                           const selectedAsset = availableLandAssets.find(a => a.id === selectedLandId)
                           if (!selectedAsset) return null
@@ -292,7 +312,7 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
                                   {formatCurrency(selectedAsset.pricing?.salePrice || 0)}
                                 </div>
                               </div>
-                              <Separator />
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                               <div className="text-lg font-bold text-blue-900">
                                 Total Package: {formatCurrency(vehicle.price + (selectedAsset.pricing?.salePrice || 0))}
                               </div>
@@ -328,7 +348,7 @@ export function VehicleDetail({ vehicle, onEdit, onClose }: VehicleDetailProps) 
         </Card>
       )}
 
-      {/* Integration Placeholders */}
+        {isManufacturedHome && isLandManagementVisible && (
       <Card>
         <CardHeader>
           <CardTitle>Customer & Marketing</CardTitle>
