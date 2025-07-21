@@ -1,8 +1,14 @@
 import React from 'react'
-import { Routes, Route, useSearchParams, Navigate } from 'react-router-dom'
+import { Routes, Route, useSearchParams } from 'react-router-dom'
 import { PortalProvider } from '@/contexts/PortalContext'
 import { mockUsers } from '@/mocks/usersMock'
+import { mockUsers } from '@/mocks/usersMock'
 import ClientPortal from '@/ClientPortal'
+import { ClientLoansView } from '@/modules/client-portal/components/ClientLoansView'
+import { ClientAgreements } from '@/modules/client-portal/components/ClientAgreements'
+import { PortalApplicationView } from '@/modules/finance-application/components/PortalApplicationView'
+import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
+import { ClientServiceTickets } from '@/modules/client-portal/components/ClientServiceTickets'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -252,8 +258,22 @@ function ClientPortalLayout() {
     setSearchParams(newSearchParams)
   }
 
+  const [searchParams] = useSearchParams()
+  const impersonateClientId = searchParams.get('impersonateClientId')
+  
+  // Find the impersonated user if ID is provided
+  const impersonatedUser = impersonateClientId 
+    ? mockUsers.sampleUsers.find(user => user.id === impersonateClientId)
+    : null
+
   return (
-    <PortalProvider fallbackUser={impersonatedUser}>
+    <PortalProvider 
+      impersonatedUser={impersonatedUser}
+      fallbackUser={{
+        name: 'Portal Customer',
+        email: 'customer@portal.com'
+      }}
+    >
       <ClientPortal>
         {/* Impersonation Banner */}
         {impersonatedUser && (
@@ -275,10 +295,11 @@ function ClientPortalLayout() {
 
         <Routes>
           <Route path="/" element={<ClientDashboard />} />
-          <Route path="loans" element={<ClientLoans />} />
-          <Route path="agreements" element={<ClientAgreements />} />
-          <Route path="finance-applications" element={<div>Finance Applications Coming Soon</div>} />
-          <Route path="settings" element={<ClientSettings />} />
+          <Route path="/loans" element={<ClientLoansView />} />
+          <Route path="/agreements" element={<ClientAgreements />} />
+          <Route path="/finance-applications" element={<PortalApplicationView />} />
+          <Route path="/service-tickets" element={<ClientServiceTickets />} />
+          <Route path="/settings" element={<ClientSettings />} />
           <Route path="*" element={<Navigate to="/portalclient/" replace />} />
         </Routes>
       </ClientPortal>

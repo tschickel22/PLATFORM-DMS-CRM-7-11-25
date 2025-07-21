@@ -3,103 +3,74 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { DollarSign, Calendar, CreditCard, Eye, TrendingUp, AlertCircle } from 'lucide-react'
-import { useLoans } from '@/modules/finance/hooks/useLoans'
+import { DollarSign, Calendar, TrendingUp, Eye, Download, CreditCard } from 'lucide-react'
 import { usePortal } from '@/contexts/PortalContext'
-import { Loan, LoanStatus } from '@/types'
+import { mockFinance } from '@/mocks/financeMock'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ClientLoanDetail } from './ClientLoanDetail'
 
 export function ClientLoansView() {
-  const { getPortalLoansByCustomer } = useLoans()
-  const { getCustomerId } = usePortal()
-  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
-
-  // Get customer ID from portal context (handles both proxied and regular sessions)
+  const { getDisplayName, getCustomerId } = usePortal()
+  const [selectedLoan, setSelectedLoan] = useState<string | null>(null)
+  
+  // Get customer-specific loans
   const customerId = getCustomerId()
-  const loans = getPortalLoansByCustomer(customerId)
+  const customerLoans = mockFinance.sampleLoans.filter(loan => 
+    loan.customerId === customerId || loan.customerName === getDisplayName()
+  )
+  
+  // Get payments for customer loans
+  const customerPayments = mockFinance.samplePayments.filter(payment => 
+    customerLoans.some(loan => loan.id === payment.loanId)
+  )
 
-  const getStatusColor = (status: LoanStatus) => {
-    switch (status) {
-      case LoanStatus.CURRENT:
-      case LoanStatus.ACTIVE:
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'current':
         return 'bg-green-100 text-green-800'
-      case LoanStatus.LATE:
+      case 'late':
         return 'bg-yellow-100 text-yellow-800'
-      case LoanStatus.DEFAULT:
-        return 'bg-red-100 text-red-800'
-      case LoanStatus.PAID_OFF:
+      case 'paid off':
         return 'bg-blue-100 text-blue-800'
-      case LoanStatus.CANCELLED:
-        return 'bg-gray-100 text-gray-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getStatusIcon = (status: LoanStatus) => {
-    switch (status) {
-      case LoanStatus.CURRENT:
-      case LoanStatus.ACTIVE:
-        return <TrendingUp className="h-4 w-4" />
-      case LoanStatus.LATE:
-      case LoanStatus.DEFAULT:
-        return <AlertCircle className="h-4 w-4" />
-      case LoanStatus.PAID_OFF:
-        return <CreditCard className="h-4 w-4" />
-      default:
-        return <DollarSign className="h-4 w-4" />
-    }
-  }
-
-  const calculateProgress = (loan: Loan) => {
-    const totalAmount = loan.loanAmount - loan.downPayment
-    const paidAmount = loan.totalPaid
-    return totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
+  const calculateProgress = (loan: any) => {
+    const totalPayments = loan.termMonths
+    const paidPayments = totalPayments - loan.paymentsRemaining
+    return (paidPayments / totalPayments) * 100
   }
 
   if (selectedLoan) {
+    const loan = customerLoans.find(l => l.id === selectedLoan)
+    const loanPayments = customerPayments.filter(p => p.loanId === selectedLoan)
+    
+    if (!loan) return null
+
     return (
-      <ClientLoanDetail
-        loan={selectedLoan}
-        onBack={() => setSelectedLoan(null)}
-      />
-    )
-  }
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => setSelectedLoan(null)}>
+              ← Back to Loans
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Loan Details</h1>
+              <p className="text-muted-foreground">{loan.vehicleInfo}</p>
+            </div>
+          </div>
+        </div>
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold">My Loans</h1>
-        <p className="text-muted-foreground">
-          View your loan details, payment history, and make payments
-        </p>
-      </div>
-
-      {/* Loan Summary Cards */}
-      {loans.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Loan Overview */}
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Loans</p>
-                  <p className="text-2xl font-bold">{loans.length}</p>
-                </div>
-                <CreditCard className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Balance</p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(loans.reduce((sum, loan) => sum + loan.remainingBalance, 0))}
-                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">Remaining Balance</p>
+                  <p className="text-2xl font-bold">{formatCurrency(loan.remainingBalance)}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -111,8 +82,166 @@ export function ClientLoansView() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
+                  <p className="text-2xl font-bold">{formatCurrency(loan.monthlyPayment)}</p>
+                </div>
+                <Calendar className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Next Payment</p>
+                  <p className="text-2xl font-bold">{formatDate(loan.nextPaymentDate)}</p>
+                </div>
+                <Calendar className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Payments Remaining</p>
+                  <p className="text-2xl font-bold">{loan.paymentsRemaining}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Loan Progress */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Loan Progress</CardTitle>
+            <CardDescription>
+              Track your loan repayment progress
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm">
+                <span>Loan Progress</span>
+                <span>{Math.round(calculateProgress(loan))}% Complete</span>
+              </div>
+              <Progress value={calculateProgress(loan)} className="h-3" />
+              <div className="grid gap-4 md:grid-cols-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Original Amount</p>
+                  <p className="font-semibold">{formatCurrency(loan.loanAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total Paid</p>
+                  <p className="font-semibold">{formatCurrency(loan.totalPaid)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Interest Rate</p>
+                  <p className="font-semibold">{loan.interestRate}%</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment History */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment History</CardTitle>
+            <CardDescription>
+              Recent payment transactions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {loanPayments.map((payment) => (
+                <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{formatCurrency(payment.amount)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(payment.paymentDate)} • {payment.paymentMethod}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className={payment.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                      {payment.status}
+                    </Badge>
+                    {payment.transactionId && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ID: {payment.transactionId}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {loanPayments.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p>No payment history available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">My Loans</h1>
+        <p className="text-muted-foreground">
+          Manage and track your loan accounts
+        </p>
+      </div>
+
+      {/* Loan Summary Cards */}
+      {customerLoans.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Loans</p>
+                  <p className="text-2xl font-bold">{customerLoans.length}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Balance</p>
                   <p className="text-2xl font-bold">
-                    {formatCurrency(loans.reduce((sum, loan) => sum + loan.monthlyPayment, 0))}
+                    {formatCurrency(customerLoans.reduce((sum, loan) => sum + loan.remainingBalance, 0))}
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(customerLoans.reduce((sum, loan) => sum + loan.monthlyPayment, 0))}
                   </p>
                 </div>
                 <Calendar className="h-8 w-8 text-muted-foreground" />
@@ -127,130 +256,76 @@ export function ClientLoansView() {
         <CardHeader>
           <CardTitle>Your Loans</CardTitle>
           <CardDescription>
-            Click on any loan to view details and make payments
+            View details and payment history for your loans
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {loans.map((loan) => {
-              const progress = calculateProgress(loan)
-              const nextPaymentDate = new Date(loan.nextPaymentDate)
-              const isPaymentDue = nextPaymentDate <= new Date()
-              
-              return (
-                <div
-                  key={loan.id}
-                  className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedLoan(loan)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(loan.status)}
-                        <div>
-                          <h4 className="font-semibold">
-                            {loan.vehicleInfo || `Loan #${loan.id.slice(-6).toUpperCase()}`}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            Started {formatDate(loan.startDate)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4">
-                        <Badge className={getStatusColor(loan.status)}>
-                          {loan.status.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                        {isPaymentDue && loan.status !== LoanStatus.PAID_OFF && (
-                          <Badge variant="destructive">
-                            Payment Due
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Remaining Balance</p>
-                          <p className="font-semibold">{formatCurrency(loan.remainingBalance)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                          <p className="font-semibold">{formatCurrency(loan.monthlyPayment)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Next Payment</p>
-                          <p className="font-semibold">
-                            {loan.status === LoanStatus.PAID_OFF ? 'Paid Off' : formatDate(loan.nextPaymentDate)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {loan.status !== LoanStatus.PAID_OFF && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Loan Progress</span>
-                            <span>{Math.round(progress)}% paid</span>
-                          </div>
-                          <Progress value={progress} className="h-2" />
-                        </div>
-                      )}
-                      
-                      {loan.portalNotes && (
-                        <div className="bg-muted/50 p-3 rounded-md">
-                          <p className="text-sm">{loan.portalNotes}</p>
-                        </div>
-                      )}
+            {customerLoans.map((loan) => (
+              <div
+                key={loan.id}
+                className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center space-x-3">
+                      <h4 className="font-semibold">{loan.vehicleInfo}</h4>
+                      <Badge className={getStatusColor(loan.status)}>
+                        {loan.status}
+                      </Badge>
                     </div>
                     
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
+                    <div className="grid gap-4 md:grid-cols-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Remaining Balance</p>
+                        <p className="font-semibold">{formatCurrency(loan.remainingBalance)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Monthly Payment</p>
+                        <p className="font-semibold">{formatCurrency(loan.monthlyPayment)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Next Payment</p>
+                        <p className="font-semibold">{formatDate(loan.nextPaymentDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Payments Remaining</p>
+                        <p className="font-semibold">{loan.paymentsRemaining}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{Math.round(calculateProgress(loan))}%</span>
+                      </div>
+                      <Progress value={calculateProgress(loan)} className="h-2" />
                     </div>
                   </div>
+                  
+                  <div className="flex items-center space-x-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedLoan(loan.id)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </div>
                 </div>
-              )
-            })}
+              </div>
+            ))}
             
-            {loans.length === 0 && (
+            {customerLoans.length === 0 && (
               <div className="text-center py-12">
-                <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-semibold mb-2">No Loans Found</h3>
                 <p className="text-muted-foreground">
-                  You don't have any loans visible in the portal at this time.
+                  You don't have any active loans at this time.
                 </p>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Help Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Need Help?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <h4 className="font-medium">Payment Questions</h4>
-              <p className="text-sm text-muted-foreground">
-                Have questions about your payments or need to set up automatic payments?
-              </p>
-              <Button variant="outline" size="sm">
-                Contact Support
-              </Button>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium">Loan Information</h4>
-              <p className="text-sm text-muted-foreground">
-                Need help understanding your loan terms or payment schedule?
-              </p>
-              <Button variant="outline" size="sm">
-                View FAQ
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>

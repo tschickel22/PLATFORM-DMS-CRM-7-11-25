@@ -15,7 +15,8 @@ import {
   Menu,
   User,
   CreditCard,
-  X
+  X,
+  Wrench
 } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -24,6 +25,7 @@ import { mockFinance } from '@/mocks/financeMock'
 import { mockAgreements } from '@/mocks/agreementsMock'
 import { mockServiceOps } from '@/mocks/serviceOpsMock'
 import { mockFinanceApplications } from '@/modules/finance-application/mocks/financeApplicationMock'
+import { useMockDataDiscovery, getPortalSectionsWithCounts } from '@/utils/mockDataDiscovery'
 
 function ClientDashboard() {
   const { getDisplayName, getDisplayEmail, getCustomerId, isProxying, proxiedClient } = usePortal()
@@ -32,23 +34,16 @@ function ClientDashboard() {
   
   // Get customer-specific data based on the current customer ID
   const customerId = getCustomerId()
+  const customerName = getDisplayName()
   
-  // Filter data for the current customer
-  const customerLoans = mockFinance.sampleLoans.filter(loan => 
-    loan.customerId === customerId || loan.customerName === getDisplayName()
-  )
+  // Use the new mock data discovery system
+  const { customerData, getSectionCount, hasDataForSection } = useMockDataDiscovery(customerId, customerName)
   
-  const customerAgreements = mockAgreements.sampleAgreements.filter(agreement => 
-    agreement.customerId === customerId || agreement.customerName === getDisplayName()
-  )
-  
-  const customerApplications = mockFinanceApplications.sampleApplications.filter(app => 
-    app.customerId === customerId || app.customerName === getDisplayName()
-  )
-  
-  const customerServiceTickets = mockServiceOps.sampleTickets.filter(ticket => 
-    ticket.customerId === customerId || ticket.customerName === getDisplayName()
-  )
+  // Get data using the discovery system
+  const customerLoans = customerData.loans || []
+  const customerAgreements = customerData.agreements || []
+  const customerApplications = customerData.financeApplications || []
+  const customerServiceTickets = customerData.serviceTickets || []
   
   // Calculate dynamic stats
   const activeLoans = customerLoans.filter(loan => ['Current', 'Active'].includes(loan.status))
@@ -154,7 +149,7 @@ function ClientDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{customerLoans.length}</div>
+            <div className="text-2xl font-bold">{getSectionCount('loans')}</div>
             <p className="text-xs text-muted-foreground">
               {activeLoans.length} active, {paidOffLoans.length} paid off
             </p>
@@ -166,7 +161,7 @@ function ClientDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{customerAgreements.length}</div>
+            <div className="text-2xl font-bold">{getSectionCount('agreements')}</div>
             <p className="text-xs text-muted-foreground">
               {pendingAgreements.length} pending signature
             </p>
@@ -178,7 +173,7 @@ function ClientDashboard() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{customerServiceTickets.length}</div>
+            <div className="text-2xl font-bold">{getSectionCount('serviceTickets')}</div>
             <p className="text-xs text-muted-foreground">
               {inProgressTickets.length} in progress
             </p>
@@ -244,6 +239,7 @@ function ClientPortalContent({ children }: ClientPortalContentProps) {
     { name: 'Loans', path: 'loans', icon: DollarSign },
     { name: 'Agreements', path: 'agreements', icon: FileText },
     { name: 'Finance Applications', path: 'finance-applications', icon: CreditCard },
+    { name: 'Service Tickets', path: 'service-tickets', icon: Wrench },
     { name: 'Settings', path: 'settings', icon: Settings },
   ]
 
