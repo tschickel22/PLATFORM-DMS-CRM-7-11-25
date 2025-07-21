@@ -11,7 +11,6 @@ import { ClientServiceTickets } from '@/modules/client-portal/components/ClientS
 import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { 
   DollarSign, 
   FileText, 
@@ -242,14 +241,13 @@ function ClientSettings() {
           <div>
             <label className="text-sm font-medium">Email</label>
             <p className="text-sm text-muted-foreground">{getDisplayEmail()}</p>
-          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
 
-function ClientPortalLayout() {
+export default function ClientPortalLayout({ fallbackUser }: ClientPortalLayoutProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const impersonateClientId = searchParams.get('impersonateClientId')
   const impersonatedUser = mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
