@@ -42,7 +42,7 @@ function ClientPortalAdminPage() {
 
   const handleProxyAsClient = (user: any) => {
     // Open client portal in new tab with impersonation parameter
-    const portalUrl = `/portalclient?impersonateClientId=${user.id}`
+    const portalUrl = `/portalclient/?impersonateClientId=${user.id}`
     window.open(portalUrl, '_blank')
   }
 
