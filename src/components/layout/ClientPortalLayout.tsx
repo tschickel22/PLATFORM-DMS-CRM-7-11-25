@@ -40,6 +40,8 @@ function ClientDashboard() {
   )
 }
 
+function ClientPortalLayout() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const impersonateClientId = searchParams.get('impersonateClientId')
   const impersonatedUser = mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
 
