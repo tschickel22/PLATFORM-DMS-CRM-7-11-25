@@ -44,42 +44,29 @@ function ClientSettings() {
 }
 
 function ClientDashboard() {
-  const { tenant } = useTenant()
-  const { user: authUser, logout } = useAuth()
-  const [searchParams] = useSearchParams()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
-
-  // Check for impersonation
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  const impersonatedUser = impersonateClientId 
-    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
-    : null
-  
-  // Use impersonated user if available, otherwise use authenticated user
-  const user = impersonatedUser || authUser
-  const isImpersonating = !!impersonatedUser
 
   return (
     <div className="space-y-6">
-      {/* Impersonation Banner */}
-      {isImpersonating && impersonatedUser && (
+      {/* Impersonation Banner - shown when proxying */}
+      {isProxying && proxiedClient && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
           <p className="text-sm text-blue-700">
-            <strong>Admin View:</strong> You are viewing the portal as {impersonatedUser.name} ({impersonatedUser.email})
+            <strong>Admin View:</strong> You are viewing the portal as {getDisplayName()} ({getDisplayEmail()})
           </p>
         </div>
       )}
       
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Welcome back, {(user?.name || 'User').split(' ')[0]}!</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {getDisplayName().split(' ')[0]}!</h1>
         <p className="text-muted-foreground">
           Here's what's happening with your account
         </p>
       </div>
 
       {/* Quick Stats */}
-      {/* TODO: Update these stats to fetch dynamic data based on the proxied client ID for full implementation */}
+      {/* TODO: Update these stats to fetch dynamic data based on the customer ID from getCustomerId() for full implementation */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -120,7 +107,7 @@ function ClientDashboard() {
       </div>
 
       {/* Recent Activity */}
-      {/* TODO: Update this section to fetch dynamic data based on the proxied client ID for full implementation */}
+      {/* TODO: Update this section to fetch dynamic data based on the customer ID from getCustomerId() for full implementation */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
@@ -171,21 +158,10 @@ function ClientDashboard() {
 
 function ClientPortalContent() {
   const { tenant } = useTenant()
-  const { user: authUser, logout } = useAuth()
-  const [searchParams] = useSearchParams()
+  const { logout } = useAuth()
   const { getDisplayName, getDisplayEmail, isProxying, proxiedClient } = usePortal()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
-
-  // Check for impersonation
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  const impersonatedUser = impersonateClientId 
-    ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
-    : null
-  
-  // Use impersonated user if available, otherwise use authenticated user
-  const user = impersonatedUser || authUser
-  const isImpersonating = !!impersonatedUser
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, current: location.pathname === '/' },
@@ -236,10 +212,10 @@ function ClientPortalContent() {
       {/* User section */}
       <div className="border-t p-4">
         {/* Impersonation indicator */}
-        {isImpersonating && impersonatedUser && (
+        {isProxying && proxiedClient && (
           <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-xs text-blue-700 font-medium">
-              Viewing as: {impersonatedUser.name}
+              Viewing as: {getDisplayName()}
             </p>
           </div>
         )}
@@ -249,8 +225,8 @@ function ClientPortalContent() {
             <User className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
+            <p className="text-sm font-medium truncate">{getDisplayName()}</p>
+            <p className="text-xs text-muted-foreground truncate">{getDisplayEmail()}</p>
           </div>
         </div>
         <Button
@@ -322,17 +298,19 @@ export default function ClientPortal() {
   const { user: authUser } = useAuth()
   const [searchParams] = useSearchParams()
   
-  // Check for impersonation at the top level
+  // Extract impersonation parameter and find the impersonated user
   const impersonateClientId = searchParams.get('impersonateClientId')
-  const impersonatedUser = impersonateClientId 
+  const impersonatedUser = impersonateClientId
     ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId)
     : null
   
-  // Use impersonated user if available, otherwise use authenticated user
-  const user = impersonatedUser || authUser
-  
   return (
-    <PortalProvider fallbackUser={{ name: user?.name || '', email: user?.email || '' }}>
+    <PortalProvider 
+      fallbackUser={{ 
+        name: impersonatedUser?.name || authUser?.name || '', 
+        email: impersonatedUser?.email || authUser?.email || '' 
+      }}
+    >
       <ClientPortalContent />
     </PortalProvider>
   )
