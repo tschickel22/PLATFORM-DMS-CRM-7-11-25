@@ -5,30 +5,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, Settings, Search, Edit, RotateCcw, ExternalLink, UserCheck } from 'lucide-react'
+import { Users, Search, Plus, Edit, RotateCcw, Settings, Eye } from 'lucide-react'
 import { mockUsers } from '@/mocks/usersMock'
 import { ClientAgreements } from './components/ClientAgreements'
 
-function ClientPortalAdminDashboard() {
+function ClientPortalAdmin() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('users')
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+
+  // Use shared mock users data
+  const users = mockUsers.sampleUsers
 
   // Filter users based on search query
-  const filteredUsers = mockUsers.sampleUsers.filter(user =>
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
 
   const getInitials = (name: string) => {
     return name
@@ -36,10 +28,6 @@ function ClientPortalAdminDashboard() {
       .map(part => part.charAt(0))
       .join('')
       .toUpperCase()
-  }
-
-  const formatLastLogin = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
   }
 
   const handleEditUser = (userId: string) => {
@@ -52,9 +40,9 @@ function ClientPortalAdminDashboard() {
     // TODO: Implement password reset functionality
   }
 
-  const handleProxyAsClient = (userId: string) => {
+  const handleProxyAsClient = (user: any) => {
     // Open client portal in new tab with impersonation parameter
-    const portalUrl = `/portalclient?impersonateClientId=${userId}`
+    const portalUrl = `/portalclient?impersonateClientId=${user.id}`
     window.open(portalUrl, '_blank')
   }
 
@@ -69,6 +57,10 @@ function ClientPortalAdminDashboard() {
               Manage client portal access and settings
             </p>
           </div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
         </div>
       </div>
 
@@ -76,28 +68,26 @@ function ClientPortalAdminDashboard() {
       <div className="ri-stats-grid">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Portal Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockUsers.sampleUsers.length}</div>
+            <div className="text-2xl font-bold">{users.length}</div>
             <p className="text-xs text-muted-foreground">
-              {mockUsers.sampleUsers.filter(u => u.status === 'Active').length} active users
+              {users.filter(u => u.status === 'Active').length} active users
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {mockUsers.sampleUsers.filter(u => u.status === 'Active').length}
-            </div>
+            <div className="text-2xl font-bold">{users.filter(u => u.status === 'Active').length}</div>
             <p className="text-xs text-muted-foreground">
-              Currently logged in
+              {Math.round((users.filter(u => u.status === 'Active').length / users.length) * 100)}% active rate
             </p>
           </CardContent>
         </Card>
@@ -116,10 +106,10 @@ function ClientPortalAdminDashboard() {
         </Card>
       </div>
 
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      {/* Main Content */}
+      <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="users">Portal Users</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="agreements">Agreements</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
@@ -127,14 +117,10 @@ function ClientPortalAdminDashboard() {
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Portal Users</CardTitle>
-                  <CardDescription>
-                    Manage client portal access and user accounts
-                  </CardDescription>
-                </div>
-              </div>
+              <CardTitle>Portal Users</CardTitle>
+              <CardDescription>
+                Manage client portal access and user accounts
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {/* Search */}
@@ -159,42 +145,40 @@ function ClientPortalAdminDashboard() {
                         </span>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <h4 className="font-semibold">{user.name}</h4>
-                          <Badge className={getStatusBadgeColor(user.status)}>
-                            {user.status.toUpperCase()}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {user.email} • {user.phone} • Last login: {formatLastLogin(user.updatedAt)}
-                        </div>
+                        <h4 className="font-semibold">{user.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {user.email} • {user.phone} • Last login: {new Date(user.updatedAt).toLocaleDateString()}
+                        </p>
                       </div>
-                    </div>
-                    <div className="ri-action-buttons">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditUser(user.id)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleResetPassword(user.email)}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Reset Password
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleProxyAsClient(user.id)}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Proxy as Client
-                      </Button>
+                      <div className="flex items-center space-x-3">
+                        <Badge className={user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          {user.status}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditUser(user.id)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleResetPassword(user.email)}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Reset Password
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleProxyAsClient(user)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Proxy as Client
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -202,7 +186,7 @@ function ClientPortalAdminDashboard() {
                 {filteredUsers.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    {mockUsers.sampleUsers.length === 0 ? (
+                    {users.length === 0 ? (
                       <>
                         <p>No portal users found</p>
                         <p className="text-sm">Users will appear here once they're added to the system</p>
@@ -302,8 +286,8 @@ function ClientPortalAdminDashboard() {
 export default function ClientPortalAdmin() {
   return (
     <Routes>
-      <Route path="/" element={<ClientPortalAdminDashboard />} />
-      <Route path="/*" element={<ClientPortalAdminDashboard />} />
+      <Route path="/" element={<ClientPortalAdmin />} />
+      <Route path="/*" element={<ClientPortalAdmin />} />
     </Routes>
   )
 }
