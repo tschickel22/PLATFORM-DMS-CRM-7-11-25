@@ -1,6 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { mockUsers } from '@/mocks/usersMock'
+import { MockUser } from '@/mocks/usersMock'
 
 interface PortalClient {
   id: string
@@ -28,23 +27,21 @@ export function usePortal() {
 
 interface PortalProviderProps {
   children: ReactNode
+  impersonatedUser?: MockUser | null
   fallbackUser?: {
     name: string
     email: string
   }
 }
 
-export function PortalProvider({ children, fallbackUser }: PortalProviderProps) {
-  const [searchParams] = useSearchParams()
-  const impersonateIdParam = searchParams.get('impersonateClientId')
-  
-  // Find the proxied client from mock users data
-  const proxiedClient = impersonateIdParam 
-    ? mockUsers.sampleUsers.find(user => user.id === impersonateIdParam) 
-      ? { id: mockUsers.sampleUsers.find(user => user.id === impersonateIdParam)!.id, 
-          name: mockUsers.sampleUsers.find(user => user.id === impersonateIdParam)!.name, 
-          email: mockUsers.sampleUsers.find(user => user.id === impersonateIdParam)!.email }
-      : null
+export function PortalProvider({ children, impersonatedUser, fallbackUser }: PortalProviderProps) {
+  // Convert impersonated user to proxied client format
+  const proxiedClient = impersonatedUser 
+    ? {
+        id: impersonatedUser.id,
+        name: impersonatedUser.name,
+        email: impersonatedUser.email
+      }
     : null
 
   const isProxying = !!proxiedClient

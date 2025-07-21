@@ -385,6 +385,7 @@ export default function ClientPortal() {
   
   return (
     <PortalProvider 
+      impersonatedUser={impersonatedUser}
       fallbackUser={{ 
         name: impersonatedUser?.name || authUser?.name || '', 
         email: impersonatedUser?.email || authUser?.email || '' 
