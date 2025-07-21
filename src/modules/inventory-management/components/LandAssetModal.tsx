@@ -91,7 +91,7 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -115,7 +115,7 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
           {/* Scrollable Content */}
           <div className="overflow-y-auto flex-1 p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Information */}
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Basic Information</h3>
                 
@@ -154,7 +154,7 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
                   />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="lotSizeSqFt">Lot Size (Sq Ft)</Label>
                     <Input
@@ -225,7 +225,7 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Pricing Information</h3>
                 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="salePrice">Sale Price</Label>
                     <Input
@@ -285,7 +285,8 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
 
           {/* Sticky Footer */}
           <div className="shrink-0 border-t bg-white p-4">
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
+                className="w-full sm:w-auto"
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
@@ -299,6 +300,7 @@ export function LandAssetModal({ asset, onClose }: LandAssetModalProps) {
                   <>
                     <Save className="h-4 w-4 mr-2" />
                     {asset ? 'Update' : 'Create'} Asset
+                className="w-full sm:w-auto"
                   </>
                 )}
               </Button>

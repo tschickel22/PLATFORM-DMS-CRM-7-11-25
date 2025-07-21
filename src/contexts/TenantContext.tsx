@@ -64,7 +64,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
             commissions: true,
             portal: true,
             invoices: true,
-            reports: true
+            reports: true,
+            landManagement: true
           }
         },
         customFields: [],
