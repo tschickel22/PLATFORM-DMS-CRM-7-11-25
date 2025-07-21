@@ -9,7 +9,7 @@ import { Users, Search, Plus, Edit, RotateCcw, Settings, Eye } from 'lucide-reac
 import { mockUsers } from '@/mocks/usersMock'
 import { ClientAgreements } from './components/ClientAgreements'
 
-function ClientPortalAdmin() {
+function ClientPortalAdminPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUser, setSelectedUser] = useState<any>(null)
 
@@ -286,8 +286,8 @@ function ClientPortalAdmin() {
 export default function ClientPortalAdmin() {
   return (
     <Routes>
-      <Route path="/" element={<ClientPortalAdmin />} />
-      <Route path="/*" element={<ClientPortalAdmin />} />
+      <Route path="/" element={<ClientPortalAdminPage />} />
+      <Route path="/*" element={<ClientPortalAdminPage />} />
     </Routes>
   )
 }
