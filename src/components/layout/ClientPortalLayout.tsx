@@ -9,6 +9,30 @@ import { PortalApplicationView } from '@/modules/finance-application/components/
 import { ClientSettings } from '@/modules/client-portal/components/ClientSettings'
 import { ClientServiceTickets } from '@/modules/client-portal/components/ClientServiceTickets'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react'
+import { Navigate } from 'react-router-dom'
+import { usePortal } from '@/contexts/PortalContext'
+
+function ClientDashboard() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome to your client portal
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((item) => (
+          <Card key={item}>
+            <CardHeader>
+              <CardTitle>Card {item}</CardTitle>
+              <CardDescription>Card description</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Card content</p>
+            </CardContent>
           </Card>
         ))}
       </div>
@@ -60,14 +84,6 @@ function ClientPortalLayout() {
     newSearchParams.delete('impersonateClientId')
     setSearchParams(newSearchParams)
   }
-
-  const [searchParams] = useSearchParams()
-  const impersonateClientId = searchParams.get('impersonateClientId')
-  
-  // Find the impersonated user if ID is provided
-  const impersonatedUser = impersonateClientId 
-    ? mockUsers.sampleUsers.find(user => user.id === impersonateClientId)
-    : null
 
   return (
     <PortalProvider 
