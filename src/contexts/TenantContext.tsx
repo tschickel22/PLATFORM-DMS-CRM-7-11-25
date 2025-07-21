@@ -40,6 +40,18 @@ export function TenantProvider({ children }: TenantProviderProps) {
           ...savedTenant.settings,
           platformType: 'both',
           features: {
+            // Ensure features object exists and has default values
+            crm: true,
+            inventory: true,
+            quotes: true,
+            agreements: true,
+            service: true,
+            delivery: true,
+            commissions: true,
+            portal: true,
+            invoices: true,
+            reports: true,
+            // Override with existing features if they exist
             ...savedTenant.settings.features,
             landManagement: true
           }
