@@ -4,6 +4,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+
+function ClientPortalAdminDashboard() {
+  const [filteredUsers, setFilteredUsers] = useState([])
+  
+  const getStatusBadgeColor = (status) => {
+    return ''
+  }
+  
+  const handleProxyAsClient = (id, email) => {
+    
+  }
+  
+  return (
+    <div>
+      <Tabs>
+        <TabsContent>
+          <Card>
+            <CardContent>
               {/* Portal Users from Mock Data */}
               {filteredUsers.map((user) => {
                 const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -63,6 +81,14 @@ import { Badge } from '@/components/ui/badge'
       </Tabs>
     </div>
   )
+}
+
+function ClientAgreements() {
+  return <div>Client Agreements</div>
+}
+
+function ClientAgreementSign() {
+  return <div>Client Agreement Sign</div>
 }
 
 export default function ClientPortalAdmin() {
