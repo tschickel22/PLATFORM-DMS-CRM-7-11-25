@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Routes, Route, useLocation, useSearchParams } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { PortalProvider, usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -373,15 +373,21 @@ function ClientPortalContent() {
 
 export default function ClientPortal() {
   const { user: authUser } = useAuth()
-  const [searchParams] = useSearchParams()
+  const location = useLocation()
   
-  // Extract impersonation parameter from URL
+  // Extract impersonation parameter from URL using URLSearchParams
+  const searchParams = new URLSearchParams(location.search)
   const impersonateClientId = searchParams.get('impersonateClientId')
   
   // Find the impersonated user from mock data (supports any user ID)
   const impersonatedUser = impersonateClientId 
     ? mockUsers.sampleUsers.find(u => u.id === impersonateClientId) 
     : null
+  
+  // Debug logging to help troubleshoot
+  console.log('URL search params:', location.search)
+  console.log('Impersonate Client ID:', impersonateClientId)
+  console.log('Found impersonated user:', impersonatedUser)
   
   return (
     <PortalProvider 
