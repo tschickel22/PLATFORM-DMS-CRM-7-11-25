@@ -27,7 +27,53 @@ export const mockInventory = {
       location: 'Main Lot',
       year: 2022,
       make: 'Forest River',
-      model: 'Flagstaff 832IKRL'
+      model: 'Flagstaff 832IKRL',
+      vin: '1FUJBBCK5NLBXXXXX',
+      price: 45000,
+      cost: 38000,
+      features: ['AC', 'Slide Outs', 'Awning']
+    },
+    {
+      stockNumber: 'RV-002',
+      type: 'Travel Trailer',
+      condition: 'New',
+      status: 'Available',
+      location: 'Main Lot',
+      year: 2024,
+      make: 'Keystone',
+      model: 'Passport 2400RB',
+      vin: '4X4TWHBK5PNXXXXXX',
+      price: 32000,
+      cost: 26000,
+      features: ['AC', 'Solar Prep', 'Outdoor Kitchen']
+    },
+    {
+      stockNumber: 'MH-001',
+      type: 'Double Wide',
+      condition: 'New',
+      status: 'Available',
+      location: 'Main Lot',
+      year: 2024,
+      make: 'Clayton',
+      model: 'The Breeze',
+      vin: 'CLT123456789XXXXX',
+      price: 85000,
+      cost: 72000,
+      features: ['Washer/Dryer', 'Porch', 'Central Air']
+    },
+    {
+      stockNumber: 'MH-002',
+      type: 'Single Wide',
+      condition: 'Used',
+      status: 'Pending',
+      location: 'Overflow Lot',
+      year: 2022,
+      make: 'Fleetwood',
+      model: 'Inspiration',
+      vin: 'FLT987654321XXXXX',
+      price: 55000,
+      cost: 48000,
+      features: ['Skirting', 'Appliances Included', 'Fireplace']
     }
   ]
 }
