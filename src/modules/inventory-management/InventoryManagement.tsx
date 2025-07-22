@@ -1,680 +1,724 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Filter, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Download,
-  MapPin,
-  Home,
-  Car
-} from 'lucide-react'
-import { Vehicle, VehicleType } from '@/types'
+import { Plus, Search, Filter, Download, Upload, Package, Home, MapPin, X } from 'lucide-react'
+import { useTenant } from '@/contexts/TenantContext'
+import { useToast } from '@/hooks/use-toast'
 import { mockInventory } from '@/mocks/inventoryMock'
 import { mockLandAssets } from '@/mocks/mockLandAssets'
-import { VehicleForm } from './components/VehicleForm'
-import { LandAssetModal } from './components/LandAssetModal'
-import { LandAsset } from './models/LandAsset'
 
-// Define vehicle type categories
-const RV_VEHICLE_TYPES = [VehicleType.RV, VehicleType.MOTORHOME, VehicleType.TRAVEL_TRAILER, VehicleType.FIFTH_WHEEL, VehicleType.TOY_HAULER]
-const MANUFACTURED_HOME_TYPES = [VehicleType.SINGLE_WIDE, VehicleType.DOUBLE_WIDE, VehicleType.TRIPLE_WIDE, VehicleType.PARK_MODEL, VehicleType.MODULAR_HOME]
+// Define RV and MH specific types and features
+const RV_VEHICLE_TYPES = ['RV', 'Motorhome', 'Travel Trailer', 'Fifth Wheel', 'Toy Hauler']
+const MANUFACTURED_HOME_TYPES = ['Single Wide', 'Double Wide', 'Triple Wide', 'Park Model', 'Modular Home']
 
-// Define features specific to each category
-const RV_FEATURES = ['AC', 'Solar Prep', 'Appliances Included', 'Generator Ready', 'Slide Outs', 'Awning']
-const MH_FEATURES = ['Washer/Dryer', 'Porch', 'Skirting', 'Appliances Included', 'Central Air', 'Fireplace']
-
-// Helper function to get filtered inventory based on tab
-const getFilteredInventory = (mode: 'vehicles' | 'homes') => {
-  const typeFilter = mode === 'vehicles' ? RV_VEHICLE_TYPES : MANUFACTURED_HOME_TYPES
-  
-  // Create extended mock inventory with proper typing and additional properties
-  const extendedInventory = mockInventory.exampleInventory.map((item, index) => ({
-    id: `inv-${index + 1}`,
-    vin: item.vin || `VIN${String(index + 1).padStart(6, '0')}`,
-    make: item.make,
-    model: item.model,
-    year: item.year,
-    type: item.type as VehicleType,
-    status: item.status as any,
-    location: item.location,
-    price: 45000 + (index * 15000), // Mock pricing
-    cost: 35000 + (index * 12000), // Mock cost
-    features: ['AC', 'Washer/Dryer', 'Solar Prep'],
-    images: [],
-    customFields: {},
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }))
-
-  return extendedInventory.filter(item => typeFilter.includes(item.type))
-}
+const RV_FEATURES = ['AC', 'Solar Prep', 'Generator Ready', 'Slide Outs', 'Awning', 'Outdoor Kitchen', 'Satellite Prep']
+const MH_FEATURES = ['Washer/Dryer', 'Porch', 'Skirting', 'Central Air', 'Fireplace', 'Appliances Included', 'Garden Tub']
 
 function InventoryManagementPage() {
+  const { tenant } = useTenant()
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('vehicles')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [locationFilter, setLocationFilter] = useState('all')
   const [showVehicleModal, setShowVehicleModal] = useState(false)
   const [vehicleModalMode, setVehicleModalMode] = useState<'vehicle' | 'home'>('vehicle')
-  const [showLandModal, setShowLandModal] = useState(false)
-  const [selectedLandAsset, setSelectedLandAsset] = useState<LandAsset | null>(null)
+  const [editingVehicle, setEditingVehicle] = useState<any>(null)
+  const [vehicles, setVehicles] = useState(mockInventory.exampleInventory)
+  const [landAssets, setLandAssets] = useState(mockLandAssets.sampleLandAssets)
+  const [newVehicle, setNewVehicle] = useState({
+    stockNumber: '',
+    vin: '',
+    year: new Date().getFullYear(),
+    make: '',
+    model: '',
+    type: '',
+    condition: 'New',
+    status: 'Available',
+    location: 'Main Lot',
+    price: 0,
+    cost: 0,
+    features: [] as string[]
+  })
 
-  // Search and filter states for vehicles tab
-  const [vehicleSearchQuery, setVehicleSearchQuery] = useState('')
-  const [vehicleMakeFilter, setVehicleMakeFilter] = useState('all')
-  const [vehicleModelFilter, setVehicleModelFilter] = useState('all')
-  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('all')
-  const [vehicleLocationFilter, setVehicleLocationFilter] = useState('all')
+  // Get platform-specific labels
+  const getVehicleLabel = () => {
+    const platformType = tenant?.settings?.platformType || 'both'
+    const labelOverrides = tenant?.settings?.labelOverrides || {}
+    
+    if (labelOverrides['general.vehicle']) {
+      return labelOverrides['general.vehicle']
+    }
+    
+    switch (platformType) {
+      case 'rv':
+        return 'RV'
+      case 'mh':
+        return 'Home'
+      case 'both':
+      default:
+        return 'Home/RV'
+    }
+  }
 
-  // Search and filter states for homes tab
-  const [homeSearchQuery, setHomeSearchQuery] = useState('')
-  const [homeMakeFilter, setHomeMakeFilter] = useState('all')
-  const [homeModelFilter, setHomeModelFilter] = useState('all')
-  const [homeStatusFilter, setHomeStatusFilter] = useState('all')
-  const [homeLocationFilter, setHomeLocationFilter] = useState('all')
+  const getInventoryLabel = () => {
+    const platformType = tenant?.settings?.platformType || 'both'
+    const labelOverrides = tenant?.settings?.labelOverrides || {}
+    
+    if (labelOverrides['general.inventory']) {
+      return labelOverrides['general.inventory']
+    }
+    
+    return 'Inventory'
+  }
 
-  // Search and filter states for land assets tab
-  const [landSearchQuery, setLandSearchQuery] = useState('')
-  const [landStatusFilter, setLandStatusFilter] = useState('all')
-  const [landOwnershipFilter, setLandOwnershipFilter] = useState('all')
+  // Initialize default type based on modal mode
+  useEffect(() => {
+    if (showVehicleModal) {
+      const defaultType = vehicleModalMode === 'vehicle' 
+        ? RV_VEHICLE_TYPES[0] 
+        : MANUFACTURED_HOME_TYPES[0]
+      
+      setNewVehicle(prev => ({
+        ...prev,
+        type: defaultType
+      }))
+    }
+  }, [vehicleModalMode, showVehicleModal])
 
   const handleOpenVehicleModal = (mode: 'vehicle' | 'home') => {
     setVehicleModalMode(mode)
+    setEditingVehicle(null)
+    const defaultType = mode === 'vehicle' ? RV_VEHICLE_TYPES[0] : MANUFACTURED_HOME_TYPES[0]
+    setNewVehicle({
+      stockNumber: '',
+      vin: '',
+      year: new Date().getFullYear(),
+      make: '',
+      model: '',
+      type: defaultType,
+      condition: 'New',
+      status: 'Available',
+      location: 'Main Lot',
+      price: 0,
+      cost: 0,
+      features: []
+    })
     setShowVehicleModal(true)
   }
 
-  const handleOpenLandModal = (asset?: LandAsset) => {
-    setSelectedLandAsset(asset || null)
-    setShowLandModal(true)
+  const handleCloseVehicleModal = () => {
+    setShowVehicleModal(false)
+    setEditingVehicle(null)
+    setNewVehicle({
+      stockNumber: '',
+      vin: '',
+      year: new Date().getFullYear(),
+      make: '',
+      model: '',
+      type: '',
+      condition: 'New',
+      status: 'Available',
+      location: 'Main Lot',
+      price: 0,
+      cost: 0,
+      features: []
+    })
   }
 
-  const handleCloseLandModal = () => {
-    setSelectedLandAsset(null)
-    setShowLandModal(false)
-  }
+  const handleSaveVehicle = () => {
+    if (!newVehicle.stockNumber || !newVehicle.vin || !newVehicle.make || !newVehicle.model) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      })
+      return
+    }
 
-  const renderInventoryTab = (mode: 'vehicles' | 'homes') => {
-    const filteredInventory = getFilteredInventory(mode)
-    const labelPrefix = mode === 'vehicles' ? 'Vehicle' : 'Home'
-    const sectionTitle = mode === 'vehicles' ? 'Vehicles' : 'Homes'
+    if (editingVehicle) {
+      setVehicles(vehicles.map(v => v.stockNumber === editingVehicle.stockNumber ? newVehicle : v))
+      toast({
+        title: 'Vehicle Updated',
+        description: `${newVehicle.year} ${newVehicle.make} ${newVehicle.model} has been updated`
+      })
+    } else {
+      setVehicles([...vehicles, newVehicle])
+      toast({
+        title: 'Vehicle Added',
+        description: `${newVehicle.year} ${newVehicle.make} ${newVehicle.model} has been added to inventory`
+      })
+    }
     
-    // Get appropriate state variables based on mode
-    const searchQuery = mode === 'vehicles' ? vehicleSearchQuery : homeSearchQuery
-    const setSearchQuery = mode === 'vehicles' ? setVehicleSearchQuery : setHomeSearchQuery
-    const makeFilter = mode === 'vehicles' ? vehicleMakeFilter : homeMakeFilter
-    const setMakeFilter = mode === 'vehicles' ? setVehicleMakeFilter : setHomeMakeFilter
-    const modelFilter = mode === 'vehicles' ? vehicleModelFilter : homeModelFilter
-    const setModelFilter = mode === 'vehicles' ? setVehicleModelFilter : setHomeModelFilter
-    const statusFilter = mode === 'vehicles' ? vehicleStatusFilter : homeStatusFilter
-    const setStatusFilter = mode === 'vehicles' ? setVehicleStatusFilter : setHomeStatusFilter
-    const locationFilter = mode === 'vehicles' ? vehicleLocationFilter : homeLocationFilter
-    const setLocationFilter = mode === 'vehicles' ? setVehicleLocationFilter : setHomeLocationFilter
-
-    // Calculate stats
-    const totalUnits = filteredInventory.length
-    const totalValue = filteredInventory.reduce((sum, item) => sum + item.price, 0)
-    const availableUnits = filteredInventory.filter(item => item.status === 'Available').length
-    const soldUnits = filteredInventory.filter(item => item.status === 'Sold').length
-
-    // Apply filters
-    let displayedInventory = filteredInventory
-
-    if (searchQuery) {
-      displayedInventory = displayedInventory.filter(item =>
-        item.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.vin.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-
-    if (makeFilter !== 'all') {
-      displayedInventory = displayedInventory.filter(item => item.make === makeFilter)
-    }
-
-    if (modelFilter !== 'all') {
-      displayedInventory = displayedInventory.filter(item => item.model === modelFilter)
-    }
-
-    if (statusFilter !== 'all') {
-      displayedInventory = displayedInventory.filter(item => item.status === statusFilter)
-    }
-
-    if (locationFilter !== 'all') {
-      displayedInventory = displayedInventory.filter(item => item.location === locationFilter)
-    }
-
-    // Get unique values for filters
-    const uniqueMakes = [...new Set(filteredInventory.map(item => item.make))]
-    const uniqueModels = [...new Set(filteredInventory.map(item => item.model))]
-    const uniqueStatuses = [...new Set(filteredInventory.map(item => item.status))]
-    const uniqueLocations = [...new Set(filteredInventory.map(item => item.location))]
-
-    const getStatusColor = (status: string) => {
-      switch (status) {
-        case 'Available':
-          return 'bg-green-100 text-green-800'
-        case 'Pending':
-          return 'bg-yellow-100 text-yellow-800'
-        case 'Sold':
-          return 'bg-blue-100 text-blue-800'
-        case 'Service':
-          return 'bg-red-100 text-red-800'
-        default:
-          return 'bg-gray-100 text-gray-800'
-      }
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="ri-stats-grid">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total {sectionTitle}</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalUnits}</div>
-              <p className="text-xs text-muted-foreground">
-                {availableUnits} available, {soldUnits} sold
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${totalValue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Inventory value
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Available {sectionTitle}</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{availableUnits}</div>
-              <p className="text-xs text-muted-foreground">
-                Ready for sale
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Price</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${totalUnits > 0 ? Math.round(totalValue / totalUnits).toLocaleString() : '0'}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Average unit price
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filters */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{sectionTitle} Inventory</CardTitle>
-                <CardDescription>
-                  Manage your {sectionTitle.toLowerCase()} inventory and track availability
-                </CardDescription>
-              </div>
-              <Button onClick={() => handleOpenVehicleModal(mode)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add {labelPrefix}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4 mb-6">
-              <div className="ri-search-bar">
-                <Search className="ri-search-icon" />
-                <Input
-                  placeholder={`Search ${sectionTitle.toLowerCase()}...`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="ri-search-input"
-                />
-              </div>
-              
-              <Select value={makeFilter} onValueChange={setMakeFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Makes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Makes</SelectItem>
-                  {uniqueMakes.map(make => (
-                    <SelectItem key={make} value={make}>{make}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={modelFilter} onValueChange={setModelFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Models" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Models</SelectItem>
-                  {uniqueModels.map(model => (
-                    <SelectItem key={model} value={model}>{model}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {uniqueStatuses.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  {uniqueLocations.map(location => (
-                    <SelectItem key={location} value={location}>{location}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Inventory Table */}
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Make/Model</TableHead>
-                    <TableHead>Year</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>VIN/Serial</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayedInventory.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.make}</div>
-                          <div className="text-sm text-muted-foreground">{item.model}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.year}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {item.type.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{item.vin}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(item.status)}>
-                          {item.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{item.location}</TableCell>
-                      <TableCell>${item.price.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="ri-action-buttons">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              
-              {displayedInventory.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No {sectionTitle.toLowerCase()} found</p>
-                  <p className="text-sm">Try adjusting your search or filters</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    handleCloseVehicleModal()
   }
 
-  const renderLandAssetsTab = () => {
-    const landAssets = mockLandAssets.sampleLandAssets
+  const handleEditVehicle = (vehicle: any) => {
+    setEditingVehicle(vehicle)
+    setNewVehicle(vehicle)
+    setVehicleModalMode(RV_VEHICLE_TYPES.includes(vehicle.type) ? 'vehicle' : 'home')
+    setShowVehicleModal(true)
+  }
+
+  const handleDeleteVehicle = (stockNumber: string) => {
+    if (window.confirm('Are you sure you want to delete this vehicle?')) {
+      setVehicles(vehicles.filter(v => v.stockNumber !== stockNumber))
+      toast({
+        title: 'Vehicle Deleted',
+        description: 'Vehicle has been removed from inventory'
+      })
+    }
+  }
+
+  const handleFeatureToggle = (feature: string) => {
+    setNewVehicle(prev => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter(f => f !== feature)
+        : [...prev.features, feature]
+    }))
+  }
+
+  // Filter vehicles based on search and filters
+  const filteredVehicles = vehicles.filter(vehicle => {
+    const matchesSearch = vehicle.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         vehicle.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         vehicle.stockNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || vehicle.status === statusFilter
+    const matchesType = typeFilter === 'all' || vehicle.type === typeFilter
+    const matchesLocation = locationFilter === 'all' || vehicle.location === locationFilter
     
-    // Apply filters
-    let filteredAssets = landAssets
+    return matchesSearch && matchesStatus && matchesType && matchesLocation
+  })
 
-    if (landSearchQuery) {
-      filteredAssets = filteredAssets.filter(asset =>
-        asset.label.toLowerCase().includes(landSearchQuery.toLowerCase()) ||
-        asset.address.toLowerCase().includes(landSearchQuery.toLowerCase()) ||
-        asset.parcelNumber.toLowerCase().includes(landSearchQuery.toLowerCase())
-      )
+  // Get unique values for filters
+  const uniqueStatuses = [...new Set(vehicles.map(v => v.status))]
+  const uniqueTypes = [...new Set(vehicles.map(v => v.type))]
+  const uniqueLocations = [...new Set(vehicles.map(v => v.location))]
+
+  // Get current features based on modal mode
+  const getCurrentFeatures = () => {
+    return vehicleModalMode === 'vehicle' ? RV_FEATURES : MH_FEATURES
+  }
+
+  // Get current types based on modal mode
+  const getCurrentTypes = () => {
+    return vehicleModalMode === 'vehicle' ? RV_VEHICLE_TYPES : MANUFACTURED_HOME_TYPES
+  }
+
+  // Get modal title based on mode
+  const getModalTitle = () => {
+    if (editingVehicle) {
+      return vehicleModalMode === 'vehicle' ? 'Edit Vehicle' : 'Edit Home'
     }
+    return vehicleModalMode === 'vehicle' ? 'Add New Vehicle' : 'Add New Home'
+  }
 
-    if (landStatusFilter !== 'all') {
-      filteredAssets = filteredAssets.filter(asset => asset.status === landStatusFilter)
-    }
+  // Get placeholder text based on mode
+  const getMakePlaceholder = () => {
+    return vehicleModalMode === 'vehicle' ? 'e.g., Ford, Winnebago' : 'e.g., Clayton, Fleetwood'
+  }
 
-    if (landOwnershipFilter !== 'all') {
-      filteredAssets = filteredAssets.filter(asset => asset.ownershipStatus === landOwnershipFilter)
-    }
-
-    // Calculate stats
-    const totalAssets = landAssets.length
-    const availableAssets = landAssets.filter(asset => asset.status === 'Available').length
-    const bundledAssets = landAssets.filter(asset => asset.status === 'Bundled').length
-    const totalValue = landAssets.reduce((sum, asset) => sum + (asset.pricing.salePrice || 0), 0)
-
-    return (
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="ri-stats-grid">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Land Assets</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalAssets}</div>
-              <p className="text-xs text-muted-foreground">
-                {availableAssets} available, {bundledAssets} bundled
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${totalValue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Land asset value
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Available Assets</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{availableAssets}</div>
-              <p className="text-xs text-muted-foreground">
-                Ready for sale/lease
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Price</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${totalAssets > 0 ? Math.round(totalValue / totalAssets).toLocaleString() : '0'}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Average asset price
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filters */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Land Assets</CardTitle>
-                <CardDescription>
-                  Manage land parcels and property assets
-                </CardDescription>
-              </div>
-              <Button onClick={() => handleOpenLandModal()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Land Asset
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4 mb-6">
-              <div className="ri-search-bar">
-                <Search className="ri-search-icon" />
-                <Input
-                  placeholder="Search land assets..."
-                  value={landSearchQuery}
-                  onChange={(e) => setLandSearchQuery(e.target.value)}
-                  className="ri-search-input"
-                />
-              </div>
-              
-              <Select value={landStatusFilter} onValueChange={setLandStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {mockLandAssets.landStatuses.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={landOwnershipFilter} onValueChange={setLandOwnershipFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Ownership" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Ownership</SelectItem>
-                  {mockLandAssets.ownershipStatuses.map(ownership => (
-                    <SelectItem key={ownership} value={ownership}>{ownership}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Land Assets Table */}
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Label</TableHead>
-                    <TableHead>Parcel Number</TableHead>
-                    <TableHead>Size (sq ft)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ownership</TableHead>
-                    <TableHead>Sale Price</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAssets.map((asset) => (
-                    <TableRow key={asset.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{asset.label}</div>
-                          <div className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {asset.address}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{asset.parcelNumber}</TableCell>
-                      <TableCell>{asset.lotSizeSqFt.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Badge className={mockLandAssets.statusColors[asset.status]}>
-                          {asset.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]} variant="outline">
-                          {asset.ownershipStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {asset.pricing.salePrice ? `$${asset.pricing.salePrice.toLocaleString()}` : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="ri-action-buttons">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleOpenLandModal(asset)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              
-              {filteredAssets.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No land assets found</p>
-                  <p className="text-sm">Try adjusting your search or filters</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  const getModelPlaceholder = () => {
+    return vehicleModalMode === 'vehicle' ? 'e.g., Cherokee, Montana' : 'e.g., The Breeze, Inspiration'
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="ri-page-header">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="ri-page-title">Inventory Management</h1>
-              <p className="ri-page-description">
-                Manage your RV and manufactured home inventory
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Reports
-              </Button>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Import CSV
-              </Button>
+    <div className="space-y-6">
+      {/* Vehicle Modal */}
+      {showVehicleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+              <div className="flex flex-col space-y-1.5 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                      {getModalTitle()}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enter {vehicleModalMode === 'vehicle' ? 'vehicle' : 'home'} details and specifications
+                    </p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleCloseVehicleModal}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-6 pt-0 space-y-6">
+                {/* Basic Information */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Basic Information</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="vin">VIN *</Label>
+                      <Input
+                        id="vin"
+                        value={newVehicle.vin}
+                        onChange={(e) => setNewVehicle(prev => ({ ...prev, vin: e.target.value }))}
+                        placeholder="Enter VIN"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="year">Year *</Label>
+                      <Input
+                        id="year"
+                        type="number"
+                        value={newVehicle.year}
+                        onChange={(e) => setNewVehicle(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                        placeholder="2025"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="make">Make *</Label>
+                      <Input
+                        id="make"
+                        value={newVehicle.make}
+                        onChange={(e) => setNewVehicle(prev => ({ ...prev, make: e.target.value }))}
+                        placeholder={getMakePlaceholder()}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="model">Model *</Label>
+                      <Input
+                        id="model"
+                        value={newVehicle.model}
+                        onChange={(e) => setNewVehicle(prev => ({ ...prev, model: e.target.value }))}
+                        placeholder={getModelPlaceholder()}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="type">Type *</Label>
+                      <Select
+                        value={newVehicle.type}
+                        onValueChange={(value) => setNewVehicle(prev => ({ ...prev, type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getCurrentTypes().map(type => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={newVehicle.status}
+                        onValueChange={(value) => setNewVehicle(prev => ({ ...prev, status: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mockInventory.statuses.map(status => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Pricing</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="price">Sale Price</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        value={newVehicle.price}
+                        onChange={(e) => setNewVehicle(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cost">Cost</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        value={newVehicle.cost}
+                        onChange={(e) => setNewVehicle(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Select
+                    value={newVehicle.location}
+                    onValueChange={(value) => setNewVehicle(prev => ({ ...prev, location: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockInventory.locations.map(location => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Features */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Features</h4>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {getCurrentFeatures().map(feature => (
+                      <div key={feature} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={feature}
+                          checked={newVehicle.features.includes(feature)}
+                          onCheckedChange={() => handleFeatureToggle(feature)}
+                        />
+                        <Label htmlFor={feature} className="font-normal">
+                          {feature}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCloseVehicleModal}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveVehicle}>
+                    {editingVehicle ? 'Update' : 'Add'} {vehicleModalMode === 'vehicle' ? 'Vehicle' : 'Home'}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="vehicles" className="flex items-center space-x-2">
-              <Car className="h-4 w-4" />
-              <span>Vehicles</span>
-            </TabsTrigger>
-            <TabsTrigger value="homes" className="flex items-center space-x-2">
-              <Home className="h-4 w-4" />
-              <span>Homes</span>
-            </TabsTrigger>
-            <TabsTrigger value="land" className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4" />
-              <span>Land Assets</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="vehicles">
-            {renderInventoryTab('vehicles')}
-          </TabsContent>
-
-          <TabsContent value="homes">
-            {renderInventoryTab('homes')}
-          </TabsContent>
-
-          <TabsContent value="land">
-            {renderLandAssetsTab()}
-          </TabsContent>
-        </Tabs>
+      {/* Page Header */}
+      <div className="ri-page-header">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="ri-page-title">{getInventoryLabel()} Management</h1>
+            <p className="ri-page-description">
+              Manage your {getVehicleLabel().toLowerCase()} inventory and land assets
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Vehicle/Home Modal */}
-      {showVehicleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <VehicleForm
-              mode={vehicleModalMode}
-              onClose={() => setShowVehicleModal(false)}
-              onSave={(vehicleData) => {
-                console.log('Saving vehicle:', vehicleData)
-                setShowVehicleModal(false)
-              }}
-            />
-          </Card>
-        </div>
-      )}
+      {/* Stats Cards */}
+      <div className="ri-stats-grid">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total {getVehicleLabel()}s</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{vehicles.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {vehicles.filter(v => v.status === 'Available').length} available
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${vehicles.reduce((sum, v) => sum + v.price, 0).toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Inventory value
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Land Assets</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{landAssets.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {landAssets.filter(l => l.status === 'Available').length} available
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Price</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${vehicles.length > 0 ? Math.round(vehicles.reduce((sum, v) => sum + v.price, 0) / vehicles.length).toLocaleString() : '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Average unit price
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Land Asset Modal */}
-      {showLandModal && (
-        <LandAssetModal
-          asset={selectedLandAsset}
-          onClose={handleCloseLandModal}
-          onSave={(assetData) => {
-            console.log('Saving land asset:', assetData)
-            handleCloseLandModal()
-          }}
-        />
-      )}
-    </>
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="vehicles">{getVehicleLabel()}s</TabsTrigger>
+            <TabsTrigger value="land">Land Assets</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center space-x-2">
+            {activeTab === 'vehicles' && (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleOpenVehicleModal('vehicle')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Vehicle
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleOpenVehicleModal('home')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Home
+                </Button>
+              </>
+            )}
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
+        </div>
+
+        <TabsContent value="vehicles" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{getVehicleLabel()} Inventory</CardTitle>
+              <CardDescription>
+                Manage your {getVehicleLabel().toLowerCase()} inventory
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="ri-search-bar">
+                  <Search className="ri-search-icon" />
+                  <Input
+                    placeholder={`Search ${getVehicleLabel().toLowerCase()}s...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="ri-search-input"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {uniqueStatuses.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {uniqueTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by Location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {uniqueLocations.map(location => (
+                      <SelectItem key={location} value={location}>{location}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Vehicle List */}
+              <div className="space-y-4">
+                {filteredVehicles.map((vehicle) => (
+                  <div
+                    key={vehicle.stockNumber}
+                    className="ri-table-row"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h4 className="font-semibold">
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            Stock: {vehicle.stockNumber} • VIN: {vehicle.vin}
+                          </p>
+                        </div>
+                        <Badge className={`ri-badge-status ${
+                          vehicle.status === 'Available' ? 'bg-green-100 text-green-800' :
+                          vehicle.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                          vehicle.status === 'Sold' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {vehicle.status}
+                        </Badge>
+                        <Badge variant="outline">{vehicle.type}</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Location: {vehicle.location} • Features: {vehicle.features.join(', ') || 'None'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">${vehicle.price.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">Cost: ${vehicle.cost.toLocaleString()}</div>
+                    </div>
+                    <div className="ri-action-buttons">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditVehicle(vehicle)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteVehicle(vehicle.stockNumber)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {filteredVehicles.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No {getVehicleLabel().toLowerCase()}s found</p>
+                    <p className="text-sm">Try adjusting your search or filters</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="land" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Land Assets</CardTitle>
+              <CardDescription>
+                Manage your land inventory and lot assets
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {landAssets.map((asset) => (
+                  <div
+                    key={asset.id}
+                    className="ri-table-row"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h4 className="font-semibold">{asset.label}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Parcel: {asset.parcelNumber} • {asset.lotSizeSqFt.toLocaleString()} sq ft
+                          </p>
+                        </div>
+                        <Badge className={mockLandAssets.statusColors[asset.status]}>
+                          {asset.status}
+                        </Badge>
+                        <Badge className={mockLandAssets.ownershipColors[asset.ownershipStatus]} variant="outline">
+                          {asset.ownershipStatus}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        {asset.address}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">
+                        {asset.pricing.salePrice ? `$${asset.pricing.salePrice.toLocaleString()}` : 'N/A'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Lease: ${asset.pricing.leaseRate.toLocaleString()}/mo
+                      </div>
+                    </div>
+                    <div className="ri-action-buttons">
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {landAssets.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Home className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No land assets found</p>
+                    <p className="text-sm">Add your first land asset to get started</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }
 
