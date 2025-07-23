@@ -9,54 +9,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, DollarSign, TrendingUp, Users, Calculator, History, Settings } from 'lucide-react'
 import { mockFinance } from '@/mocks/financeMock'
 import { useTenant } from '@/contexts/TenantContext'
-import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
 import { formatCurrency } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
 import { useLoans } from './hooks/useLoans'
 import { NewLoanForm } from './components/NewLoanForm'
-import { NewLoanForm as OriginalNewLoanForm } from './components/NewLoanForm'
 import { LoanCalculator } from './components/LoanCalculator'
 import { PaymentHistory } from './components/PaymentHistory'
 import { LoanSettings } from './components/LoanSettings'
 import { AmortizationSchedule } from './components/AmortizationSchedule'
-import { LoanPaymentHistory } from './components/LoanPaymentHistory' // Import the new component
-import { Payment, PaymentMethod, PaymentStatus } from '@/types' 
-import { Loan } from '@/types'
-
-// Define interfaces
-interface Loan {
-  id: string;
-  customerId: string;
-  customerName: string;
-  vehicleId: string;
-  vehicleInfo: string;
-  amount: number;
-  downPayment: number;
-  term: number;
-  rate: number;
-  paymentAmount: number;
-  startDate: Date;
-  status: string;
-  remainingBalance: number;
-  nextPaymentDate: Date;
-  createdAt: Date;
-  payments: Payment[];
-}
-
-interface Payment {
-  id: string;
-  loanId: string;
-  amount: number;
-  paymentDate: Date;
-  status: 'pending' | 'completed' | 'failed';
-  method: string;
-}
+import { LoanPaymentHistory } from './components/LoanPaymentHistory'
+import { Payment, PaymentMethod, PaymentStatus, Loan } from '@/types'
 
 function FinanceModulePage() {
   const { tenant } = useTenant()
   const { toast } = useToast()
-  const { loans, getLoansByCustomer } = useLoans()
+  const { loans, setLoans, getLoansByCustomer } = useLoans()
   const { vehicles } = useInventoryManagement()
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
@@ -65,35 +33,6 @@ function FinanceModulePage() {
   const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false) 
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null) 
   const [statusFilter, setStatusFilter] = useState('all')
-
-  // Safe mock data for demonstration
-  const mockLoans: Loan[] = [
-    {
-      id: '1',
-      customerId: 'cust-1',
-      customerName: 'John Smith',
-      vehicleId: 'veh-1',
-      vehicleInfo: '2020 Honda Civic',
-      amount: 25000,
-      downPayment: 5000,
-      term: 60,
-      rate: 4.5,
-      paymentAmount: 372.86,
-      startDate: new Date(),
-      status: 'active',
-      remainingBalance: 20000,
-      nextPaymentDate: new Date(),
-      createdAt: new Date(),
-      payments: []
-    }
-  ]
-
-  // Use mock loan data as fallback when no tenant data is available
-  // const loans = tenant?.settings ? [] : mockFinance.sampleLoans
-
-  React.useEffect(() => {
-    setLoans(mockLoans)
-  }, [])
 
   const filteredLoans = loans.filter(loan => {
     // Safe string comparisons with null checks
@@ -106,12 +45,12 @@ function FinanceModulePage() {
 
   // Get platform-specific labels
   const getModuleLabel = () => {
-    switch (tenant?.platform) {
+    switch (tenant?.settings?.platformType) {
       case 'rv':
         return 'RV Finance'
       case 'marine':
         return 'Marine Finance'
-      case 'manufactured_home':
+      case 'mh':
         return 'MH Finance'
       default:
         return 'Finance Management'
@@ -179,16 +118,21 @@ function FinanceModulePage() {
           if (loan.id === selectedLoan.id) {
             return {
               ...loan,
-              payments: [...loan.payments, newPayment]
+              history: [...(loan.history || []), {
+                id: newPayment.id,
+                timestamp: new Date().toISOString(),
+                type: 'payment' as const,
+                amount: newPayment.amount,
+                description: `Payment of ${formatCurrency(newPayment.amount)} recorded`,
+                paymentMethod: newPayment.method,
+                transactionId: newPayment.transactionId,
+                status: newPayment.status
+              }]
             };
           }
           return loan;
         });
       });
-
-      const getStatusColor = (status: string) => {
-        return mockFinance.statusColors[status] || 'bg-gray-100 text-gray-800'
-      }
 
       toast({
         title: "Payment Recorded",
@@ -205,6 +149,10 @@ function FinanceModulePage() {
       });
       return Promise.reject(error);
     }
+  }
+
+  const getStatusColor = (status: string) => {
+    return mockFinance.statusColors[status] || 'bg-gray-100 text-gray-800'
   }
 
   return (
@@ -264,7 +212,7 @@ function FinanceModulePage() {
               +12% from last month
             </p>
           </CardContent>
-        </Card>
+        </div>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -337,7 +285,9 @@ function FinanceModulePage() {
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Badge>{loan.status.replace('_', ' ').toUpperCase()}</Badge>
+                          <Badge className={getStatusColor(loan.status)}>
+                            {loan.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
                           {loan.isPortalVisible && (
                             <Badge variant="outline">Portal</Badge>
                           )}
@@ -414,7 +364,9 @@ function FinanceModulePage() {
                           <h4 className="font-semibold">
                             {loan.customerName}
                           </h4>
-                          <Badge>{loan.status.replace('_', ' ').toUpperCase()}</Badge>
+                          <Badge className={getStatusColor(loan.status)}>
+                            {loan.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
                           {loan.isPortalVisible && (
                             <Badge variant="outline">Portal Visible</Badge>
                           )}
@@ -465,19 +417,25 @@ function FinanceModulePage() {
               id: '0',
               customerId: '',
               customerName: '',
+              customerEmail: '',
+              customerPhone: '',
               vehicleId: '',
               vehicleInfo: '',
-              amount: 0,
+              loanAmount: 0,
               downPayment: 0,
-              term: 0,
-              rate: 0,
-              paymentAmount: 0,
-              startDate: new Date(),
-              status: '',
+              interestRate: 0,
+              termMonths: 0,
+              monthlyPayment: 0,
+              startDate: new Date().toISOString(),
+              status: 'Current',
               remainingBalance: 0,
-              nextPaymentDate: new Date(),
-              createdAt: new Date(),
-              payments: []
+              nextPaymentDate: new Date().toISOString(),
+              totalPaid: 0,
+              paymentsRemaining: 0,
+              history: [],
+              isPortalVisible: false,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             }}
             onClose={() => setShowPaymentHistoryModal(false)}
             onRecordPayment={handleRecordPayment}
