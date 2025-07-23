@@ -306,7 +306,7 @@ function LeadsList() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="leads" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="quotes">Quotes</TabsTrigger>
