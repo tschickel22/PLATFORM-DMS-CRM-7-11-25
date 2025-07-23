@@ -21,42 +21,12 @@ import { PaymentHistory } from './components/PaymentHistory'
 import { LoanSettings } from './components/LoanSettings'
 import { AmortizationSchedule } from './components/AmortizationSchedule'
 import { LoanPaymentHistory } from './components/LoanPaymentHistory' // Import the new component
-import { Payment, PaymentMethod, PaymentStatus } from '@/types' 
-import { Loan } from '@/types'
-
-// Define interfaces
-interface Loan {
-  id: string;
-  customerId: string;
-  customerName: string;
-  vehicleId: string;
-  vehicleInfo: string;
-  amount: number;
-  downPayment: number;
-  term: number;
-  rate: number;
-  paymentAmount: number;
-  startDate: Date;
-  status: string;
-  remainingBalance: number;
-  nextPaymentDate: Date;
-  createdAt: Date;
-  payments: Payment[];
-}
-
-interface Payment {
-  id: string;
-  loanId: string;
-  amount: number;
-  paymentDate: Date;
-  status: 'pending' | 'completed' | 'failed';
-  method: string;
-}
+import { Payment, PaymentMethod, PaymentStatus, Loan } from '@/types'
 
 function FinanceModulePage() {
   const { tenant } = useTenant()
   const { toast } = useToast()
-  const { loans, getLoansByCustomer } = useLoans()
+  const { loans, setLoans, getLoansByCustomer } = useLoans()
   const { vehicles } = useInventoryManagement()
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
@@ -65,35 +35,6 @@ function FinanceModulePage() {
   const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false) 
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null) 
   const [statusFilter, setStatusFilter] = useState('all')
-
-  // Safe mock data for demonstration
-  const mockLoans: Loan[] = [
-    {
-      id: '1',
-      customerId: 'cust-1',
-      customerName: 'John Smith',
-      vehicleId: 'veh-1',
-      vehicleInfo: '2020 Honda Civic',
-      amount: 25000,
-      downPayment: 5000,
-      term: 60,
-      rate: 4.5,
-      paymentAmount: 372.86,
-      startDate: new Date(),
-      status: 'active',
-      remainingBalance: 20000,
-      nextPaymentDate: new Date(),
-      createdAt: new Date(),
-      payments: []
-    }
-  ]
-
-  // Use mock loan data as fallback when no tenant data is available
-  // const loans = tenant?.settings ? [] : mockFinance.sampleLoans
-
-  React.useEffect(() => {
-    setLoans(mockLoans)
-  }, [])
 
   const filteredLoans = loans.filter(loan => {
     // Safe string comparisons with null checks
@@ -161,7 +102,7 @@ function FinanceModulePage() {
       // Create a new payment
       const newPayment: Payment = {
         id: `payment-${Math.random().toString(36).substring(2, 9)}`,
-        invoiceId: selectedLoan.id,
+        loanId: selectedLoan.id,
         amount: paymentData.amount || 0,
         method: paymentData.method || PaymentMethod.CASH,
         status: paymentData.status || PaymentStatus.COMPLETED,
@@ -461,24 +402,7 @@ function FinanceModulePage() {
 
         <TabsContent value="payments">
           <LoanPaymentHistory 
-            loan={Array.isArray(filteredLoans) && filteredLoans.length > 0 ? filteredLoans[0] : {
-              id: '0',
-              customerId: '',
-              customerName: '',
-              vehicleId: '',
-              vehicleInfo: '',
-              amount: 0,
-              downPayment: 0,
-              term: 0,
-              rate: 0,
-              paymentAmount: 0,
-              startDate: new Date(),
-              status: '',
-              remainingBalance: 0,
-              nextPaymentDate: new Date(),
-              createdAt: new Date(),
-              payments: []
-            }}
+            loan={filteredLoans.length > 0 ? filteredLoans[0] : null}
             onClose={() => setShowPaymentHistoryModal(false)}
             onRecordPayment={handleRecordPayment}
           />
