@@ -1,5 +1,11 @@
 // src/modules/finance/components/LoanPaymentHistory.tsx
 import React, { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { formatCurrency } from '@/lib/utils'
+import { Loan, Payment } from '@/types'
+import { mockFinance } from '@/mocks/financeMock'
 
 export const LoanPaymentHistory = ({ loanId }: { loanId: string }) => {
   const getStatusColor = (status: string) => {
@@ -11,7 +17,6 @@ export const LoanPaymentHistory = ({ loanId }: { loanId: string }) => {
 
   // Use mock payment data as fallback
   // Filter mock payments by loanId
-import { mockFinance } from '@/mocks/financeMock'
   const payments = mockFinance.samplePayments.filter(payment => payment.loanId === loanId)
   return (
     <Card>
