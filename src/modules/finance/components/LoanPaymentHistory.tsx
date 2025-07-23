@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
-import { Loan, Payment } from '@/types'
+import { DollarSign, Calendar, CreditCard, X, Search } from 'lucide-react'
 import { mockFinance } from '@/mocks/financeMock'
 
 export const LoanPaymentHistory = ({ loanId }: { loanId: string }) => {
