@@ -11,6 +11,7 @@ export const LoanPaymentHistory = ({ loanId }: { loanId: string }) => {
 
   // Use mock payment data as fallback
   // Filter mock payments by loanId
+import { mockFinance } from '@/mocks/financeMock'
   const payments = mockFinance.samplePayments.filter(payment => payment.loanId === loanId)
   return (
     <Card>
