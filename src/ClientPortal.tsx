@@ -4,7 +4,7 @@ import { usePortal } from '@/contexts/PortalContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { 
   Home, 
   DollarSign, 
@@ -247,16 +247,16 @@ function ClientPortalContent({ children }: ClientPortalContentProps) {
     return (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <SheetHeader className="px-4 py-6">
-        <SheetTitle className="flex items-center">
+      <div className="flex items-center px-4 py-6">
+        <div className="flex items-center">
           <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">
               {tenant?.name?.charAt(0) || 'T'}
             </span>
           </div>
           <span className="ml-2 text-lg font-semibold">{tenant?.name || 'Portal'}</span>
-        </SheetTitle>
-      </SheetHeader>
+        </div>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
