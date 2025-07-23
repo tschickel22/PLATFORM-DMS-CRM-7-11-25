@@ -212,6 +212,7 @@ function FinanceModulePage() {
               +12% from last month
             </p>
           </CardContent>
+        </Card>
         </div>
         
         <Card>
