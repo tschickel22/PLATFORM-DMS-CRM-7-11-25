@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Key, Eye, EyeOff, Copy, Trash2 } from 'lucide-react'
+import { Plus, Key, Eye, EyeOff, Copy, Trash2, Database } from 'lucide-react'
 import { useSupabase } from '@/contexts/SupabaseContext'
 import { useToast } from '@/hooks/use-toast'
 

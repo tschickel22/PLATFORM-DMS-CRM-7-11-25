@@ -47,7 +47,7 @@ export function SupabaseProvider({ children }: SupabaseProviderProps) {
         // Test the connection
         const { error } = await client.from('test').select('*').limit(1)
         
-        if (error && !error.message.includes('relation "test" does not exist')) {
+        if (error && !error.message.includes('relation "public.test" does not exist')) {
           throw error
         }
 
