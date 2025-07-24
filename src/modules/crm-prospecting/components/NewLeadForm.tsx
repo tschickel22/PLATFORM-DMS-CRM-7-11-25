@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { X, Save, User, Mail, Phone, MapPin, Tag, DollarSign, CheckCircle } from 'lucide-react'
 import { Lead, LeadStatus } from '../types'
-import { useLeadManagement } from '../hooks/useLeadManagement'
 import { useToast } from '@/hooks/use-toast'
 
 interface NewLeadFormProps {
@@ -22,6 +21,10 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+  // Static configuration data
+  const leadSources = ['Walk-In', 'Referral', 'Website', 'Phone Call', 'Social Media', 'Trade Show']
+  const leadStatuses = ['New', 'Contacted', 'Qualified', 'Lost', 'Converted']
+  
     email: '',
     phone: '',
     source: '',
@@ -210,7 +213,7 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                 
                 <div>
                   <Label htmlFor="phone">Phone Number *</Label>
-                  <div className="relative">
+                    {leadSources.map(source => (
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
@@ -348,7 +351,7 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select contact method" />
-                    </SelectTrigger>
+                    {leadStatuses.map(status => (
                     <SelectContent>
                       <SelectItem value="email">Email</SelectItem>
                       <SelectItem value="phone">Phone</SelectItem>

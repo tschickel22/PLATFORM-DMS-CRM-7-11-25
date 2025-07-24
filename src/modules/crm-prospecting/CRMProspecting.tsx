@@ -12,7 +12,6 @@ import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useLeadManagement } from './hooks/useLeadManagement'
 import { PipelineDashboard } from './components/PipelineDashboard'
-import { LeadScoring } from './components/LeadScoring'
 import { ActivityTimeline } from './components/ActivityTimeline'
 import { LeadReminders } from './components/LeadReminders'
 import { LeadIntakeFormBuilder, DynamicLeadForm } from './components/LeadIntakeForm'
@@ -25,6 +24,8 @@ import { QuotesList } from './components/QuotesList'
 function LeadsList() {
   const {
     leads,
+    loading,
+    error,
     sources,
     activities,
     salesReps,
@@ -34,6 +35,10 @@ function LeadsList() {
     getRemindersByUser,
     getLeadScore
   } = useLeadManagement()
+  
+  // Static configuration data (not dynamic lead data)
+  const leadSources = ['Walk-In', 'Referral', 'Website', 'Phone Call', 'Social Media', 'Trade Show']
+  const leadStatuses = ['New', 'Contacted', 'Qualified', 'Lost', 'Converted']
   
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -61,6 +66,41 @@ function LeadsList() {
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">CRM & Prospecting</h1>
+          <p className="ri-page-description">Loading leads...</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">CRM & Prospecting</h1>
+          <p className="ri-page-description">Error loading leads</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   const getScoreColor = (score: number) => {
@@ -170,7 +210,7 @@ function LeadsList() {
                       {Object.entries(selectedLead.customFields || {}).map(([key, value]) => (
                         <div key={key}>
                           <label className="text-sm font-medium text-muted-foreground capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                      {leadStatuses.map(status => (
                           </label>
                           <p className="font-medium">{value}</p>
                         </div>
@@ -376,7 +416,7 @@ function LeadsList() {
 
           {/* Leads Table */}
           <Card className="shadow-sm">
-            <CardHeader>
+                      {leadSources.map(source => (
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-xl">Leads ({filteredLeads.length})</CardTitle>
@@ -428,7 +468,7 @@ function LeadsList() {
                           </span>
                           <span className="flex items-center">
                             <Calendar className="h-3 w-3 mr-2 text-orange-500" />
-                            {formatDate(lead.createdAt)}
+                          {lead.firstName || ''} {lead.lastName || ''}
                           </span>
                         </div>
                         {lead.notes && (
@@ -468,9 +508,18 @@ function LeadsList() {
         <TabsContent value="quotes">
           <QuotesList />
         </TabsContent>
-
-        <TabsContent value="nurturing">
-          <NurtureSequences />
+                    {leads.length === 0 ? (
+                      <>
+                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <p>No leads found</p>
+                        <p className="text-sm">Create your first lead to get started</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>No leads match your current filters</p>
+                        <p className="text-sm">Try adjusting your search or filter criteria</p>
+                      </>
+                    )}
         </TabsContent>
 
         <TabsContent value="forms">
