@@ -612,3 +612,20 @@ export function useDealManagement() {
     refreshData: fetchAllData
   }
 }
+
+// Export getDealMetrics as a standalone function
+export function getDealMetrics() {
+  // Calculate metrics from mock data for now
+  const mockMetrics = mockCrmSalesDeal.metrics
+  
+  return {
+    totalDeals: mockMetrics.totalDeals,
+    totalValue: mockMetrics.totalValue,
+    avgDealSize: mockMetrics.avgDealSize,
+    conversionRate: mockMetrics.conversionRate,
+    avgSalesCycle: mockMetrics.avgSalesCycle,
+    monthlyGrowth: mockMetrics.monthlyGrowth,
+    pipelineByStage: mockMetrics.pipelineByStage,
+    monthlyPerformance: mockMetrics.monthlyPerformance
+  }
+}

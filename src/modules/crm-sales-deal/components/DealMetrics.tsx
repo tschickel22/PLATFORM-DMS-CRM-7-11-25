@@ -5,16 +5,34 @@ import { DealMetrics as DealMetricsType, StageConversionRate } from '../types'
 import { formatCurrency } from '@/lib/utils'
 import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 import { TrendingUp, TrendingDown, DollarSign, Target, Clock, BarChart3 } from 'lucide-react'
+import { getDealMetrics } from '../hooks/useDealManagement'
 
 interface DealMetricsProps {
   // Props can be defined here if needed
 }
 
 export function DealMetrics(props: DealMetricsProps) {
-  const { tenant } = useTenant()
+  const metrics = React.useMemo(() => {
+    try {
+      if (typeof getDealMetrics === 'function') {
+        return getDealMetrics()
+      } else {
+        console.error('getDealMetrics is not defined or not a function')
+        return null
+      }
+    } catch (error) {
+      console.error('Error calling getDealMetrics:', error)
+      return null
+    }
+  }, [])
   
-  // Use tenant metrics if available, otherwise fallback to mock data
-  const metrics = tenant?.dealMetrics || mockCrmSalesDeal.metrics
+  if (!metrics) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Unable to load metrics</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

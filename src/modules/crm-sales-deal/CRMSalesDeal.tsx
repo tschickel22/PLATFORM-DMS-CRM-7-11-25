@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { getDealMetrics } from './hooks/useDealManagement'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Target, Plus, Search, Filter, DollarSign, TrendingUp, Users, MapPin, Settings, BarChart3 } from 'lucide-react'
@@ -39,7 +40,6 @@ const stageColors = {
 
 function DealsList() {
   const {
-    deals = [],
     territories,
     approvalWorkflows,
     winLossReports,
@@ -84,6 +84,21 @@ function DealsList() {
   const [selectedDeal, setSelectedDeal] = useState<any>(null)
   
   const [showDealForm, setShowDealForm] = useState(false)
+  
+  // Get metrics using the standalone function
+  const metrics = React.useMemo(() => {
+    try {
+      if (typeof getDealMetrics === 'function') {
+        return getDealMetrics()
+      } else {
+        console.error('getDealMetrics is not defined or not a function')
+        return null
+      }
+    } catch (error) {
+      console.error('Error calling getDealMetrics:', error)
+      return null
+    }
+  }, [])
   const [activeTab, setActiveTab] = useState('pipeline')
   const [showDealDetail, setShowDealDetail] = useState(false)
   const { toast } = useToast()
