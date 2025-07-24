@@ -43,6 +43,8 @@ const stageColors = {
   'Negotiation': 'bg-orange-100 text-orange-800',
   'Closed Won': 'bg-green-100 text-green-800',
   'Closed Lost': 'bg-red-100 text-red-800'
+}
+
 function DealsList() {
   const {
     deals = [],
@@ -76,6 +78,10 @@ function DealsList() {
       'Active': 'bg-blue-50 text-blue-700 border-blue-200',
       'Won': 'bg-green-50 text-green-700 border-green-200',
       'Lost': 'bg-red-50 text-red-700 border-red-200',
+    }
+    return statusColors[status] || 'bg-gray-50 text-gray-700 border-gray-200'
+  }
+
   const filteredDeals = (deals || []).filter(deal => {
     const matchesSearch = 
       (deal.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,7 +98,7 @@ function DealsList() {
       updateDealStage && await updateDealStage(dealId, newStage)
 
       // Show success toast
-      const deal = allDeals.find((d: any) => d.id === dealId)
+      const deal = deals.find((d: any) => d.id === dealId)
       if (deal) {
         toast({
           title: 'Deal Stage Updated',
@@ -142,13 +148,6 @@ function DealsList() {
   const handleCreateWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: any) => {
     createWinLossReport && await createWinLossReport(dealId, outcome, reportData)
   }
-  const handleCreateApproval = async (dealId: string, workflowType: string) => {
-    await createApprovalWorkflow(dealId, workflowType)
-  }
-
-  const handleCreateWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: any) => {
-    await createWinLossReport(dealId, outcome, reportData)
-  }
 
   const metrics = getDealMetrics()
 
@@ -159,6 +158,8 @@ function DealsList() {
     price: vehicle.price,
     category: 'vehicle'
   }))
+
+  const territories = []
 
   if (loading) {
     return (
@@ -296,7 +297,7 @@ function DealsList() {
 
         <TabsContent value="pipeline" className="space-y-6">
           <DealPipeline 
-            deals={allDeals} 
+            deals={deals} 
             onDealStageChange={handleDealStageChange} 
             onDealClick={handleDealClick}
           />
@@ -323,6 +324,10 @@ function DealsList() {
                 {dealStages.map(stage => (
                   <SelectItem key={stage} value={stage}>{stage}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select value={repFilter} onValueChange={setRepFilter}>
+              <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sales Rep" />
               </SelectTrigger>
               <SelectContent>
@@ -431,7 +436,7 @@ function DealsList() {
 
             <TabsContent value="win-loss">
               <WinLossAnalysis 
-                deals={allDeals} 
+                deals={deals} 
                 winLossReports={winLossReports || []}
                 onCreateReport={handleCreateWinLossReport}
               />
@@ -443,7 +448,7 @@ function DealsList() {
           <TerritoryManagement 
             territories={territories || []}
             salesReps={salesReps || []}
-            deals={allDeals}
+            deals={deals}
             onCreateTerritory={() => {}}
             onUpdateTerritory={() => {}}
             onDeleteTerritory={() => {}}
@@ -452,7 +457,7 @@ function DealsList() {
 
         <TabsContent value="approvals" className="space-y-6">
           <ApprovalWorkflows 
-            deals={allDeals}
+            deals={deals}
             approvalWorkflows={approvalWorkflows || []}
             onApprove={() => {}}
             onReject={() => {}}
