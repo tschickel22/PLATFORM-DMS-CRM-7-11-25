@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-  }, [leads, pipelineStages])
+import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { TrendingUp, Users, DollarSign, Calendar, ArrowRight } from 'lucide-react'
 import { Lead } from '@/types'
@@ -10,15 +10,15 @@ import { formatCurrency } from '@/lib/utils'
 interface PipelineDashboardProps {
   leads: Lead[]
   onLeadMove?: (leadId: string, newStage: string) => void
+  loading?: boolean
 }
-    loading,
 
-export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps) {
-  // Use mock data as fallback for pipeline stages and leads
-  const pipelineStages = mockCrmProspecting.pipelines
+export function PipelineDashboard({ leads, onLeadMove, loading }: PipelineDashboardProps) {
+  // Static configuration data
+  const pipelineStages = ['New Inquiry', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost']
   
   // Ensure leads is always an array to prevent errors
-  const safeLeads = leads || mockCrmProspecting.pipelineLeads || []
+  const safeLeads = leads || []
   
   const [stageData, setStageData] = useState<Array<{
     stage: string
@@ -34,13 +34,11 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
       const value = stageLeads.reduce((sum, lead) => sum + (lead.customFields?.estimatedValue || 0), 0)
       
       return {
-  // Static configuration data
-  const pipelineStages = ['New Inquiry', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost']
-  
         stage,
         count: stageLeads.length,
         value,
         conversionRate: stageLeads.length > 0 ? (stageLeads.length / safeLeads.length) * 100 : 0
+      }
     })
     
     setStageData(data)
@@ -126,8 +124,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
           <CardTitle>Sales Pipeline</CardTitle>
           <CardDescription>
             Track leads through your sales process
-            {pipelineStages.map((stage) => {
-              const stageLeads = leadsByStage[stage] || []
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-5">
@@ -141,7 +138,7 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
                     <Card className="h-32">
                       <CardContent className="p-4 h-full flex flex-col justify-between">
                         <div>
-                          {lead.firstName || ''} {lead.lastName || ''}
+                          <h3 className="font-medium text-sm">{stage}</h3>
                           <div className="text-2xl font-bold">{data?.count || 0}</div>
                         </div>
                         <div>
@@ -182,15 +179,14 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
               <div key={lead.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div>
-                    <p className="font-medium">{lead.name}</p>
-                      <p className="font-medium">{lead.firstName} {lead.lastName}</p>
+                    <p className="font-medium">{lead.firstName} {lead.lastName}</p>
                   </div>
                   <Badge variant="secondary">
                     {lead.customFields?.pipelineStage || 'New Inquiry'}
                   </Badge>
                 </div>
                 <div className="flex items-center space-x-2">
-                        {lead.firstName || ''} {lead.lastName || ''}
+                  <span className="text-sm font-medium">
                     {formatCurrency(lead.customFields?.estimatedValue || 0)}
                   </span>
                   <Button variant="outline" size="sm">
@@ -207,8 +203,8 @@ export function PipelineDashboard({ leads, onLeadMove }: PipelineDashboardProps)
               </div>
             )}
           </div>
-    pipelineStages.forEach(stage => {
         </CardContent>
+      </Card>
     </div>
   )
 }
