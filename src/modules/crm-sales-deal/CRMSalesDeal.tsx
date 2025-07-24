@@ -40,7 +40,6 @@ const stageColors = {
 function DealsList() {
   const {
     deals = [],
-    deals,
     territories,
     approvalWorkflows,
     winLossReports,
@@ -173,6 +172,7 @@ function DealsList() {
     name: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
     price: vehicle.price,
     category: 'vehicle'
+  }))
 
   if (loading) {
     return (
@@ -345,7 +345,6 @@ function DealsList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Reps</SelectItem>
-                {(salesReps || []).map(rep => (
                 {salesReps.map(rep => (
                   <SelectItem key={rep.id} value={rep.id}>
                     {rep.name}
