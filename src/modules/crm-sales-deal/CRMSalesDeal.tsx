@@ -41,7 +41,6 @@ const stageColors = {
 function DealsList() {
   const {
     territories,
-    approvalWorkflows,
     winLossReports,
     createDeal,
     updateDealStage,
