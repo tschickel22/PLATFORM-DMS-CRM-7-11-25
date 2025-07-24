@@ -43,6 +43,7 @@ const {
   deals = [],
   territories,
   winLossReports,
+  approvalWorkflows,
   createDeal,
   updateDealStage,
   assignTerritory,
