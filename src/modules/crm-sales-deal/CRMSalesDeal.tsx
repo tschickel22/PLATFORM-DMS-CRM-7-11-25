@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { getDealMetrics } from './hooks/useDealManagement'
+import { getmetrics } from './hooks/useDealManagement'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Target, Plus, Search, Filter, DollarSign, TrendingUp, Users, MapPin, Settings, BarChart3 } from 'lucide-react'
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useDealManagement } from './hooks/useDealManagement'
 import { DealPipeline } from './components/DealPipeline'
-import { DealMetrics } from './components/DealMetrics'
+import { Metrics } from './components/metrics'
 import { WinLossAnalysis } from './components/WinLossAnalysis'
 import { DealDetail } from './components/DealDetail'
 import { TerritoryManagement } from './components/TerritoryManagement'
@@ -49,7 +49,7 @@ const {
   assignTerritory,
   createApprovalWorkflow,
   createWinLossReport,
-  getDealMetrics,
+  getmetrics,
   loading,
   error
 } = useDealManagement()
@@ -89,14 +89,14 @@ const {
   // Get metrics using the standalone function
   const metrics = React.useMemo(() => {
     try {
-      if (typeof getDealMetrics === 'function') {
-        return getDealMetrics()
+      if (typeof getmetrics === 'function') {
+        return getmetrics()
       } else {
-        console.error('getDealMetrics is not defined or not a function')
+        console.error('getmetrics is not defined or not a function')
         return null
       }
     } catch (error) {
-      console.error('Error calling getDealMetrics:', error)
+      console.error('Error calling getmetrics:', error)
       return null
     }
   }, [])
@@ -180,7 +180,6 @@ const {
     createWinLossReport && await createWinLossReport(dealId, outcome, reportData)
   }
 
-  const dealMetrics = getDealMetrics()
 
   // Products from Supabase only
   const products = safeVehicles.map(vehicle => ({
@@ -460,7 +459,7 @@ const {
             </TabsList>
 
             <TabsContent value="metrics">
-              <DealMetrics metrics={metrics} />
+              <metrics metrics={metrics} />
             </TabsContent>
 
             <TabsContent value="win-loss">
