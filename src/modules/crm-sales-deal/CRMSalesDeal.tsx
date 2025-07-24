@@ -21,6 +21,15 @@ import { DealForm } from './components/DealForm'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
 
+import { DealMetrics } from './components/DealMetrics'
+import { WinLossAnalysis } from './components/WinLossAnalysis'
+import { DealDetail } from './components/DealDetail'
+import { TerritoryManagement } from './components/TerritoryManagement'
+import { ApprovalWorkflows } from './components/ApprovalWorkflows'
+import { DealForm } from './components/DealForm'
+import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
+import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
+
 // Static configuration data
 const dealStages = ['New', 'Qualified', 'Proposal Sent', 'Negotiation', 'Closed Won', 'Closed Lost']
 const dealSources = ['Walk-in', 'Online', 'Referral', 'Trade Show', 'Phone Call', 'Email Campaign']
@@ -34,99 +43,19 @@ const stageColors = {
   'Negotiation': 'bg-orange-100 text-orange-800',
   'Closed Won': 'bg-green-100 text-green-800',
   'Closed Lost': 'bg-red-100 text-red-800'
-}
-
-const priorityColors = {
-  'Low': 'bg-gray-100 text-gray-800',
-  'Medium': 'bg-blue-100 text-blue-800',
-  'High': 'bg-orange-100 text-orange-800',
-  'Urgent': 'bg-red-100 text-red-800'
-}
-
-// Mock data for now - will be replaced with Supabase in future phases
-const sampleDeals = [
-  {
-    id: 'deal-001',
-    customerId: 'cust-001',
-    customerName: 'John Smith',
-    customerEmail: 'john.smith@email.com',
-    customerPhone: '(555) 123-4567',
-    vehicleId: 'veh-001',
-    vehicleInfo: '2023 Forest River Cherokee 274RK',
-    stage: 'Qualified',
-    amount: 35000,
-    source: 'Referral',
-    type: 'New Sale',
-    priority: 'High',
-    repId: 'rep-001',
-    repName: 'Jamie Closer',
-    probability: 75,
-    expectedCloseDate: '2024-02-15',
-    createdAt: '2024-01-10T09:30:00Z',
-    updatedAt: '2024-01-20T14:22:00Z',
-    notes: 'Customer very interested, ready to move forward with financing'
-  },
-  {
-    id: 'deal-002',
-    customerId: 'cust-002',
-    customerName: 'Maria Rodriguez',
-    customerEmail: 'maria.rodriguez@email.com',
-    customerPhone: '(555) 987-6543',
-    vehicleId: 'veh-002',
-    vehicleInfo: '2024 Keystone Montana 3761FL',
-    stage: 'Proposal Sent',
-    amount: 62000,
-    source: 'Trade Show',
-    type: 'New Sale',
-    priority: 'Medium',
-    repId: 'rep-002',
-    repName: 'Avery Seller',
-    probability: 60,
-    expectedCloseDate: '2024-02-28',
-    createdAt: '2024-01-05T11:15:00Z',
-    updatedAt: '2024-01-18T16:45:00Z',
-    notes: 'Proposal sent, waiting for customer decision'
-  }
-]
-
-// Define types for the component
-interface Deal {
-  id: string
-  name: string
-  customerName: string
-  customerEmail: string
-  customerPhone: string
-  vehicleInfo: string
-  stage: string
-  amount: number
-  source: string
-  type: string
-  priority: string
-  repName: string
-  probability: number
-  expectedCloseDate: string
-  createdAt: string
-  updatedAt: string
-  notes: string
-  status: string
-  value: number
-  assignedTo: string
-  territoryId?: string
-  requiresApproval?: boolean
-}
-
-function DealsList({ deals = [] }: { deals?: Deal[] }) {
+function DealsList() {
   const {
-    territories,
+    deals = [],
     approvalWorkflows,
     winLossReports,
-    stageHistory,
     createDeal,
     updateDealStage,
     assignTerritory,
     createApprovalWorkflow,
     createWinLossReport,
-    getDealMetrics
+    getDealMetrics,
+    loading,
+    error
   } = useDealManagement() || {}
 
   const { leads, salesReps } = useLeadManagement()
@@ -135,9 +64,8 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [stageFilter, setStageFilter] = useState<string>('all')
   const [repFilter, setRepFilter] = useState<string>('all')
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
+  const [selectedDeal, setSelectedDeal] = useState<any>(null)
   
-  // Use sample deals for now - will be replaced with Supabase hook in future phases
   const [showDealForm, setShowDealForm] = useState(false)
   const [activeTab, setActiveTab] = useState('pipeline')
   const [showDealDetail, setShowDealDetail] = useState(false)
@@ -145,25 +73,16 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
 
   const getStatusColor = (status: string) => {
     const statusColors: Record<string, string> = {
-      'active': 'bg-blue-50 text-blue-700 border-blue-200',
-      'won': 'bg-green-50 text-green-700 border-green-200',
-      'lost': 'bg-red-50 text-red-700 border-red-200',
-      'on_hold': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-      'cancelled': 'bg-gray-50 text-gray-700 border-gray-200'
-    }
-    return statusColors[status] || 'bg-gray-50 text-gray-700 border-gray-200'
-  }
-
-  // Use sample deals for now since useDealManagement might not be implemented yet
-  const allDeals = deals.length > 0 ? deals : sampleDeals
-  
-  const filteredDeals = (allDeals || []).filter((deal: any) => {
+      'Active': 'bg-blue-50 text-blue-700 border-blue-200',
+      'Won': 'bg-green-50 text-green-700 border-green-200',
+      'Lost': 'bg-red-50 text-red-700 border-red-200',
+  const filteredDeals = (deals || []).filter(deal => {
     const matchesSearch = 
-      (deal.name || deal.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (deal.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       deal.customerName.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStage = stageFilter === 'all' || deal.stage === stageFilter
-    const matchesRep = repFilter === 'all' || deal.assignedTo === repFilter
+    const matchesRep = repFilter === 'all' || deal.repId === repFilter
 
     return matchesSearch && matchesStage && matchesRep
   })
@@ -177,7 +96,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
       if (deal) {
         toast({
           title: 'Deal Stage Updated',
-          description: `${deal.name || deal.customerName} moved to ${newStage.replace('_', ' ').toLowerCase()}`,
+          description: `${deal.name || 'Deal'} moved to ${newStage.replace('_', ' ').toLowerCase()}`,
         })
       }
     } catch (error) {
@@ -223,42 +142,48 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
   const handleCreateWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: any) => {
     createWinLossReport && await createWinLossReport(dealId, outcome, reportData)
   }
-
-  const metrics = getDealMetrics ? getDealMetrics() : {
-    totalValue: 0,
-    totalDeals: 0,
-    winRate: 0,
-    wonDeals: 0,
-    averageDealSize: 0,
-    averageSalesCycle: 0
+  const handleCreateApproval = async (dealId: string, workflowType: string) => {
+    await createApprovalWorkflow(dealId, workflowType)
   }
 
-  // Mock products for the form
-  const mockProducts = (vehicles || []).map((vehicle: any) => ({
+  const handleCreateWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: any) => {
+    await createWinLossReport(dealId, outcome, reportData)
+  }
+
+  const metrics = getDealMetrics()
+
+  // Products from Supabase only
+  const products = (vehicles || []).map(vehicle => ({
     id: vehicle.id,
     name: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
     price: vehicle.price,
     category: 'vehicle'
-  })).concat([
-    {
-      id: 'prod-001',
-      name: 'Extended Warranty Package',
-      price: 3500,
-      category: 'warranty'
-    },
-    {
-      id: 'prod-002',
-      name: 'Premium Interior Upgrade',
-      price: 2200,
-      category: 'upgrade'
-    },
-    {
-      id: 'prod-003',
-      name: 'Solar Panel Package',
-      price: 3500,
-      category: 'accessory'
-    }
-  ])
+  }))
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">Sales Deal Management</h1>
+          <p className="ri-page-description">Loading deals...</p>
+        </div>
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">Sales Deal Management</h1>
+          <p className="ri-page-description text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -278,7 +203,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
           customers={leads}
           salesReps={salesReps}
           territories={territories}
-          products={mockProducts}
+          products={products}
           onSave={handleSaveDeal}
           onCancel={() => {
             setShowDealForm(false)
@@ -350,7 +275,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
             <MapPin className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-900">{territories.length}</div>
+            <div className="text-2xl font-bold text-orange-900">{(territories || []).length}</div>
             <p className="text-xs text-orange-600 flex items-center mt-1">
               <Users className="h-3 w-3 mr-1" />
               Active territories
@@ -398,15 +323,11 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                 {dealStages.map(stage => (
                   <SelectItem key={stage} value={stage}>{stage}</SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-            <Select value={repFilter} onValueChange={setRepFilter}>
-              <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sales Rep" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Reps</SelectItem>
-                {(salesReps || []).map((rep: any) => (
+                {(salesReps || []).map(rep => (
                   <SelectItem key={rep.id} value={rep.id}>
                     {rep.name}
                   </SelectItem>
@@ -434,7 +355,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                     <div className="flex items-center space-x-4 flex-1">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-foreground">{deal.customerName}</h3>
+                          <h3 className="font-semibold text-foreground">{deal.name || `Deal ${deal.id.slice(-6)}`}</h3>
                           <Badge className={cn("ri-badge-status", stageColors[deal.stage as keyof typeof stageColors] || 'bg-gray-100 text-gray-800')}>
                             {deal.stage.toUpperCase()}
                           </Badge>
@@ -457,7 +378,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                           </span>
                           <span className="flex items-center">
                             <MapPin className="h-3 w-3 mr-2 text-orange-500" />
-                            {(territories || []).find((t: any) => t.id === deal.territoryId)?.name || 'No Territory'}
+                            {(territories || []).find(t => t.id === deal.territoryId)?.name || 'No Territory'}
                           </span>
                         </div>
                         {deal.notes && (

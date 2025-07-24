@@ -1,436 +1,523 @@
 import { useState, useEffect } from 'react'
-import { Deal, DealStage, DealStatus, DealStageHistory, Territory, ApprovalWorkflow, WinLossReport, DealMetrics } from '../types'
-import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
+import { supabase } from '@/lib/supabaseClient'
+import { useToast } from '@/hooks/use-toast'
+
+export interface Deal {
+  id: string
+  name: string
+  customerId: string
+  customerName: string
+  customerEmail?: string
+  customerPhone?: string
+  vehicleId?: string
+  vehicleInfo?: string
+  stage: string
+  amount: number
+  source: string
+  type: string
+  priority: string
+  repId?: string
+  repName?: string
+  probability: number
+  expectedCloseDate: string
+  territoryId?: string
+  requiresApproval?: boolean
+  status: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Territory {
+  id: string
+  name: string
+  description: string
+  repIds: string[]
+  zipcodes: string[]
+  isActive: boolean
+}
+
+export interface ApprovalWorkflow {
+  id: string
+  dealId: string
+  workflowType: string
+  status: string
+  approvers: string[]
+  currentStep: number
+  createdAt: string
+}
+
+export interface WinLossReport {
+  id: string
+  dealId: string
+  outcome: 'won' | 'lost'
+  reason: string
+  competitorInfo?: string
+  feedback?: string
+  createdAt: string
+}
+
+export interface DealMetrics {
+  totalDeals: number
+  totalValue: number
+  averageDealSize: number
+  winRate: number
+  wonDeals: number
+  averageSalesCycle: number
+}
 
 export function useDealManagement() {
+  const { toast } = useToast()
   const [deals, setDeals] = useState<Deal[]>([])
   const [territories, setTerritories] = useState<Territory[]>([])
   const [approvalWorkflows, setApprovalWorkflows] = useState<ApprovalWorkflow[]>([])
   const [winLossReports, setWinLossReports] = useState<WinLossReport[]>([])
-  const [stageHistory, setStageHistory] = useState<DealStageHistory[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    initializeMockData()
-  }, [])
-
-  const initializeMockData = () => {
-    // Load existing data from localStorage or use mock data
-    const savedDeals = loadFromLocalStorage('renter-insight-deals', [
-      {
-        id: '1',
-        name: 'Georgetown Class A Sale - Smith Family',
-        customerId: 'cust-001',
-        customerName: 'John & Mary Smith',
-        stage: DealStage.PROPOSAL,
-        status: DealStatus.ACTIVE,
-        priority: 'high',
-        value: 145000,
-        probability: 75,
-        expectedCloseDate: new Date('2024-02-15'),
-        assignedTo: 'rep-001',
-        territoryId: 'territory-001',
-        sourceId: 'source-001',
-        competitorIds: ['comp-001'],
-        products: [
-          {
-            id: '1',
-            productId: 'prod-001',
-            productName: '2024 Forest River Georgetown',
-            quantity: 1,
-            unitPrice: 125000,
-            discount: 5000,
-            total: 120000
-          },
-          {
-            id: '2',
-            productId: 'prod-002',
-            productName: 'Extended Warranty Package',
-            quantity: 1,
-            unitPrice: 3500,
-            discount: 0,
-            total: 3500
-          }
-        ],
-        stageHistory: [],
-        notes: 'Customer very interested, financing pre-approved',
-        requiresApproval: true,
-        approvalStatus: 'pending',
-        customFields: {
-          tradeInValue: 25000,
-          financingType: 'bank_loan'
-        },
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-01-20')
-      },
-      {
-        id: '2',
-        name: 'Travel Trailer - Johnson Family',
-        customerId: 'cust-002',
-        customerName: 'Sarah Johnson',
-        stage: DealStage.NEGOTIATION,
-        status: DealStatus.ACTIVE,
-        priority: 'medium',
-        value: 75000,
-        probability: 85,
-        expectedCloseDate: new Date('2024-02-10'),
-        assignedTo: 'rep-002',
-        territoryId: 'territory-002',
-        competitorIds: [],
-        products: [
-          {
-            id: '3',
-            productId: 'prod-003',
-            productName: '2024 Airstream Flying Cloud',
-            quantity: 1,
-            unitPrice: 75000,
-            discount: 2000,
-            total: 73000
-          }
-        ],
-        stageHistory: [],
-        notes: 'Ready to close, just finalizing delivery details',
-        requiresApproval: false,
-        customFields: {},
-        createdAt: new Date('2024-01-05'),
-        updatedAt: new Date('2024-01-18')
-      }
-    ])
-
-    const savedTerritories = loadFromLocalStorage('renter-insight-territories', [
-      {
-        id: 'territory-001',
-        name: 'North Region',
-        type: 'geographic',
-        description: 'Northern states territory',
-        assignedTo: ['rep-001', 'rep-003'],
-        rules: [
-          {
-            id: '1',
-            field: 'state',
-            operator: 'in_range',
-            value: ['IL', 'WI', 'MN', 'IA'],
-            priority: 1
-          }
-        ],
-        isActive: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: 'territory-002',
-        name: 'South Region',
-        type: 'geographic',
-        description: 'Southern states territory',
-        assignedTo: ['rep-002'],
-        rules: [
-          {
-            id: '2',
-            field: 'state',
-            operator: 'in_range',
-            value: ['TX', 'FL', 'GA', 'NC'],
-            priority: 1
-          }
-        ],
-        isActive: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      }
-    ])
-
-    const savedStageHistory = loadFromLocalStorage('renter-insight-stage-history', [
-      {
-        id: '1',
-        dealId: '1',
-        fromStage: DealStage.QUALIFICATION,
-        toStage: DealStage.NEEDS_ANALYSIS,
-        changedBy: 'rep-001',
-        changedAt: new Date('2024-01-12'),
-        duration: 48,
-        notes: 'Customer qualified, moving to needs analysis'
-      },
-      {
-        id: '2',
-        dealId: '1',
-        fromStage: DealStage.NEEDS_ANALYSIS,
-        toStage: DealStage.PROPOSAL,
-        changedBy: 'rep-001',
-        changedAt: new Date('2024-01-18'),
-        duration: 144,
-        notes: 'Proposal prepared and presented'
-      }
-    ])
-
-    setDeals(savedDeals)
-    setTerritories(savedTerritories)
-    setStageHistory(savedStageHistory)
-  }
-
-  const saveDealsToStorage = (updatedDeals: Deal[]) => {
-    saveToLocalStorage('renter-insight-deals', updatedDeals)
-  }
-
-  const saveStageHistoryToStorage = (updatedHistory: DealStageHistory[]) => {
-    saveToLocalStorage('renter-insight-stage-history', updatedHistory)
-  }
-
-  const createDeal = async (dealData: Partial<Deal>) => {
-    setLoading(true)
+  // Load deals from Supabase
+  const loadDeals = async () => {
     try {
-      const newDeal: Deal = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: dealData.name || '',
-        customerId: dealData.customerId || '',
-        customerName: dealData.customerName || '',
-        stage: DealStage.PROSPECTING,
-        status: DealStatus.ACTIVE,
-        priority: dealData.priority || 'medium',
-        value: dealData.value || 0,
-        probability: 10, // Default probability for prospecting stage
-        expectedCloseDate: dealData.expectedCloseDate || new Date(),
-        assignedTo: dealData.assignedTo || '',
-        territoryId: dealData.territoryId || '',
-        sourceId: dealData.sourceId,
-        competitorIds: dealData.competitorIds || [],
-        products: dealData.products || [],
-        stageHistory: [],
-        notes: dealData.notes || '',
-        requiresApproval: (dealData.value || 0) > 100000, // Configurable threshold
-        customFields: dealData.customFields || {},
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-      const updatedDeals = [...deals, newDeal]
-      setDeals(updatedDeals)
-      saveDealsToStorage(updatedDeals)
+      if (error) throw error
 
-      // Log initial stage
-      await logStageChange(newDeal.id, undefined, DealStage.PROSPECTING, 'system')
+      const mappedDeals: Deal[] = (data || []).map(row => ({
+        id: row.id,
+        name: row.name || `Deal ${row.id.slice(-6)}`,
+        customerId: row.customer_id || '',
+        customerName: row.customer_name || '',
+        customerEmail: row.customer_email,
+        customerPhone: row.customer_phone,
+        vehicleId: row.vehicle_id,
+        vehicleInfo: row.vehicle_info,
+        stage: row.stage || 'New',
+        amount: row.amount || 0,
+        source: row.source || 'Unknown',
+        type: row.type || 'New Sale',
+        priority: row.priority || 'Medium',
+        repId: row.rep_id,
+        repName: row.rep_name,
+        probability: row.probability || 0,
+        expectedCloseDate: row.expected_close_date || new Date().toISOString().split('T')[0],
+        territoryId: row.territory_id,
+        requiresApproval: row.requires_approval || false,
+        status: row.status || 'Active',
+        notes: row.notes,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }))
 
-      return newDeal
-    } finally {
+      setDeals(mappedDeals)
+    } catch (err) {
+      console.error('Error loading deals:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load deals')
+      setDeals([]) // Ensure deals is always an array
+    }
+  }
+
+  // Load territories from Supabase
+  const loadTerritories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('territories')
+        .select('*')
+        .eq('is_active', true)
+
+      if (error) throw error
+
+      const mappedTerritories: Territory[] = (data || []).map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        repIds: row.rep_ids || [],
+        zipcodes: row.zipcodes || [],
+        isActive: row.is_active
+      }))
+
+      setTerritories(mappedTerritories)
+    } catch (err) {
+      console.error('Error loading territories:', err)
+      setTerritories([])
+    }
+  }
+
+  // Load approval workflows from Supabase
+  const loadApprovalWorkflows = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('approval_workflows')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const mappedWorkflows: ApprovalWorkflow[] = (data || []).map(row => ({
+        id: row.id,
+        dealId: row.deal_id,
+        workflowType: row.workflow_type,
+        status: row.status,
+        approvers: row.approvers || [],
+        currentStep: row.current_step || 0,
+        createdAt: row.created_at
+      }))
+
+      setApprovalWorkflows(mappedWorkflows)
+    } catch (err) {
+      console.error('Error loading approval workflows:', err)
+      setApprovalWorkflows([])
+    }
+  }
+
+  // Load win/loss reports from Supabase
+  const loadWinLossReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('win_loss_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const mappedReports: WinLossReport[] = (data || []).map(row => ({
+        id: row.id,
+        dealId: row.deal_id,
+        outcome: row.outcome,
+        reason: row.reason,
+        competitorInfo: row.competitor_info,
+        feedback: row.feedback,
+        createdAt: row.created_at
+      }))
+
+      setWinLossReports(mappedReports)
+    } catch (err) {
+      console.error('Error loading win/loss reports:', err)
+      setWinLossReports([])
+    }
+  }
+
+  // Load all data on mount
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true)
+      setError(null)
+      
+      await Promise.all([
+        loadDeals(),
+        loadTerritories(),
+        loadApprovalWorkflows(),
+        loadWinLossReports()
+      ])
+      
       setLoading(false)
     }
-  }
 
-  const updateDealStage = async (dealId: string, newStage: DealStage, notes?: string) => {
-    const deal = deals.find(d => d.id === dealId)
-    if (!deal) return
-    
-    const oldStage = deal.stage
-    const probability = getStageProbability(newStage)
-    const status = newStage === DealStage.CLOSED_WON ? DealStatus.WON : 
-                   newStage === DealStage.CLOSED_LOST ? DealStatus.LOST : 
-                   DealStatus.ACTIVE
-    const actualCloseDate = (newStage === DealStage.CLOSED_WON || newStage === DealStage.CLOSED_LOST) ? new Date() : undefined
-    
-    // Update deal
-    const updatedDeals = deals.map(d => 
-      d.id === dealId 
-        ? { 
-            ...d, 
-            stage: newStage, 
-            probability,
-            status,
-            actualCloseDate,
-            updatedAt: new Date() 
-          }
-        : d
-    )
-    setDeals(updatedDeals)
-    saveDealsToStorage(updatedDeals)
+    loadAllData()
+  }, [])
 
-    // Log stage change
-    await logStageChange(dealId, oldStage, newStage, 'current-user', notes || `Stage changed from ${oldStage?.replace('_', ' ') || 'none'} to ${newStage.replace('_', ' ')}`)
-    
-    return updatedDeals.find(d => d.id === dealId)
-  }
+  // Create new deal
+  const createDeal = async (dealData: Partial<Deal>): Promise<Deal | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .insert([{
+          name: dealData.name,
+          customer_id: dealData.customerId,
+          customer_name: dealData.customerName,
+          customer_email: dealData.customerEmail,
+          customer_phone: dealData.customerPhone,
+          vehicle_id: dealData.vehicleId,
+          vehicle_info: dealData.vehicleInfo,
+          stage: dealData.stage || 'New',
+          amount: dealData.amount || 0,
+          source: dealData.source || 'Unknown',
+          type: dealData.type || 'New Sale',
+          priority: dealData.priority || 'Medium',
+          rep_id: dealData.repId,
+          rep_name: dealData.repName,
+          probability: dealData.probability || 0,
+          expected_close_date: dealData.expectedCloseDate,
+          territory_id: dealData.territoryId,
+          requires_approval: dealData.requiresApproval || false,
+          status: dealData.status || 'Active',
+          notes: dealData.notes
+        }])
+        .select()
+        .single()
 
-  const logStageChange = async (dealId: string, fromStage: DealStage | undefined, toStage: DealStage, changedBy: string, notes?: string) => {
-    const duration = fromStage ? calculateStageDuration(dealId, fromStage) : undefined
-    
-    const stageChange: DealStageHistory = {
-      id: Math.random().toString(36).substr(2, 9),
-      dealId,
-      fromStage,
-      toStage,
-      changedBy,
-      changedAt: new Date(),
-      duration,
-      notes
-    }
+      if (error) throw error
 
-    const updatedHistory = [...stageHistory, stageChange]
-    setStageHistory(updatedHistory)
-    saveStageHistoryToStorage(updatedHistory)
-  }
+      const newDeal: Deal = {
+        id: data.id,
+        name: data.name,
+        customerId: data.customer_id,
+        customerName: data.customer_name,
+        customerEmail: data.customer_email,
+        customerPhone: data.customer_phone,
+        vehicleId: data.vehicle_id,
+        vehicleInfo: data.vehicle_info,
+        stage: data.stage,
+        amount: data.amount,
+        source: data.source,
+        type: data.type,
+        priority: data.priority,
+        repId: data.rep_id,
+        repName: data.rep_name,
+        probability: data.probability,
+        expectedCloseDate: data.expected_close_date,
+        territoryId: data.territory_id,
+        requiresApproval: data.requires_approval,
+        status: data.status,
+        notes: data.notes,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      }
 
-  const calculateStageDuration = (dealId: string, stage: DealStage): number => {
-    const dealHistory = stageHistory.filter(h => h.dealId === dealId)
-    const stageEntry = dealHistory.find(h => h.toStage === stage)
-    
-    if (stageEntry) {
-      const hours = Math.floor((Date.now() - stageEntry.changedAt.getTime()) / (1000 * 60 * 60))
-      return hours
-    }
-    return 0
-  }
+      setDeals(prev => [newDeal, ...prev])
+      
+      toast({
+        title: 'Deal Created',
+        description: `Deal "${newDeal.name}" has been created successfully.`
+      })
 
-  const getStageProbability = (stage: DealStage): number => {
-    switch (stage) {
-      case DealStage.PROSPECTING: return 10
-      case DealStage.QUALIFICATION: return 25
-      case DealStage.NEEDS_ANALYSIS: return 40
-      case DealStage.PROPOSAL: return 60
-      case DealStage.NEGOTIATION: return 80
-      case DealStage.CLOSED_WON: return 100
-      case DealStage.CLOSED_LOST: return 0
-      default: return 10
-    }
-  }
-
-  const assignTerritory = async (dealId: string, customerId: string) => {
-    // Simple territory assignment logic - in real app would be more sophisticated
-    const territory = territories.find(t => t.isActive)
-    if (territory) {
-      const updatedDeals = deals.map(d => 
-        d.id === dealId 
-          ? { ...d, territoryId: territory.id, updatedAt: new Date() }
-          : d
-      )
-      setDeals(updatedDeals)
-      saveDealsToStorage(updatedDeals)
+      return newDeal
+    } catch (err) {
+      console.error('Error creating deal:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to create deal. Please try again.',
+        variant: 'destructive'
+      })
+      return null
     }
   }
 
-  const createApprovalWorkflow = async (dealId: string, workflowType: string) => {
-    const workflow: ApprovalWorkflow = {
-      id: Math.random().toString(36).substr(2, 9),
-      dealId,
-      workflowType: workflowType as any,
-      currentStep: 1,
-      totalSteps: 2,
-      steps: [
-        {
-          id: '1',
-          stepNumber: 1,
-          approverRole: 'sales_manager',
-          approverIds: ['manager-001'],
-          requiredApprovals: 1,
-          currentApprovals: [],
-          status: 'pending'
-        },
-        {
-          id: '2',
-          stepNumber: 2,
-          approverRole: 'sales_director',
-          approverIds: ['director-001'],
-          requiredApprovals: 1,
-          currentApprovals: [],
-          status: 'pending'
-        }
-      ],
-      status: 'pending',
-      requestedBy: 'current-user',
-      requestedAt: new Date()
-    }
+  // Update deal stage
+  const updateDealStage = async (dealId: string, newStage: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ 
+          stage: newStage,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', dealId)
 
-    setApprovalWorkflows(prev => [...prev, workflow])
-    return workflow
+      if (error) throw error
+
+      setDeals(prev => prev.map(deal => 
+        deal.id === dealId 
+          ? { ...deal, stage: newStage, updatedAt: new Date().toISOString() }
+          : deal
+      ))
+
+      return true
+    } catch (err) {
+      console.error('Error updating deal stage:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to update deal stage. Please try again.',
+        variant: 'destructive'
+      })
+      return false
+    }
   }
 
-  const createWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: Partial<WinLossReport>) => {
-    const report: WinLossReport = {
-      id: Math.random().toString(36).substr(2, 9),
-      dealId,
-      outcome,
-      primaryReason: reportData.primaryReason || '',
-      secondaryReasons: reportData.secondaryReasons || [],
-      competitorWon: reportData.competitorWon,
-      feedback: reportData.feedback || '',
-      lessonsLearned: reportData.lessonsLearned || [],
-      actionItems: reportData.actionItems || [],
-      reportedBy: 'current-user',
-      reportedAt: new Date()
-    }
+  // Update deal
+  const updateDeal = async (dealId: string, updates: Partial<Deal>): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({
+          name: updates.name,
+          customer_id: updates.customerId,
+          customer_name: updates.customerName,
+          customer_email: updates.customerEmail,
+          customer_phone: updates.customerPhone,
+          vehicle_id: updates.vehicleId,
+          vehicle_info: updates.vehicleInfo,
+          stage: updates.stage,
+          amount: updates.amount,
+          source: updates.source,
+          type: updates.type,
+          priority: updates.priority,
+          rep_id: updates.repId,
+          rep_name: updates.repName,
+          probability: updates.probability,
+          expected_close_date: updates.expectedCloseDate,
+          territory_id: updates.territoryId,
+          requires_approval: updates.requiresApproval,
+          status: updates.status,
+          notes: updates.notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', dealId)
 
-    setWinLossReports(prev => [...prev, report])
-    return report
+      if (error) throw error
+
+      setDeals(prev => prev.map(deal => 
+        deal.id === dealId 
+          ? { ...deal, ...updates, updatedAt: new Date().toISOString() }
+          : deal
+      ))
+
+      return true
+    } catch (err) {
+      console.error('Error updating deal:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to update deal. Please try again.',
+        variant: 'destructive'
+      })
+      return false
+    }
   }
 
+  // Delete deal
+  const deleteDeal = async (dealId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .delete()
+        .eq('id', dealId)
+
+      if (error) throw error
+
+      setDeals(prev => prev.filter(deal => deal.id !== dealId))
+
+      toast({
+        title: 'Deal Deleted',
+        description: 'Deal has been deleted successfully.'
+      })
+
+      return true
+    } catch (err) {
+      console.error('Error deleting deal:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete deal. Please try again.',
+        variant: 'destructive'
+      })
+      return false
+    }
+  }
+
+  // Assign territory
+  const assignTerritory = async (dealId: string, territoryId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ 
+          territory_id: territoryId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', dealId)
+
+      if (error) throw error
+
+      setDeals(prev => prev.map(deal => 
+        deal.id === dealId 
+          ? { ...deal, territoryId, updatedAt: new Date().toISOString() }
+          : deal
+      ))
+
+      return true
+    } catch (err) {
+      console.error('Error assigning territory:', err)
+      return false
+    }
+  }
+
+  // Create approval workflow
+  const createApprovalWorkflow = async (dealId: string, workflowType: string): Promise<ApprovalWorkflow | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('approval_workflows')
+        .insert([{
+          deal_id: dealId,
+          workflow_type: workflowType,
+          status: 'pending',
+          approvers: [],
+          current_step: 0
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newWorkflow: ApprovalWorkflow = {
+        id: data.id,
+        dealId: data.deal_id,
+        workflowType: data.workflow_type,
+        status: data.status,
+        approvers: data.approvers || [],
+        currentStep: data.current_step,
+        createdAt: data.created_at
+      }
+
+      setApprovalWorkflows(prev => [newWorkflow, ...prev])
+      return newWorkflow
+    } catch (err) {
+      console.error('Error creating approval workflow:', err)
+      return null
+    }
+  }
+
+  // Create win/loss report
+  const createWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: Partial<WinLossReport>): Promise<WinLossReport | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('win_loss_reports')
+        .insert([{
+          deal_id: dealId,
+          outcome,
+          reason: reportData.reason || '',
+          competitor_info: reportData.competitorInfo,
+          feedback: reportData.feedback
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newReport: WinLossReport = {
+        id: data.id,
+        dealId: data.deal_id,
+        outcome: data.outcome,
+        reason: data.reason,
+        competitorInfo: data.competitor_info,
+        feedback: data.feedback,
+        createdAt: data.created_at
+      }
+
+      setWinLossReports(prev => [newReport, ...prev])
+      return newReport
+    } catch (err) {
+      console.error('Error creating win/loss report:', err)
+      return null
+    }
+  }
+
+  // Calculate deal metrics
   const getDealMetrics = (): DealMetrics => {
     const totalDeals = deals.length
-    const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0)
-    const wonDeals = deals.filter(d => d.status === DealStatus.WON).length
-    const wonValue = deals.filter(d => d.status === DealStatus.WON).reduce((sum, deal) => sum + deal.value, 0)
-    const lostDeals = deals.filter(d => d.status === DealStatus.LOST).length
-    const lostValue = deals.filter(d => d.status === DealStatus.LOST).reduce((sum, deal) => sum + deal.value, 0)
-    const winRate = totalDeals > 0 ? (wonDeals / totalDeals) * 100 : 0
+    const totalValue = deals.reduce((sum, deal) => sum + deal.amount, 0)
     const averageDealSize = totalDeals > 0 ? totalValue / totalDeals : 0
-    const averageSalesCycle = calculateAverageSalesCycle()
+    const wonDeals = deals.filter(deal => deal.stage === 'Closed Won').length
+    const winRate = totalDeals > 0 ? (wonDeals / totalDeals) * 100 : 0
+    const averageSalesCycle = 30 // Placeholder - would calculate from actual data
 
     return {
       totalDeals,
       totalValue,
-      wonDeals,
-      wonValue,
-      lostDeals,
-      lostValue,
-      winRate,
       averageDealSize,
-      averageSalesCycle,
-      conversionRates: calculateConversionRates()
+      winRate,
+      wonDeals,
+      averageSalesCycle
     }
-  }
-
-  const calculateAverageSalesCycle = (): number => {
-    const closedDeals = deals.filter(d => d.actualCloseDate)
-    if (closedDeals.length === 0) return 0
-
-    const totalDays = closedDeals.reduce((sum, deal) => {
-      const closeDate = new Date(deal.actualCloseDate!)
-      const createdDate = new Date(deal.createdAt)
-      
-      const closeTime = !isNaN(closeDate.getTime()) ? closeDate.getTime() : 0
-      const createdTime = !isNaN(createdDate.getTime()) ? createdDate.getTime() : 0
-      
-      const days = closeTime && createdTime 
-        ? Math.floor((closeTime - createdTime) / (1000 * 60 * 60 * 24))
-        : 0
-      return sum + days
-    }, 0)
-
-    return totalDays / closedDeals.length
-  }
-
-  const calculateConversionRates = () => {
-    // Simplified conversion rate calculation
-    return [
-      { fromStage: DealStage.PROSPECTING, toStage: DealStage.QUALIFICATION, rate: 65, averageDuration: 72 },
-      { fromStage: DealStage.QUALIFICATION, toStage: DealStage.NEEDS_ANALYSIS, rate: 75, averageDuration: 48 },
-      { fromStage: DealStage.NEEDS_ANALYSIS, toStage: DealStage.PROPOSAL, rate: 80, averageDuration: 96 },
-      { fromStage: DealStage.PROPOSAL, toStage: DealStage.NEGOTIATION, rate: 70, averageDuration: 120 },
-      { fromStage: DealStage.NEGOTIATION, toStage: DealStage.CLOSED_WON, rate: 85, averageDuration: 168 }
-    ]
-  }
-
-  const getDealsByStage = (stage: DealStage) => {
-    return deals.filter(deal => deal.stage === stage)
-  }
-
-  const getDealsByTerritory = (territoryId: string) => {
-    return deals.filter(deal => deal.territoryId === territoryId)
-  }
-
-  const getDealsByRep = (repId: string) => {
-    return deals.filter(deal => deal.assignedTo === repId)
-  }
-
-  const getStageHistory = (dealId: string) => {
-    return stageHistory.filter(h => h.dealId === dealId).sort((a, b) => 
-      new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime()
-    )
   }
 
   return {
@@ -438,17 +525,16 @@ export function useDealManagement() {
     territories,
     approvalWorkflows,
     winLossReports,
-    stageHistory,
     loading,
+    error,
     createDeal,
+    updateDeal,
     updateDealStage,
+    deleteDeal,
     assignTerritory,
     createApprovalWorkflow,
     createWinLossReport,
     getDealMetrics,
-    getDealsByStage,
-    getDealsByTerritory,
-    getDealsByRep,
-    getStageHistory
+    refreshDeals: loadDeals
   }
 }
