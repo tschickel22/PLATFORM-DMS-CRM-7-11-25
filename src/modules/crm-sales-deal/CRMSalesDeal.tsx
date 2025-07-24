@@ -66,7 +66,7 @@ function DealsList() {
     }
   }
 
-  const filteredDeals = deals.filter(deal => {
+  const filteredDeals = (deals || []).filter(deal => {
     const matchesSearch = 
       deal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       deal.customerName.toLowerCase().includes(searchTerm.toLowerCase())
