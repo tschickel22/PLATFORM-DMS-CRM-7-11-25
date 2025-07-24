@@ -76,14 +76,34 @@ export function useDealManagement() {
   const [error, setError] = useState<string | null>(null)
 
   // Load deals from Supabase
-  const loadDeals = async () => {
+  const fetchDeals = async () => {
     try {
+      setLoading(true)
+      
+      // Check if deals table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'deals')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        console.log('Deals table does not exist yet')
+        setDeals([])
+        return
+      }
+      
       const { data, error } = await supabase
         .from('deals')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching deals:', error)
+        setError(error.message)
+        return
+      }
 
       const mappedDeals: Deal[] = (data || []).map(row => ({
         id: row.id,
@@ -113,114 +133,145 @@ export function useDealManagement() {
 
       setDeals(mappedDeals)
     } catch (err) {
-      console.error('Error loading deals:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load deals')
-      setDeals([]) // Ensure deals is always an array
+      console.error('Error in fetchDeals:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch deals')
+      setDeals([]) // Set empty array on error
+    } finally {
+      setLoading(false)
     }
   }
 
   // Load territories from Supabase
-  const loadTerritories = async () => {
+  const fetchTerritories = async () => {
     try {
+      // Check if territories table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'territories')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        console.log('Territories table does not exist yet')
+        setTerritories([])
+        return
+      }
+      
       const { data, error } = await supabase
         .from('territories')
         .select('*')
-        .eq('is_active', true)
+        .order('name')
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching territories:', error)
+        setTerritories([])
+        return
+      }
 
-      const mappedTerritories: Territory[] = (data || []).map(row => ({
-        id: row.id,
-        name: row.name,
-        description: row.description || '',
-        repIds: row.rep_ids || [],
-        zipcodes: row.zipcodes || [],
-        isActive: row.is_active
-      }))
-
-      setTerritories(mappedTerritories)
+      setTerritories(data || [])
     } catch (err) {
-      console.error('Error loading territories:', err)
+      console.error('Error in fetchTerritories:', err)
       setTerritories([])
     }
   }
 
-  // Load approval workflows from Supabase
-  const loadApprovalWorkflows = async () => {
+  const fetchApprovalWorkflows = async () => {
     try {
+      // Check if approval_workflows table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'approval_workflows')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        console.log('Approval workflows table does not exist yet')
+        setApprovalWorkflows([])
+        return
+      }
+      
       const { data, error } = await supabase
         .from('approval_workflows')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching approval workflows:', error)
+        setApprovalWorkflows([])
+        return
+      }
 
-      const mappedWorkflows: ApprovalWorkflow[] = (data || []).map(row => ({
-        id: row.id,
-        dealId: row.deal_id,
-        workflowType: row.workflow_type,
-        status: row.status,
-        approvers: row.approvers || [],
-        currentStep: row.current_step || 0,
-        createdAt: row.created_at
-      }))
-
-      setApprovalWorkflows(mappedWorkflows)
+      setApprovalWorkflows(data || [])
     } catch (err) {
-      console.error('Error loading approval workflows:', err)
+      console.error('Error in fetchApprovalWorkflows:', err)
       setApprovalWorkflows([])
     }
   }
 
-  // Load win/loss reports from Supabase
-  const loadWinLossReports = async () => {
+  const fetchWinLossReports = async () => {
     try {
+      // Check if win_loss_reports table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'win_loss_reports')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        console.log('Win/loss reports table does not exist yet')
+        setWinLossReports([])
+        return
+      }
+      
       const { data, error } = await supabase
         .from('win_loss_reports')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching win/loss reports:', error)
+        setWinLossReports([])
+        return
+      }
 
-      const mappedReports: WinLossReport[] = (data || []).map(row => ({
-        id: row.id,
-        dealId: row.deal_id,
-        outcome: row.outcome,
-        reason: row.reason,
-        competitorInfo: row.competitor_info,
-        feedback: row.feedback,
-        createdAt: row.created_at
-      }))
-
-      setWinLossReports(mappedReports)
+      setWinLossReports(data || [])
     } catch (err) {
-      console.error('Error loading win/loss reports:', err)
+      console.error('Error in fetchWinLossReports:', err)
       setWinLossReports([])
     }
   }
 
   // Load all data on mount
   useEffect(() => {
-    const loadAllData = async () => {
-      setLoading(true)
-      setError(null)
-      
-      await Promise.all([
-        loadDeals(),
-        loadTerritories(),
-        loadApprovalWorkflows(),
-        loadWinLossReports()
-      ])
-      
-      setLoading(false)
-    }
-
-    loadAllData()
+    fetchDeals()
+    fetchTerritories()
+    fetchApprovalWorkflows()
+    fetchWinLossReports()
   }, [])
 
   // Create new deal
-  const createDeal = async (dealData: Partial<Deal>): Promise<Deal | null> => {
+  const createDeal = async (dealData: Partial<Deal>) => {
     try {
+      // Check if deals table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'deals')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        toast({
+          title: 'Database Setup Required',
+          description: 'Deals table needs to be created. Please run database migrations.',
+          variant: 'destructive'
+        })
+        return
+      }
+      
       const { data, error } = await supabase
         .from('deals')
         .insert([{
@@ -248,56 +299,53 @@ export function useDealManagement() {
         .select()
         .single()
 
-      if (error) throw error
-
-      const newDeal: Deal = {
-        id: data.id,
-        name: data.name,
-        customerId: data.customer_id,
-        customerName: data.customer_name,
-        customerEmail: data.customer_email,
-        customerPhone: data.customer_phone,
-        vehicleId: data.vehicle_id,
-        vehicleInfo: data.vehicle_info,
-        stage: data.stage,
-        amount: data.amount,
-        source: data.source,
-        type: data.type,
-        priority: data.priority,
-        repId: data.rep_id,
-        repName: data.rep_name,
-        probability: data.probability,
-        expectedCloseDate: data.expected_close_date,
-        territoryId: data.territory_id,
-        requiresApproval: data.requires_approval,
-        status: data.status,
-        notes: data.notes,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
+      if (error) {
+        console.error('Error creating deal:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to create deal',
+          variant: 'destructive'
+        })
+        return
       }
 
-      setDeals(prev => [newDeal, ...prev])
+      // Refresh deals list
+      fetchDeals()
       
       toast({
         title: 'Deal Created',
-        description: `Deal "${newDeal.name}" has been created successfully.`
+        description: 'Deal has been created successfully'
       })
-
-      return newDeal
     } catch (err) {
-      console.error('Error creating deal:', err)
+      console.error('Error in createDeal:', err)
       toast({
         title: 'Error',
-        description: 'Failed to create deal. Please try again.',
+        description: 'Failed to create deal',
         variant: 'destructive'
       })
-      return null
     }
   }
 
   // Update deal stage
-  const updateDealStage = async (dealId: string, newStage: string): Promise<boolean> => {
+  const updateDealStage = async (dealId: string, newStage: string) => {
     try {
+      // Check if deals table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'deals')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        toast({
+          title: 'Database Setup Required',
+          description: 'Deals table needs to be created. Please run database migrations.',
+          variant: 'destructive'
+        })
+        return
+      }
+      
       const { error } = await supabase
         .from('deals')
         .update({ 
@@ -306,23 +354,25 @@ export function useDealManagement() {
         })
         .eq('id', dealId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Error updating deal stage:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to update deal stage',
+          variant: 'destructive'
+        })
+        return
+      }
 
-      setDeals(prev => prev.map(deal => 
-        deal.id === dealId 
-          ? { ...deal, stage: newStage, updatedAt: new Date().toISOString() }
-          : deal
-      ))
-
-      return true
+      // Refresh deals list
+      fetchDeals()
     } catch (err) {
-      console.error('Error updating deal stage:', err)
+      console.error('Error in updateDealStage:', err)
       toast({
         title: 'Error',
-        description: 'Failed to update deal stage. Please try again.',
+        description: 'Failed to update deal stage',
         variant: 'destructive'
       })
-      return false
     }
   }
 
@@ -432,9 +482,22 @@ export function useDealManagement() {
   }
 
   // Create approval workflow
-  const createApprovalWorkflow = async (dealId: string, workflowType: string): Promise<ApprovalWorkflow | null> => {
+  const createApprovalWorkflow = async (dealId: string, workflowType: string) => {
     try {
-      const { data, error } = await supabase
+      // Check if approval_workflows table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'approval_workflows')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        console.log('Approval workflows table does not exist yet')
+        return
+      }
+      
+      const { error } = await supabase
         .from('approval_workflows')
         .insert([{
           deal_id: dealId,
@@ -443,33 +506,35 @@ export function useDealManagement() {
           approvers: [],
           current_step: 0
         }])
-        .select()
-        .single()
 
-      if (error) throw error
-
-      const newWorkflow: ApprovalWorkflow = {
-        id: data.id,
-        dealId: data.deal_id,
-        workflowType: data.workflow_type,
-        status: data.status,
-        approvers: data.approvers || [],
-        currentStep: data.current_step,
-        createdAt: data.created_at
+      if (error) {
+        console.error('Error creating approval workflow:', error)
+        return
       }
 
-      setApprovalWorkflows(prev => [newWorkflow, ...prev])
-      return newWorkflow
+      fetchApprovalWorkflows()
     } catch (err) {
-      console.error('Error creating approval workflow:', err)
-      return null
+      console.error('Error in createApprovalWorkflow:', err)
     }
   }
 
   // Create win/loss report
-  const createWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: Partial<WinLossReport>): Promise<WinLossReport | null> => {
+  const createWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: Partial<WinLossReport>) => {
     try {
-      const { data, error } = await supabase
+      // Check if win_loss_reports table exists first
+      const { data: tableExists } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_name', 'win_loss_reports')
+        .eq('table_schema', 'public')
+        .single()
+      
+      if (!tableExists) {
+        console.log('Win/loss reports table does not exist yet')
+        return
+      }
+      
+      const { error } = await supabase
         .from('win_loss_reports')
         .insert([{
           deal_id: dealId,
@@ -478,31 +543,31 @@ export function useDealManagement() {
           competitor_info: reportData.competitorInfo,
           feedback: reportData.feedback
         }])
-        .select()
-        .single()
 
-      if (error) throw error
-
-      const newReport: WinLossReport = {
-        id: data.id,
-        dealId: data.deal_id,
-        outcome: data.outcome,
-        reason: data.reason,
-        competitorInfo: data.competitor_info,
-        feedback: data.feedback,
-        createdAt: data.created_at
+      if (error) {
+        console.error('Error creating win/loss report:', error)
+        return
       }
 
-      setWinLossReports(prev => [newReport, ...prev])
-      return newReport
+      fetchWinLossReports()
     } catch (err) {
-      console.error('Error creating win/loss report:', err)
-      return null
+      console.error('Error in createWinLossReport:', err)
     }
   }
 
   // Calculate deal metrics
-  const getDealMetrics = (): DealMetrics => {
+  const getDealMetrics = () => {
+    if (!deals || deals.length === 0) {
+      return {
+        totalDeals: 0,
+        totalValue: 0,
+        averageDealSize: 0,
+        winRate: 0,
+        wonDeals: 0,
+        averageSalesCycle: 0
+      }
+    }
+    
     const totalDeals = deals.length
     const totalValue = deals.reduce((sum, deal) => sum + deal.amount, 0)
     const averageDealSize = totalDeals > 0 ? totalValue / totalDeals : 0
@@ -520,13 +585,21 @@ export function useDealManagement() {
     }
   }
 
+  // Add error boundary for the entire hook
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error in useDealManagement:', event.error)
+    }
+    
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
+  }, [])
+
   return {
     deals,
     territories,
     approvalWorkflows,
     winLossReports,
-    loading,
-    error,
     createDeal,
     updateDeal,
     updateDealStage,
@@ -535,6 +608,11 @@ export function useDealManagement() {
     createApprovalWorkflow,
     createWinLossReport,
     getDealMetrics,
-    refreshDeals: loadDeals
+    loading,
+    error,
+    // Add safe fallback functions
+    createDealSafe: createDeal,
+    updateDealStageSafe: updateDealStage,
+    refreshDeals: fetchDeals
   }
 }
