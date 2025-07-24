@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 
 export interface Deal {
@@ -67,6 +68,7 @@ export interface DealMetrics {
 }
 
 export function useDealManagement() {
+  const { user } = useAuth()
   const { toast } = useToast()
   const [deals, setDeals] = useState<Deal[]>([])
   const [territories, setTerritories] = useState<Territory[]>([])
@@ -75,8 +77,17 @@ export function useDealManagement() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Check if user is authenticated before making requests
+  const isAuthenticated = !!user
+
   // Load deals from Supabase
   const fetchDeals = async () => {
+    if (!isAuthenticated) {
+      console.log('User not authenticated, skipping deals fetch')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       
@@ -98,15 +109,22 @@ export function useDealManagement() {
         .from('deals')
         .select('*')
         .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching deals:', error)
-        setError(error.message)
-        return
-      }
-
-      const mappedDeals: Deal[] = (data || []).map(row => ({
-        id: row.id,
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Deals table does not exist yet')
+          setDeals([])
+          setError(null)
+        } else {
+          console.error('Error fetching deals:', error)
+          setError(error.message)
+          toast({
+            title: 'Database Error',
+            description: 'Failed to load deals. Please check your database connection.',
+            variant: 'destructive'
+          })
+        }
         name: row.name || `Deal ${row.id.slice(-6)}`,
         customerId: row.customer_id || '',
         customerName: row.customer_name || '',
@@ -143,6 +161,8 @@ export function useDealManagement() {
 
   // Load territories from Supabase
   const fetchTerritories = async () => {
+    if (!isAuthenticated) return
+
     try {
       // Check if territories table exists first
       const { data: tableExists } = await supabase
@@ -162,10 +182,16 @@ export function useDealManagement() {
         .from('territories')
         .select('*')
         .order('name')
+        .order('name')
 
       if (error) {
-        console.error('Error fetching territories:', error)
-        setTerritories([])
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Territories table does not exist yet')
+          setTerritories([])
+        } else {
+          console.error('Error fetching territories:', error)
+        }
+        return
         return
       }
 
@@ -177,6 +203,8 @@ export function useDealManagement() {
   }
 
   const fetchApprovalWorkflows = async () => {
+    if (!isAuthenticated) return
+
     try {
       // Check if approval_workflows table exists first
       const { data: tableExists } = await supabase
@@ -196,10 +224,16 @@ export function useDealManagement() {
         .from('approval_workflows')
         .select('*')
         .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching approval workflows:', error)
-        setApprovalWorkflows([])
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Approval workflows table does not exist yet')
+          setApprovalWorkflows([])
+        } else {
+          console.error('Error fetching approval workflows:', error)
+        }
+        return
         return
       }
 
@@ -211,6 +245,8 @@ export function useDealManagement() {
   }
 
   const fetchWinLossReports = async () => {
+    if (!isAuthenticated) return
+
     try {
       // Check if win_loss_reports table exists first
       const { data: tableExists } = await supabase
@@ -230,10 +266,16 @@ export function useDealManagement() {
         .from('win_loss_reports')
         .select('*')
         .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching win/loss reports:', error)
-        setWinLossReports([])
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Win/loss reports table does not exist yet')
+          setWinLossReports([])
+        } else {
+          console.error('Error fetching win/loss reports:', error)
+        }
+        return
         return
       }
 
@@ -246,14 +288,33 @@ export function useDealManagement() {
 
   // Load all data on mount
   useEffect(() => {
-    fetchDeals()
-    fetchTerritories()
-    fetchApprovalWorkflows()
-    fetchWinLossReports()
-  }, [])
+    if (isAuthenticated) {
+      fetchDeals()
+      fetchTerritories()
+      fetchApprovalWorkflows()
+      fetchWinLossReports()
+    } else {
+      // Clear data when not authenticated
+      setDeals([])
+      setTerritories([])
+      setApprovalWorkflows([])
+      setWinLossReports([])
+      setLoading(false)
+      setError(null)
+    }
+  }, [isAuthenticated])
 
   // Create new deal
   const createDeal = async (dealData: Partial<Deal>) => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to create deals',
+        variant: 'destructive'
+      })
+      return
+    }
+
     try {
       // Check if deals table exists first
       const { data: tableExists } = await supabase
@@ -300,12 +361,20 @@ export function useDealManagement() {
         .single()
 
       if (error) {
-        console.error('Error creating deal:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to create deal',
-          variant: 'destructive'
-        })
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          toast({
+            title: 'Database Setup Required',
+            description: 'Please set up the deals table in your database',
+            variant: 'destructive'
+          })
+        } else {
+          console.error('Error creating deal:', error)
+          toast({
+            title: 'Error',
+            description: 'Failed to create deal',
+            variant: 'destructive'
+          })
+        }
         return
       }
 
@@ -328,6 +397,8 @@ export function useDealManagement() {
 
   // Update deal stage
   const updateDealStage = async (dealId: string, newStage: string) => {
+    if (!isAuthenticated) return
+
     try {
       // Check if deals table exists first
       const { data: tableExists } = await supabase
@@ -355,12 +426,40 @@ export function useDealManagement() {
         .eq('id', dealId)
 
       if (error) {
-        console.error('Error updating deal stage:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to update deal stage',
-          variant: 'destructive'
-        })
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Deals table does not exist yet')
+        } else {
+          console.error('Error assigning territory:', error)
+        }
+        return
+            title: 'Database Setup Required',
+            description: 'Please set up the deals table in your database',
+            variant: 'destructive'
+          })
+        } else {
+          console.error('Error deleting deal:', error)
+          toast({
+            title: 'Error',
+            description: 'Failed to delete deal',
+            variant: 'destructive'
+          })
+        }
+        } else {
+          console.error('Error updating deal:', error)
+          toast({
+            title: 'Error',
+            description: 'Failed to update deal',
+            variant: 'destructive'
+          })
+        }
+        } else {
+          console.error('Error updating deal stage:', error)
+          toast({
+            title: 'Error',
+            description: 'Failed to update deal stage',
+            variant: 'destructive'
+          })
+        }
         return
       }
 
@@ -378,6 +477,8 @@ export function useDealManagement() {
 
   // Update deal
   const updateDeal = async (dealId: string, updates: Partial<Deal>): Promise<boolean> => {
+    if (!isAuthenticated) return
+
     try {
       const { error } = await supabase
         .from('deals')
@@ -428,6 +529,8 @@ export function useDealManagement() {
 
   // Delete deal
   const deleteDeal = async (dealId: string): Promise<boolean> => {
+    if (!isAuthenticated) return
+
     try {
       const { error } = await supabase
         .from('deals')
@@ -457,6 +560,8 @@ export function useDealManagement() {
 
   // Assign territory
   const assignTerritory = async (dealId: string, territoryId: string): Promise<boolean> => {
+    if (!isAuthenticated) return
+
     try {
       const { error } = await supabase
         .from('deals')
@@ -483,6 +588,8 @@ export function useDealManagement() {
 
   // Create approval workflow
   const createApprovalWorkflow = async (dealId: string, workflowType: string) => {
+    if (!isAuthenticated) return
+
     try {
       // Check if approval_workflows table exists first
       const { data: tableExists } = await supabase
@@ -508,7 +615,11 @@ export function useDealManagement() {
         }])
 
       if (error) {
-        console.error('Error creating approval workflow:', error)
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Approval workflows table does not exist yet')
+        } else {
+          console.error('Error creating approval workflow:', error)
+        }
         return
       }
 
@@ -520,6 +631,8 @@ export function useDealManagement() {
 
   // Create win/loss report
   const createWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: Partial<WinLossReport>) => {
+    if (!isAuthenticated) return
+
     try {
       // Check if win_loss_reports table exists first
       const { data: tableExists } = await supabase
@@ -545,7 +658,11 @@ export function useDealManagement() {
         }])
 
       if (error) {
-        console.error('Error creating win/loss report:', error)
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          console.log('Win/loss reports table does not exist yet')
+        } else {
+          console.error('Error creating win/loss report:', error)
+        }
         return
       }
 
@@ -557,6 +674,18 @@ export function useDealManagement() {
 
   // Calculate deal metrics
   const getDealMetrics = () => {
+    if (!deals || deals.length === 0) {
+      return {
+        totalDeals: 0,
+        totalValue: 0,
+        averageDealSize: 0,
+        winRate: 0,
+        wonDeals: 0,
+        lostDeals: 0,
+        averageSalesCycle: 0
+      }
+    }
+
     if (!deals || deals.length === 0) {
       return {
         totalDeals: 0,

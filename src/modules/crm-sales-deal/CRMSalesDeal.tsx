@@ -39,6 +39,7 @@ const stageColors = {
 function DealsList() {
   const {
     deals = [],
+    territories = [],
     approvalWorkflows,
     winLossReports,
     createDeal,
@@ -149,8 +150,6 @@ function DealsList() {
     price: vehicle.price,
     category: 'vehicle'
   }))
-
-  const territories = []
 
   if (loading) {
     return (
@@ -267,7 +266,7 @@ function DealsList() {
             <MapPin className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-900">{(territories || []).length}</div>
+            <div className="text-2xl font-bold text-orange-900">{territories.length}</div>
             <p className="text-xs text-orange-600 flex items-center mt-1">
               <Users className="h-3 w-3 mr-1" />
               Active territories
@@ -374,7 +373,7 @@ function DealsList() {
                           </span>
                           <span className="flex items-center">
                             <MapPin className="h-3 w-3 mr-2 text-orange-500" />
-                            {(territories || []).find(t => t.id === deal.territoryId)?.name || 'No Territory'}
+                            {territories.find(t => t.id === deal.territoryId)?.name || 'No Territory'}
                           </span>
                         </div>
                         {deal.notes && (
@@ -437,7 +436,7 @@ function DealsList() {
 
         <TabsContent value="territories" className="space-y-6">
           <TerritoryManagement 
-            territories={territories || []}
+            territories={territories}
             salesReps={salesReps || []}
             deals={deals}
             onCreateTerritory={() => {}}
