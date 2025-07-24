@@ -550,3 +550,4 @@ export default function CRMSalesDeal() {
       <Route path="/*" element={<DealsList />} />
     </Routes>
   )
+}
