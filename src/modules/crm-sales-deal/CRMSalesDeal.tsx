@@ -39,18 +39,19 @@ const stageColors = {
 }
 
 function DealsList() {
-  const {
-    territories,
-    winLossReports,
-    createDeal,
-    updateDealStage,
-    assignTerritory,
-    createApprovalWorkflow,
-    createWinLossReport,
-    getDealMetrics,
-    loading,
-    error
-  } = useDealManagement()
+const {
+  deals = [],
+  territories,
+  winLossReports,
+  createDeal,
+  updateDealStage,
+  assignTerritory,
+  createApprovalWorkflow,
+  createWinLossReport,
+  getDealMetrics,
+  loading,
+  error
+} = useDealManagement()
 
   const { leads } = useLeadManagement()
   const { vehicles } = useInventoryManagement()
