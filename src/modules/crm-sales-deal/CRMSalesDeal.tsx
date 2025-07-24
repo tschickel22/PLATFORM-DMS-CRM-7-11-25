@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useDealManagement } from './hooks/useDealManagement'
 import { DealPipeline } from './components/DealPipeline'
-import { Metrics } from './components/metrics'
+import { DealMetrics } from './components/DealMetrics'
 import { WinLossAnalysis } from './components/WinLossAnalysis'
 import { DealDetail } from './components/DealDetail'
 import { TerritoryManagement } from './components/TerritoryManagement'
@@ -459,7 +459,7 @@ const {
             </TabsList>
 
             <TabsContent value="metrics">
-              <Metrics metrics={dealMetrics} />
+              <DealMetrics metrics={dealMetrics} />
             </TabsContent>
 
             <TabsContent value="win-loss">
