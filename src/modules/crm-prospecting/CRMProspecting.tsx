@@ -210,7 +210,7 @@ function LeadsList() {
                       {Object.entries(selectedLead.customFields || {}).map(([key, value]) => (
                         <div key={key}>
                           <label className="text-sm font-medium text-muted-foreground capitalize">
-                      {leadStatuses.map(status => (
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
                           </label>
                           <p className="font-medium">{value}</p>
                         </div>
@@ -373,6 +373,9 @@ function LeadsList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                {leadStatuses.map(status => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
                 <SelectItem value={LeadStatus.NEW}>New</SelectItem>
                 <SelectItem value={LeadStatus.CONTACTED}>Contacted</SelectItem>
                 <SelectItem value={LeadStatus.QUALIFIED}>Qualified</SelectItem>
@@ -388,6 +391,9 @@ function LeadsList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sources</SelectItem>
+                {leadSources.map(source => (
+                  <SelectItem key={source} value={source}>{source}</SelectItem>
+                ))}
                 {sources.map(source => (
                   <SelectItem key={source.id} value={source.id}>
                     {source.name}
@@ -416,7 +422,7 @@ function LeadsList() {
 
           {/* Leads Table */}
           <Card className="shadow-sm">
-                      {leadSources.map(source => (
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-xl">Leads ({filteredLeads.length})</CardTitle>
@@ -431,72 +437,89 @@ function LeadsList() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {filteredLeads.map((lead) => (
-                  <div key={lead.id} className="ri-table-row cursor-pointer" onClick={() => setSelectedLead(lead)}>
-                    <div className="flex items-center space-x-4 flex-1">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-foreground">
-                            {lead.firstName} {lead.lastName}
-                          </h3>
-                          <Badge className={cn("ri-badge-status", getStatusColor(lead.status))}>
-                            {lead.status.replace('_', ' ').toUpperCase()}
-                          </Badge>
-                          {lead.score && (
-                            <Badge className={cn("ri-badge-status", getScoreColor(lead.score))}>
-                              {lead.score}
+              {filteredLeads.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  {leads.length === 0 ? (
+                    <>
+                      <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <p>No leads found</p>
+                      <p className="text-sm">Create your first lead to get started</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>No leads match your current filters</p>
+                      <p className="text-sm">Try adjusting your search or filter criteria</p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredLeads.map((lead) => (
+                    <div key={lead.id} className="ri-table-row cursor-pointer" onClick={() => setSelectedLead(lead)}>
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="font-semibold text-foreground">
+                              {lead.firstName} {lead.lastName}
+                            </h3>
+                            <Badge className={cn("ri-badge-status", getStatusColor(lead.status))}>
+                              {lead.status.replace('_', ' ').toUpperCase()}
                             </Badge>
+                            {lead.score && (
+                              <Badge className={cn("ri-badge-status", getScoreColor(lead.score))}>
+                                {lead.score}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              <Brain className="h-3 w-3 mr-1" />
+                              AI Ready
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
+                            <span className="flex items-center">
+                              <Mail className="h-3 w-3 mr-2 text-blue-500" />
+                              {lead.email}
+                            </span>
+                            <span className="flex items-center">
+                              <Phone className="h-3 w-3 mr-2 text-green-500" />
+                              {lead.phone}
+                            </span>
+                            <span className="flex items-center">
+                              <Users className="h-3 w-3 mr-2 text-purple-500" />
+                              {salesReps.find(rep => rep.id === lead.assignedTo)?.name || 'Unassigned'}
+                            </span>
+                            <span className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-2 text-orange-500" />
+                              {formatDate(lead.createdAt)}
+                            </span>
+                          </div>
+                          {lead.notes && (
+                            <p className="text-sm text-muted-foreground mt-2 bg-muted/30 p-2 rounded-md">
+                              {lead.notes}
+                            </p>
                           )}
-                          <Badge variant="outline" className="text-xs">
-                            <Brain className="h-3 w-3 mr-1" />
-                            AI Ready
-                          </Badge>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                          <span className="flex items-center">
-                            <Mail className="h-3 w-3 mr-2 text-blue-500" />
-                            {lead.email}
-                          </span>
-                          <span className="flex items-center">
-                            <Phone className="h-3 w-3 mr-2 text-green-500" />
-                            {lead.phone}
-                          </span>
-                          <span className="flex items-center">
-                            <Users className="h-3 w-3 mr-2 text-purple-500" />
-                            {salesReps.find(rep => rep.id === lead.assignedTo)?.name || 'Unassigned'}
-                          </span>
-                          <span className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-2 text-orange-500" />
-                          {lead.firstName || ''} {lead.lastName || ''}
-                          </span>
-                        </div>
-                        {lead.notes && (
-                          <p className="text-sm text-muted-foreground mt-2 bg-muted/30 p-2 rounded-md">
-                            {lead.notes}
-                          </p>
-                        )}
+                      </div>
+                      <div className="ri-action-buttons">
+                        <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
+                          e.stopPropagation()
+                          // Handle quick actions
+                        }}>
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Contact
+                        </Button>
+                        <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLead(lead)
+                        }}>
+                          <Brain className="h-3 w-3 mr-1" />
+                          AI Insights
+                        </Button>
                       </div>
                     </div>
-                    <div className="ri-action-buttons">
-                      <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-                        e.stopPropagation()
-                        // Handle quick actions
-                      }}>
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        Contact
-                      </Button>
-                      <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedLead(lead)
-                      }}>
-                        <Brain className="h-3 w-3 mr-1" />
-                        AI Insights
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -508,18 +531,11 @@ function LeadsList() {
         <TabsContent value="quotes">
           <QuotesList />
         </TabsContent>
-                    {leads.length === 0 ? (
-                      <>
-                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No leads found</p>
-                        <p className="text-sm">Create your first lead to get started</p>
-                      </>
-                    ) : (
-                      <>
-                        <p>No leads match your current filters</p>
-                        <p className="text-sm">Try adjusting your search or filter criteria</p>
-                      </>
-                    )}
+
+        <TabsContent value="nurturing">
+          <div className="space-y-6">
+            <NurtureSequences />
+          </div>
         </TabsContent>
 
         <TabsContent value="forms">
