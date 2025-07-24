@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Settings, Save, Plus, Edit, Trash2, Users, Building, Palette, Tag, Mail, Globe } from 'lucide-react'
-import { useTenant } from '@/contexts/TenantContext'
+import { fetchCompanySettings, updateCompanySettings, fetchCustomFields, createCustomField, updateCustomField, deleteCustomField } from '@/hooks/useSettingsStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { CustomField, CustomFieldType } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -17,18 +18,20 @@ import { IntegrationSettings } from './components/IntegrationSettings'
 import { mockCompanySettings } from '@/mocks/companySettingsMock'
 
 function CompanySettingsPage() {
-  const { tenant, getCustomFields, updateTenant, addCustomField, updateCustomField, deleteCustomField } = useTenant()
+  const { user } = useAuth()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('general')
   const [showCustomFieldModal, setShowCustomFieldModal] = useState(false)
   const [selectedCustomField, setSelectedCustomField] = useState<CustomField | null>(null)
   const [loading, setLoading] = useState(false)
+  const [customFields, setCustomFields] = useState<CustomField[]>([])
+  const [companySettings, setCompanySettings] = useState<any>(null)
   
   // Form state for general settings
-  const [companyName, setCompanyName] = useState(tenant?.name || '')
-  const [companyDomain, setCompanyDomain] = useState(tenant?.domain || '')
-  const [timezone, setTimezone] = useState(tenant?.settings?.timezone || '')
-  const [currency, setCurrency] = useState(tenant?.settings?.currency || '')
+  const [companyName, setCompanyName] = useState('')
+  const [companyDomain, setCompanyDomain] = useState('')
+  const [timezone, setTimezone] = useState('')
+  const [currency, setCurrency] = useState('')
 
   // Use tabs and modules from mock
   const tabs = [
@@ -42,31 +45,58 @@ function CompanySettingsPage() {
   ]
   const modules = mockCompanySettings.customFields.modules
 
-  // Get custom fields from tenant
-  const customFields = tenant?.customFields || []
+  // Get current company ID from user context
+  const currentCompanyId = user?.tenantId || 'default-company'
 
-  // Update form state when tenant changes
+  // Load settings from Supabase on component mount
   React.useEffect(() => {
-    if (tenant) {
-      setCompanyName(tenant.name)
-      setCompanyDomain(tenant.domain)
-      setTimezone(tenant.settings?.timezone || '')
-      setCurrency(tenant.settings?.currency || '')
+    const loadSettings = async () => {
+      try {
+        // Load company settings
+        const { data: companyData } = await fetchCompanySettings(currentCompanyId)
+        if (companyData) {
+          setCompanySettings(companyData)
+          setCompanyName(companyData.name || '')
+          setCompanyDomain(companyData.domain || '')
+          setTimezone(companyData.settings?.timezone || '')
+          setCurrency(companyData.settings?.currency || '')
+        }
+
+        // Load custom fields
+        const { data: fieldsData } = await fetchCustomFields(currentCompanyId)
+        if (fieldsData) {
+          setCustomFields(fieldsData)
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to load settings. Using defaults.',
+          variant: 'destructive'
+        })
+      }
     }
-  }, [tenant])
+    
+    loadSettings()
+  }, [currentCompanyId])
 
   const handleSaveSettings = async () => {
     setLoading(true)
     try {
-      // Update all tenant data in a single atomic operation
-      await updateTenant({
+      // Update company settings in Supabase
+      const { error } = await updateCompanySettings(currentCompanyId, {
         name: companyName,
         domain: companyDomain,
         settings: {
+          ...companySettings?.settings,
           timezone,
           currency
         }
       })
+
+      if (error) {
+        throw error
+      }
 
       toast({
         title: 'Settings Saved',
@@ -95,7 +125,14 @@ function CompanySettingsPage() {
   const handleDeleteCustomField = async (fieldId: string) => {
     if (window.confirm('Are you sure you want to delete this custom field?')) {
       try {
-        await deleteCustomField(fieldId)
+        const { error } = await deleteCustomField(fieldId)
+        if (error) {
+          throw error
+        }
+        
+        // Update local state
+        setCustomFields(customFields.filter(field => field.id !== fieldId))
+        
         toast({
           title: 'Success',
           description: 'Custom field deleted successfully',
@@ -113,9 +150,30 @@ function CompanySettingsPage() {
   const handleSaveCustomField = async (fieldData: Partial<CustomField>) => {
     try {
       if (selectedCustomField) {
-        await updateCustomField(selectedCustomField.id, fieldData)
+        const { error } = await updateCustomField(selectedCustomField.id, fieldData)
+        if (error) {
+          throw error
+        }
+        
+        // Update local state
+        setCustomFields(customFields.map(field => 
+          field.id === selectedCustomField.id 
+            ? { ...field, ...fieldData } as CustomField
+            : field
+        ))
       } else {
-        await addCustomField(fieldData)
+        const { data, error } = await createCustomField({
+          ...fieldData,
+          company_id: currentCompanyId
+        } as any)
+        if (error) {
+          throw error
+        }
+        
+        // Update local state
+        if (data) {
+          setCustomFields([...customFields, data])
+        }
       }
       setShowCustomFieldModal(false)
       return true
@@ -171,46 +229,49 @@ function CompanySettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Business Hours</CardTitle>
-          <CardDescription>
-            Set your dealership operating hours
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {tenant?.settings.businessHours && Object.entries(tenant.settings.businessHours).map(([day, hours]) => (
-              <div key={day} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="w-24 capitalize font-medium">{day}</div>
-                <div className="flex items-center space-x-3">
-                  <Input
-                    type="time"
-                    defaultValue={hours.open}
-                    disabled={hours.closed}
-                    className="w-32 shadow-sm"
-                  />
-                  <span className="text-muted-foreground">to</span>
-                  <Input
-                    type="time"
-                    defaultValue={hours.close}
-                    disabled={hours.closed}
-                    className="w-32 shadow-sm"
-                  />
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      defaultChecked={hours.closed}
-                      className="rounded"
+      {/* Business Hours - temporarily disabled until we add business_hours to schema */}
+      {companySettings?.settings?.businessHours && (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Business Hours</CardTitle>
+            <CardDescription>
+              Set your dealership operating hours
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Object.entries(companySettings.settings.businessHours).map(([day, hours]: [string, any]) => (
+                <div key={day} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="w-24 capitalize font-medium">{day}</div>
+                  <div className="flex items-center space-x-3">
+                    <Input
+                      type="time"
+                      defaultValue={hours.open}
+                      disabled={hours.closed}
+                      className="w-32 shadow-sm"
                     />
-                    <span className="text-sm">Closed</span>
-                  </label>
+                    <span className="text-muted-foreground">to</span>
+                    <Input
+                      type="time"
+                      defaultValue={hours.close}
+                      disabled={hours.closed}
+                      className="w-32 shadow-sm"
+                    />
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        defaultChecked={hours.closed}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Closed</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 
@@ -324,7 +385,7 @@ function CompanySettingsPage() {
   )
 
   return (
-    <div key={tenant?.updatedAt || tenant?.id} className="space-y-8">
+    <div key={companySettings?.updated_at || currentCompanyId} className="space-y-8">
        {/* Custom Field Modal */}
        {showCustomFieldModal && (
          <CustomFieldModal
