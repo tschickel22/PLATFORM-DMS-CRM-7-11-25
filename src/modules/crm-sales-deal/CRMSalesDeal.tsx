@@ -178,7 +178,7 @@ function DealsList() {
     createWinLossReport && await createWinLossReport(dealId, outcome, reportData)
   }
 
-  const metrics = getDealMetrics()
+  const dealMetrics = getDealMetrics()
 
   // Products from Supabase only
   const products = safeVehicles.map(vehicle => ({
