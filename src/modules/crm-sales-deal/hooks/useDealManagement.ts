@@ -109,7 +109,6 @@ export function useDealManagement() {
         .from('deals')
         .select('*')
         .order('created_at', { ascending: false })
-        .order('created_at', { ascending: false })
 
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
@@ -125,6 +124,11 @@ export function useDealManagement() {
             variant: 'destructive'
           })
         }
+        return
+      }
+
+      const mappedDeals = (data || []).map((row: any) => ({
+        id: row.id,
         name: row.name || `Deal ${row.id.slice(-6)}`,
         customerId: row.customer_id || '',
         customerName: row.customer_name || '',
@@ -182,7 +186,6 @@ export function useDealManagement() {
         .from('territories')
         .select('*')
         .order('name')
-        .order('name')
 
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
@@ -191,7 +194,6 @@ export function useDealManagement() {
         } else {
           console.error('Error fetching territories:', error)
         }
-        return
         return
       }
 
@@ -224,7 +226,6 @@ export function useDealManagement() {
         .from('approval_workflows')
         .select('*')
         .order('created_at', { ascending: false })
-        .order('created_at', { ascending: false })
 
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
@@ -233,7 +234,6 @@ export function useDealManagement() {
         } else {
           console.error('Error fetching approval workflows:', error)
         }
-        return
         return
       }
 
@@ -266,7 +266,6 @@ export function useDealManagement() {
         .from('win_loss_reports')
         .select('*')
         .order('created_at', { ascending: false })
-        .order('created_at', { ascending: false })
 
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
@@ -275,7 +274,6 @@ export function useDealManagement() {
         } else {
           console.error('Error fetching win/loss reports:', error)
         }
-        return
         return
       }
 
@@ -427,31 +425,11 @@ export function useDealManagement() {
 
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
-          console.log('Deals table does not exist yet')
-        } else {
-          console.error('Error assigning territory:', error)
-        }
-        return
+          toast({
             title: 'Database Setup Required',
             description: 'Please set up the deals table in your database',
             variant: 'destructive'
           })
-        } else {
-          console.error('Error deleting deal:', error)
-          toast({
-            title: 'Error',
-            description: 'Failed to delete deal',
-            variant: 'destructive'
-          })
-        }
-        } else {
-          console.error('Error updating deal:', error)
-          toast({
-            title: 'Error',
-            description: 'Failed to update deal',
-            variant: 'destructive'
-          })
-        }
         } else {
           console.error('Error updating deal stage:', error)
           toast({
@@ -477,7 +455,7 @@ export function useDealManagement() {
 
   // Update deal
   const updateDeal = async (dealId: string, updates: Partial<Deal>): Promise<boolean> => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) return false
 
     try {
       const { error } = await supabase
@@ -529,7 +507,7 @@ export function useDealManagement() {
 
   // Delete deal
   const deleteDeal = async (dealId: string): Promise<boolean> => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) return false
 
     try {
       const { error } = await supabase
@@ -560,7 +538,7 @@ export function useDealManagement() {
 
   // Assign territory
   const assignTerritory = async (dealId: string, territoryId: string): Promise<boolean> => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) return false
 
     try {
       const { error } = await supabase
@@ -674,18 +652,6 @@ export function useDealManagement() {
 
   // Calculate deal metrics
   const getDealMetrics = () => {
-    if (!deals || deals.length === 0) {
-      return {
-        totalDeals: 0,
-        totalValue: 0,
-        averageDealSize: 0,
-        winRate: 0,
-        wonDeals: 0,
-        lostDeals: 0,
-        averageSalesCycle: 0
-      }
-    }
-
     if (!deals || deals.length === 0) {
       return {
         totalDeals: 0,
