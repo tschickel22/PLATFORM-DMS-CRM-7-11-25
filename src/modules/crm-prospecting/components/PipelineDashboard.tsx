@@ -1,89 +1,101 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { TrendingUp, Users, DollarSign, Calendar, ArrowRight } from 'lucide-react'
 import { Lead } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { useLeadManagement } from '../hooks/useLeadManagement'
 
-interface PipelineDashboardProps {
-  leads: Lead[]
-  onLeadMove?: (leadId: string, newStage: string) => void
-  loading?: boolean
-}
+// Static configuration data
+const pipelineStages = [
+  { id: 'new', name: 'New Inquiry', color: 'bg-blue-100 text-blue-800' },
+  { id: 'contacted', name: 'Contacted', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'qualified', name: 'Qualified', color: 'bg-green-100 text-green-800' },
+  { id: 'converted', name: 'Converted', color: 'bg-emerald-100 text-emerald-800' },
+  { id: 'lost', name: 'Lost', color: 'bg-red-100 text-red-800' }
+]
 
-export function PipelineDashboard({ leads, onLeadMove, loading }: PipelineDashboardProps) {
-  // Static configuration data
-  const pipelineStages = ['New Inquiry', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost']
-  
-  // Ensure leads is always an array to prevent errors
-  const safeLeads = leads || []
-  
-  const [stageData, setStageData] = useState<Array<{
-    stage: string
-    count: number
-    value: number
-    conversionRate: number
-  }>>([])
+export function PipelineDashboard() {
+  const { leads, loading, error, getLeadStats } = useLeadManagement()
 
-  useEffect(() => {
-    // Calculate stage metrics
-    const data = pipelineStages.map(stage => {
-      const stageLeads = safeLeads.filter(lead => lead.customFields?.pipelineStage === stage)
-      const value = stageLeads.reduce((sum, lead) => sum + (lead.customFields?.estimatedValue || 0), 0)
+  const stats = getLeadStats()
+
+  // Calculate pipeline data
+  const pipelineData = React.useMemo(() => {
+    return pipelineStages.map(stage => {
+      const stageLeads = leads.filter(lead => lead.status === stage.id)
+      const totalValue = stageLeads.reduce((sum, lead) => {
+        const estimatedValue = lead.customFields?.estimatedValue || 0
+        return sum + (typeof estimatedValue === 'number' ? estimatedValue : 0)
+      }, 0)
       
       return {
-        stage,
+        ...stage,
         count: stageLeads.length,
-        value,
-        conversionRate: stageLeads.length > 0 ? (stageLeads.length / safeLeads.length) * 100 : 0
+        value: totalValue,
+        leads: stageLeads
       }
     })
-    
-    setStageData(data)
-  }, [safeLeads, pipelineStages])
-
-  const totalValue = stageData.reduce((sum, stage) => sum + stage.value, 0)
-  const totalLeads = stageData.reduce((sum, stage) => sum + stage.count, 0)
+  }, [leads])
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">Sales Pipeline</h1>
+          <p className="ri-page-description">Track leads through your sales process</p>
         </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading pipeline data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">Sales Pipeline</h1>
+          <p className="ri-page-description">Track leads through your sales process</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <div className="text-red-600 mb-4">
+              <TrendingUp className="h-12 w-12 mx-auto mb-2" />
+              <p className="font-semibold">Error Loading Pipeline</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Pipeline Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Page Header */}
+      <div className="ri-page-header">
+        <h1 className="ri-page-title">Sales Pipeline</h1>
+        <p className="ri-page-description">
+          Track leads through your sales process
+        </p>
+      </div>
+
+      {/* Pipeline Stats */}
+      <div className="ri-stats-grid">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pipeline Value</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
+            <div className="text-2xl font-bold">
+              ${pipelineData.reduce((sum, stage) => sum + stage.value, 0).toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +12% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalLeads}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +5% from last month
+              Across all stages
             </p>
           </CardContent>
         </Card>
@@ -94,69 +106,122 @@ export function PipelineDashboard({ leads, onLeadMove, loading }: PipelineDashbo
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24.5%</div>
+            <div className="text-2xl font-bold">
+              {stats.total > 0 ? Math.round(((stats.byStatus.converted || 0) / stats.total) * 100) : 0}%
+            </div>
             <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +2.1% from last month
+              Leads to customers
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Deal Size</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Leads</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalValue / Math.max(totalLeads, 1))}</div>
+            <div className="text-2xl font-bold">
+              {leads.filter(lead => !['converted', 'lost'].includes(lead.status)).length}
+            </div>
             <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +8% from last month
+              In progress
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.recentActivity}</div>
+            <p className="text-xs text-muted-foreground">
+              Last 7 days
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Pipeline Stages */}
+      <div className="grid gap-6 md:grid-cols-5">
+        {pipelineData.map((stage, index) => (
+          <Card key={stage.id} className="relative">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">{stage.name}</CardTitle>
+                {index < pipelineData.length - 1 && (
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold">{stage.count}</div>
+                <div className="text-xs text-muted-foreground">
+                  ${stage.value.toLocaleString()}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {stage.leads.slice(0, 3).map((lead) => (
+                  <div
+                    key={lead.id}
+                    className="p-2 bg-muted/30 rounded-md text-sm"
+                  >
+                    <div className="font-medium">
+                      {lead.firstName} {lead.lastName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {lead.source}
+                    </div>
+                  </div>
+                ))}
+                
+                {stage.leads.length > 3 && (
+                  <div className="text-xs text-muted-foreground text-center py-1">
+                    +{stage.leads.length - 3} more
+                  </div>
+                )}
+                
+                {stage.leads.length === 0 && (
+                  <div className="text-xs text-muted-foreground text-center py-4">
+                    No leads in this stage
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Pipeline Progress */}
       <Card>
         <CardHeader>
-          <CardTitle>Sales Pipeline</CardTitle>
+          <CardTitle>Pipeline Health</CardTitle>
           <CardDescription>
-            Track leads through your sales process
+            Overview of lead progression through your sales pipeline
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-5">
-            {pipelineStages.map((stage, index) => {
-              const data = stageData.find(s => s.stage === stage)
-              const isLast = index === pipelineStages.length - 1
+          <div className="space-y-6">
+            {pipelineData.map((stage) => {
+              const percentage = stats.total > 0 ? (stage.count / stats.total) * 100 : 0
               
               return (
-                <div key={stage} className="flex items-center">
-                  <div className="flex-1">
-                    <Card className="h-32">
-                      <CardContent className="p-4 h-full flex flex-col justify-between">
-                        <div>
-                          <h3 className="font-medium text-sm">{stage}</h3>
-                          <div className="text-2xl font-bold">{data?.count || 0}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatCurrency(data?.value || 0)}
-                          </div>
-                          <Progress 
-                            value={data?.conversionRate || 0} 
-                            className="h-1 mt-1"
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  {!isLast && (
-                    <div className="mx-2 flex-shrink-0">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <div key={stage.id} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Badge className={stage.color}>
+                        {stage.name}
+                      </Badge>
+                      <span className="text-sm font-medium">{stage.count} leads</span>
                     </div>
-                  )}
+                    <span className="text-sm text-muted-foreground">
+                      {percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress value={percentage} className="h-2" />
                 </div>
               )
             })}
@@ -167,38 +232,44 @@ export function PipelineDashboard({ leads, onLeadMove, loading }: PipelineDashbo
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Pipeline Activity</CardTitle>
+          <CardTitle>Recent Lead Activity</CardTitle>
           <CardDescription>
-            Latest updates and movements in your pipeline
+            Latest updates from your sales team
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {safeLeads.slice(0, 5).map(lead => (
-              <div key={lead.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div>
-                    <p className="font-medium">{lead.firstName} {lead.lastName}</p>
+            {leads
+              .filter(lead => lead.lastActivity)
+              .sort((a, b) => {
+                const dateA = a.lastActivity ? new Date(a.lastActivity).getTime() : 0
+                const dateB = b.lastActivity ? new Date(b.lastActivity).getTime() : 0
+                return dateB - dateA
+              })
+              .slice(0, 5)
+              .map((lead) => (
+                <div key={lead.id} className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
                   </div>
-                  <Badge variant="secondary">
-                    {lead.customFields?.pipelineStage || 'New Inquiry'}
-                  </Badge>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      {lead.firstName} {lead.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Status: {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {lead.lastActivity ? new Date(lead.lastActivity).toLocaleDateString() : 'No activity'}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">
-                    {formatCurrency(lead.customFields?.estimatedValue || 0)}
-                  </span>
-                  <Button variant="outline" size="sm">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Schedule
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {safeLeads.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No recent pipeline activity</p>
-                <p className="text-sm">Leads will appear here once they're added to the pipeline</p>
+              ))}
+            
+            {leads.filter(lead => lead.lastActivity).length === 0 && (
+              <div className="text-center py-6 text-muted-foreground">
+                <Calendar className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="text-sm">No recent activity</p>
               </div>
             )}
           </div>
