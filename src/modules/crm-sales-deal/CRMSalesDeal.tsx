@@ -102,7 +102,7 @@ function DealsList() {
     createApprovalWorkflow,
     createWinLossReport,
     getDealMetrics
-function DealsList({ deals = [] }: { deals?: Deal[] }) {
+  } = useDealManagement()
 
   const { leads, salesReps } = useLeadManagement()
   const { vehicles } = useInventoryManagement()
@@ -113,7 +113,6 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
   
   // Use sample deals for now - will be replaced with Supabase hook in future phases
-  const deals = sampleDeals
   const [showDealForm, setShowDealForm] = useState(false)
   const [activeTab, setActiveTab] = useState('pipeline')
   const [showDealDetail, setShowDealDetail] = useState(false)
@@ -222,8 +221,6 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
       id: 'prod-002',
       name: 'Premium Interior Upgrade',
       price: 2200,
-    if (!deals || !Array.isArray(deals)) return []
-    
       category: 'upgrade'
     },
     {
@@ -232,7 +229,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
       price: 3500,
       category: 'accessory'
     }
-  }, [deals, searchQuery, stageFilter, repFilter])
+  ])
 
   return (
     <div className="space-y-8">
@@ -433,7 +430,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                             <Target className="h-3 w-3 mr-2 text-purple-500" />
                             {deal.probability}% probability
                           </span>
-            {dealStages.map(stage => (
+                          <span className="flex items-center">
                             <MapPin className="h-3 w-3 mr-2 text-orange-500" />
                             {territories.find(t => t.id === deal.territoryId)?.name || 'No Territory'}
                           </span>
@@ -447,7 +444,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                     </div>
                     <div className="ri-action-buttons">
                       <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-            {['Jamie Closer', 'Avery Seller', 'Morgan Deal'].map(rep => (
+                        e.stopPropagation()
                         handleDealClick(deal)
                       }}>
                         View
@@ -457,7 +454,7 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                           e.stopPropagation()
                           handleCreateApproval(deal.id, 'deal_value')
                         }}>
-        {filteredDeals?.map((deal) => (
+                          Approve
                         </Button>
                       )}
                     </div>
@@ -465,13 +462,12 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
                 ))}
 
                 {filteredDeals.length === 0 && (
-                <Badge className={stageColors[deal.stage as keyof typeof stageColors] || 'bg-gray-100 text-gray-800'}>
+                  <div className="text-center py-12">
                     <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     <p>No deals found</p>
-                <Badge className={priorityColors[deal.priority as keyof typeof priorityColors] || 'bg-gray-100 text-gray-800'}>
                   </div>
                 )}
-              <DealsList deals={deals} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -511,11 +507,11 @@ function DealsList({ deals = [] }: { deals?: Deal[] }) {
         <TabsContent value="approvals" className="space-y-6">
           <ApprovalWorkflows 
             deals={deals}
-          <DealPipeline deals={deals} />
+            approvalWorkflows={approvalWorkflows}
             onApprove={() => {}}
             onReject={() => {}}
             onEscalate={() => {}}
-          <DealMetrics deals={deals} />
+          />
         </TabsContent>
       </Tabs>
     </div>
