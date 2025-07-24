@@ -250,7 +250,7 @@ export default function Settings() {
           <div className="bg-blue-50 p-4 rounded-md">
             <p className="text-sm text-blue-700">
               <strong>Note:</strong> Database connection is managed through environment variables. 
-              Use the "Connect to Supabase" button in the top right to configure your connection.
+              Use the "Connect to Supabase\" button in the top right to configure your connection.
             </p>
           </div>
         </CardContent>
