@@ -28,6 +28,13 @@ interface DealFormProps {
 export function DealForm({ deal, customers, salesReps, territories, products, onSave, onCancel }: DealFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  
+  // Ensure all props are arrays to prevent map errors
+  const safeCustomers = Array.isArray(customers) ? customers : []
+  const safeSalesReps = Array.isArray(salesReps) ? salesReps : []
+  const safeTerritories = Array.isArray(territories) ? territories : []
+  const safeProducts = Array.isArray(products) ? products : []
+  
   const [formData, setFormData] = useState<Partial<Deal>>({
     name: '',
     customerId: '',
@@ -72,7 +79,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
   // Update customer name when customer is selected
   useEffect(() => {
     if (formData.customerId) {
-      const customer = customers.find(c => c.id === formData.customerId)
+      const customer = safeCustomers.find(c => c.id === formData.customerId)
       if (customer) {
         setFormData(prev => ({
           ...prev,
@@ -80,7 +87,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
         }))
       }
     }
-  }, [formData.customerId, customers])
+  }, [formData.customerId, safeCustomers])
 
   // Calculate total value when products change
   useEffect(() => {
@@ -181,7 +188,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
   }
 
   const handleProductSelect = (productId: string) => {
-    const product = products.find(p => p.id === productId)
+    const product = safeProducts.find(p => p.id === productId)
     if (product) {
       setNewProduct({
         productId: product.id,
@@ -275,7 +282,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                         </Button>
                       </div>
                       <div className="px-2 py-1 border-t"></div>
-                      {customers.map(customer => (
+                      {safeCustomers.map(customer => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.firstName} {customer.lastName}
                         </SelectItem>
@@ -369,7 +376,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                       <SelectValue placeholder="Select sales rep" />
                     </SelectTrigger>
                     <SelectContent>
-                      {salesReps.map(rep => (
+                      {safeSalesReps.map(rep => (
                         <SelectItem key={rep.id} value={rep.id}>
                           {rep.name}
                         </SelectItem>
@@ -388,7 +395,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                       <SelectValue placeholder="Select territory" />
                     </SelectTrigger>
                     <SelectContent>
-                      {territories.map(territory => (
+                      {safeTerritories.map(territory => (
                         <SelectItem key={territory.id} value={territory.id}>
                           {territory.name}
                         </SelectItem>
@@ -424,7 +431,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                             <SelectValue placeholder="Select product" />
                           </SelectTrigger>
                           <SelectContent>
-                            {products.map(product => (
+                            {safeProducts.map(product => (
                               <SelectItem key={product.id} value={product.id}>
                                 {product.name} - {formatCurrency(product.price)}
                               </SelectItem>

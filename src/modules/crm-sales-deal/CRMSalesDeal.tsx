@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Target, Plus, Search, Filter, DollarSign, TrendingUp, Users, MapPin, Settings, BarChart3 } from 'lucide-react'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { useDealManagement } from './hooks/useDealManagement'
 import { DealPipeline } from './components/DealPipeline'
 import { DealMetrics } from './components/DealMetrics'
@@ -39,7 +40,8 @@ const stageColors = {
 function DealsList() {
   const {
     deals = [],
-    territories = [],
+    deals,
+    territories,
     approvalWorkflows,
     winLossReports,
     createDeal,
@@ -50,10 +52,32 @@ function DealsList() {
     getDealMetrics,
     loading,
     error
-  } = useDealManagement() || {}
+  } = useDealManagement()
 
-  const { leads, salesReps } = useLeadManagement()
+  const { leads } = useLeadManagement()
   const { vehicles } = useInventoryManagement()
+  
+  // Ensure all data is arrays to prevent map errors
+  const safeDeals = Array.isArray(deals) ? deals : []
+  const safeTerritories = Array.isArray(territories) ? territories : []
+  const safeApprovalWorkflows = Array.isArray(approvalWorkflows) ? approvalWorkflows : []
+  const safeWinLossReports = Array.isArray(winLossReports) ? winLossReports : []
+  const safeLeads = Array.isArray(leads) ? leads : []
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : []
+  
+  // Extract unique sales reps from leads data
+  const salesReps = safeLeads
+    .filter(lead => lead.assignedTo)
+    .reduce((unique: any[], lead) => {
+      const existing = unique.find(rep => rep.id === lead.assignedTo)
+      if (!existing) {
+        unique.push({
+          id: lead.assignedTo,
+          name: lead.assignedTo // In real app, this would be resolved to actual name
+        })
+      }
+      return unique
+    }, [])
   
   const [searchTerm, setSearchTerm] = useState('')
   const [stageFilter, setStageFilter] = useState<string>('all')
@@ -74,7 +98,7 @@ function DealsList() {
     return statusColors[status] || 'bg-gray-50 text-gray-700 border-gray-200'
   }
 
-  const filteredDeals = (deals || []).filter(deal => {
+  const filteredDeals = safeDeals.filter(deal => {
     const matchesSearch = 
       (deal.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       deal.customerName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -90,7 +114,7 @@ function DealsList() {
       updateDealStage && await updateDealStage(dealId, newStage)
 
       // Show success toast
-      const deal = deals.find((d: any) => d.id === dealId)
+      const deal = safeDeals.find((d: any) => d.id === dealId)
       if (deal) {
         toast({
           title: 'Deal Stage Updated',
@@ -144,12 +168,11 @@ function DealsList() {
   const metrics = getDealMetrics()
 
   // Products from Supabase only
-  const products = (vehicles || []).map(vehicle => ({
+  const products = safeVehicles.map(vehicle => ({
     id: vehicle.id,
     name: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
     price: vehicle.price,
     category: 'vehicle'
-  }))
 
   if (loading) {
     return (
@@ -191,9 +214,9 @@ function DealsList() {
       {showDealForm && (
         <DealForm
           deal={selectedDeal || undefined}
-          customers={leads}
+          customers={safeLeads}
           salesReps={salesReps}
-          territories={territories}
+          territories={safeTerritories}
           products={products}
           onSave={handleSaveDeal}
           onCancel={() => {
@@ -266,7 +289,7 @@ function DealsList() {
             <MapPin className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-900">{territories.length}</div>
+            <div className="text-2xl font-bold text-orange-900">{safeTerritories.length}</div>
             <p className="text-xs text-orange-600 flex items-center mt-1">
               <Users className="h-3 w-3 mr-1" />
               Active territories
@@ -287,7 +310,7 @@ function DealsList() {
 
         <TabsContent value="pipeline" className="space-y-6">
           <DealPipeline 
-            deals={deals} 
+            deals={safeDeals} 
             onDealStageChange={handleDealStageChange} 
             onDealClick={handleDealClick}
           />
@@ -323,6 +346,7 @@ function DealsList() {
               <SelectContent>
                 <SelectItem value="all">All Reps</SelectItem>
                 {(salesReps || []).map(rep => (
+                {salesReps.map(rep => (
                   <SelectItem key={rep.id} value={rep.id}>
                     {rep.name}
                   </SelectItem>
@@ -373,7 +397,7 @@ function DealsList() {
                           </span>
                           <span className="flex items-center">
                             <MapPin className="h-3 w-3 mr-2 text-orange-500" />
-                            {territories.find(t => t.id === deal.territoryId)?.name || 'No Territory'}
+                            {safeTerritories.find(t => t.id === deal.territoryId)?.name || 'No Territory'}
                           </span>
                         </div>
                         {deal.notes && (
@@ -426,8 +450,8 @@ function DealsList() {
 
             <TabsContent value="win-loss">
               <WinLossAnalysis 
-                deals={deals} 
-                winLossReports={winLossReports || []}
+                deals={safeDeals} 
+                winLossReports={safeWinLossReports}
                 onCreateReport={handleCreateWinLossReport}
               />
             </TabsContent>
@@ -436,9 +460,9 @@ function DealsList() {
 
         <TabsContent value="territories" className="space-y-6">
           <TerritoryManagement 
-            territories={territories}
-            salesReps={salesReps || []}
-            deals={deals}
+            territories={safeTerritories}
+            salesReps={salesReps}
+            deals={safeDeals}
             onCreateTerritory={() => {}}
             onUpdateTerritory={() => {}}
             onDeleteTerritory={() => {}}
@@ -447,8 +471,8 @@ function DealsList() {
 
         <TabsContent value="approvals" className="space-y-6">
           <ApprovalWorkflows 
-            deals={deals}
-            approvalWorkflows={approvalWorkflows || []}
+            deals={safeDeals}
+            approvalWorkflows={safeApprovalWorkflows}
             onApprove={() => {}}
             onReject={() => {}}
             onEscalate={() => {}}
@@ -461,9 +485,11 @@ function DealsList() {
 
 export default function CRMSalesDeal() {
   return (
-    <Routes>
-      <Route path="/" element={<DealsList />} />
-      <Route path="/*" element={<DealsList />} />
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/" element={<DealsList />} />
+        <Route path="/*" element={<DealsList />} />
+      </Routes>
+    </ErrorBoundary>
   )
 }
