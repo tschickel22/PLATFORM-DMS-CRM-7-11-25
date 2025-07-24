@@ -2,161 +2,93 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
+import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
+
+export interface Deal {
+  id: string
+  customer_id?: string
+  customer_name: string
+  customer_email?: string
+  customer_phone?: string
+  vehicle_id?: string
+  vehicle_info?: string
+  stage: string
+  amount: number
+  source?: string
+  type?: string
+  priority?: string
+  rep_id?: string
+  rep_name?: string
+  probability?: number
+  expected_close_date?: string
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Territory {
+  id: string
+  name: string
+  description?: string
+  rep_ids: string[]
+  zipcodes: string[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface WinLossReport {
+  id: string
+  deal_id: string
+  outcome: string
+  reason?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ApprovalWorkflow {
+  id: string
+  deal_id: string
+  workflow_type: string
+  status: string
+  approver_id?: string
+  approved_at?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
 
 export function useDealManagement() {
   const { user } = useAuth()
   const { toast } = useToast()
   
-  const [deals, setDeals] = useState<any[]>([])
-  const [territories, setTerritories] = useState<any[]>([])
-  const [approvalWorkflows, setApprovalWorkflows] = useState<any[]>([])
-  const [winLossReports, setWinLossReports] = useState<any[]>([])
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [territories, setTerritories] = useState<Territory[]>([])
+  const [winLossReports, setWinLossReports] = useState<WinLossReport[]>([])
+  const [approvalWorkflows, setApprovalWorkflows] = useState<ApprovalWorkflow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Check if user is authenticated before making any requests
-  const isAuthenticated = !!user
-
-  const fetchDeals = async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping deals fetch')
-      setDeals([])
-      return
-    }
-
-    try {
-      console.log('Fetching deals from Supabase...')
-      const { data, error } = await supabase
-        .from('deals')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.warn('Deals table does not exist yet, using empty array')
-          setDeals([])
-          return
-        }
-        throw error
-      }
-
-      console.log('Deals fetched successfully:', data?.length || 0)
-      setDeals(data || [])
-    } catch (error: any) {
-      console.error('Error fetching deals:', error)
-      setError(`Failed to fetch deals: ${error.message}`)
-      setDeals([])
-      
-      toast({
-        title: 'Error Loading Deals',
-        description: 'Unable to load deals. Please check your connection.',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const fetchTerritories = async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping territories fetch')
-      setTerritories([])
-      return
-    }
-
-    try {
-      console.log('Fetching territories from Supabase...')
-      const { data, error } = await supabase
-        .from('territories')
-        .select('*')
-        .order('name', { ascending: true })
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.warn('Territories table does not exist yet, using empty array')
-          setTerritories([])
-          return
-        }
-        throw error
-      }
-
-      console.log('Territories fetched successfully:', data?.length || 0)
-      setTerritories(data || [])
-    } catch (error: any) {
-      console.error('Error fetching territories:', error)
-      setTerritories([])
-    }
-  }
-
-  const fetchApprovalWorkflows = async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping approval workflows fetch')
-      setApprovalWorkflows([])
-      return
-    }
-
-    try {
-      console.log('Fetching approval workflows from Supabase...')
-      const { data, error } = await supabase
-        .from('approval_workflows')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.warn('Approval workflows table does not exist yet, using empty array')
-          setApprovalWorkflows([])
-          return
-        }
-        throw error
-      }
-
-      console.log('Approval workflows fetched successfully:', data?.length || 0)
-      setApprovalWorkflows(data || [])
-    } catch (error: any) {
-      console.error('Error fetching approval workflows:', error)
-      setApprovalWorkflows([])
-    }
-  }
-
-  const fetchWinLossReports = async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping win/loss reports fetch')
-      setWinLossReports([])
-      return
-    }
-
-    try {
-      console.log('Fetching win/loss reports from Supabase...')
-      const { data, error } = await supabase
-        .from('win_loss_reports')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.warn('Win/loss reports table does not exist yet, using empty array')
-          setWinLossReports([])
-          return
-        }
-        throw error
-      }
-
-      console.log('Win/loss reports fetched successfully:', data?.length || 0)
-      setWinLossReports(data || [])
-    } catch (error: any) {
-      console.error('Error fetching win/loss reports:', error)
-      setWinLossReports([])
-    }
-  }
-
-  const fetchAllData = async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, clearing all data')
+  // Fetch all data when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      fetchAllData()
+    } else {
+      // Clear data when user is not authenticated
       setDeals([])
       setTerritories([])
-      setApprovalWorkflows([])
       setWinLossReports([])
+      setApprovalWorkflows([])
       setLoading(false)
       setError(null)
+    }
+  }, [user])
+
+  const fetchAllData = async () => {
+    if (!user) {
+      console.log('User not authenticated, skipping data fetch')
+      setLoading(false)
       return
     }
 
@@ -164,24 +96,29 @@ export function useDealManagement() {
     setError(null)
 
     try {
-      console.log('Starting to fetch all CRM sales deal data...')
+      console.log('Starting to fetch CRM Sales Deal data...')
       
-      // Fetch all data in parallel
-      await Promise.all([
-        fetchDeals(),
-        fetchTerritories(),
-        fetchApprovalWorkflows(),
-        fetchWinLossReports()
-      ])
-
-      console.log('All CRM sales deal data fetched successfully')
-    } catch (error: any) {
+      // Fetch deals
+      await fetchDeals()
+      
+      // Fetch territories
+      await fetchTerritories()
+      
+      // Fetch win/loss reports
+      await fetchWinLossReports()
+      
+      // Fetch approval workflows
+      await fetchApprovalWorkflows()
+      
+      console.log('Successfully fetched all CRM Sales Deal data')
+      
+    } catch (error) {
       console.error('Global error in useDealManagement:', error)
-      setError(`Failed to load data: ${error.message}`)
+      setError('Failed to load sales deal data')
       
       toast({
-        title: 'Error Loading Data',
-        description: 'Unable to load sales deal data. Please refresh the page.',
+        title: 'Data Loading Error',
+        description: 'Unable to load sales deal data. Please try refreshing the page.',
         variant: 'destructive'
       })
     } finally {
@@ -189,19 +126,138 @@ export function useDealManagement() {
     }
   }
 
-  // Load data when component mounts or authentication changes
-  useEffect(() => {
-    fetchAllData()
-  }, [isAuthenticated])
+  const fetchDeals = async () => {
+    try {
+      console.log('Fetching deals...')
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-  const createDeal = async (dealData: any) => {
-    if (!isAuthenticated) {
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Deals table does not exist, using empty array')
+          setDeals([])
+          return
+        }
+        throw error
+      }
+
+      console.log('Deals fetched successfully:', data?.length || 0, 'records')
+      setDeals(data || [])
+      
+    } catch (error) {
+      console.error('Error fetching deals:', error)
+      console.error('Full error stack:', error)
+      
+      // Fallback to empty array on error
+      setDeals([])
+      
+      if (error instanceof Error && !error.message.includes('PGRST116')) {
+        toast({
+          title: 'Error Loading Deals',
+          description: `Failed to fetch deals: ${error.message}`,
+          variant: 'destructive'
+        })
+      }
+    }
+  }
+
+  const fetchTerritories = async () => {
+    try {
+      console.log('Fetching territories...')
+      const { data, error } = await supabase
+        .from('territories')
+        .select('*')
+        .order('name', { ascending: true })
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Territories table does not exist, using empty array')
+          setTerritories([])
+          return
+        }
+        throw error
+      }
+
+      console.log('Territories fetched successfully:', data?.length || 0, 'records')
+      setTerritories(data || [])
+      
+    } catch (error) {
+      console.error('Error fetching territories:', error)
+      console.error('Full error stack:', error)
+      
+      // Fallback to empty array on error
+      setTerritories([])
+    }
+  }
+
+  const fetchWinLossReports = async () => {
+    try {
+      console.log('Fetching win/loss reports...')
+      const { data, error } = await supabase
+        .from('win_loss_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Win/loss reports table does not exist, using empty array')
+          setWinLossReports([])
+          return
+        }
+        throw error
+      }
+
+      console.log('Win/loss reports fetched successfully:', data?.length || 0, 'records')
+      setWinLossReports(data || [])
+      
+    } catch (error) {
+      console.error('Error fetching win/loss reports:', error)
+      console.error('Full error stack:', error)
+      
+      // Fallback to empty array on error
+      setWinLossReports([])
+    }
+  }
+
+  const fetchApprovalWorkflows = async () => {
+    try {
+      console.log('Fetching approval workflows...')
+      const { data, error } = await supabase
+        .from('approval_workflows')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Approval workflows table does not exist, using empty array')
+          setApprovalWorkflows([])
+          return
+        }
+        throw error
+      }
+
+      console.log('Approval workflows fetched successfully:', data?.length || 0, 'records')
+      setApprovalWorkflows(data || [])
+      
+    } catch (error) {
+      console.error('Error fetching approval workflows:', error)
+      console.error('Full error stack:', error)
+      
+      // Fallback to empty array on error
+      setApprovalWorkflows([])
+    }
+  }
+
+  const createDeal = async (dealData: Partial<Deal>): Promise<Deal | null> => {
+    if (!user) {
       toast({
         title: 'Authentication Required',
-        description: 'Please log in to create deals.',
+        description: 'Please log in to create deals',
         variant: 'destructive'
       })
-      return
+      return null
     }
 
     try {
@@ -210,215 +266,349 @@ export function useDealManagement() {
       const { data, error } = await supabase
         .from('deals')
         .insert([{
-          customer_name: dealData.customerName || '',
-          customer_email: dealData.customerEmail || '',
-          customer_phone: dealData.customerPhone || '',
-          vehicle_info: dealData.vehicleInfo || '',
-          stage: dealData.stage || 'New',
-          amount: dealData.amount || 0,
-          source: dealData.source || '',
-          type: dealData.type || 'New Sale',
-          priority: dealData.priority || 'Medium',
-          rep_name: dealData.repName || '',
-          probability: dealData.probability || 0,
-          expected_close_date: dealData.expectedCloseDate || null,
-          notes: dealData.notes || ''
+          ...dealData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }])
         .select()
+        .single()
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Deals table does not exist, cannot create deal')
+          toast({
+            title: 'Database Error',
+            description: 'Deals table not found. Please contact support.',
+            variant: 'destructive'
+          })
+          return null
+        }
         throw error
       }
 
       console.log('Deal created successfully:', data)
       
-      // Refresh deals list
-      await fetchDeals()
+      // Add to local state
+      setDeals(prev => [data, ...prev])
       
       toast({
         title: 'Deal Created',
-        description: 'New deal has been created successfully.'
+        description: 'New deal has been created successfully'
       })
-
-      return data?.[0]
-    } catch (error: any) {
+      
+      return data
+      
+    } catch (error) {
       console.error('Error creating deal:', error)
+      console.error('Full error stack:', error)
       
       toast({
         title: 'Error Creating Deal',
-        description: `Failed to create deal: ${error.message}`,
+        description: error instanceof Error ? error.message : 'Failed to create deal',
         variant: 'destructive'
       })
       
-      throw error
+      return null
     }
   }
 
-  const updateDealStage = async (dealId: string, newStage: string) => {
-    if (!isAuthenticated) {
+  const updateDeal = async (id: string, updates: Partial<Deal>): Promise<boolean> => {
+    if (!user) {
       toast({
         title: 'Authentication Required',
-        description: 'Please log in to update deals.',
+        description: 'Please log in to update deals',
         variant: 'destructive'
       })
-      return
+      return false
     }
 
     try {
-      console.log('Updating deal stage:', dealId, newStage)
+      console.log('Updating deal:', id, updates)
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('deals')
-        .update({ stage: newStage })
-        .eq('id', dealId)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single()
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Deals table does not exist, cannot update deal')
+          return false
+        }
         throw error
       }
 
-      console.log('Deal stage updated successfully')
+      console.log('Deal updated successfully:', data)
       
-      // Refresh deals list
-      await fetchDeals()
+      // Update local state
+      setDeals(prev => prev.map(deal => 
+        deal.id === id ? { ...deal, ...data } : deal
+      ))
       
       toast({
         title: 'Deal Updated',
-        description: `Deal stage changed to ${newStage}.`
+        description: 'Deal has been updated successfully'
       })
-    } catch (error: any) {
-      console.error('Error updating deal stage:', error)
+      
+      return true
+      
+    } catch (error) {
+      console.error('Error updating deal:', error)
+      console.error('Full error stack:', error)
       
       toast({
         title: 'Error Updating Deal',
-        description: `Failed to update deal: ${error.message}`,
+        description: error instanceof Error ? error.message : 'Failed to update deal',
         variant: 'destructive'
       })
       
-      throw error
+      return false
     }
   }
 
-  const assignTerritory = async (dealId: string, territoryId: string) => {
-    if (!isAuthenticated) {
-      return
+  const deleteDeal = async (id: string): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to delete deals',
+        variant: 'destructive'
+      })
+      return false
     }
 
     try {
-      console.log('Assigning territory to deal:', dealId, territoryId)
+      console.log('Deleting deal:', id)
       
       const { error } = await supabase
         .from('deals')
-        .update({ territory_id: territoryId })
-        .eq('id', dealId)
+        .delete()
+        .eq('id', id)
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Deals table does not exist, cannot delete deal')
+          return false
+        }
         throw error
       }
 
-      console.log('Territory assigned successfully')
-      await fetchDeals()
-    } catch (error: any) {
-      console.error('Error assigning territory:', error)
-      throw error
+      console.log('Deal deleted successfully')
+      
+      // Remove from local state
+      setDeals(prev => prev.filter(deal => deal.id !== id))
+      
+      toast({
+        title: 'Deal Deleted',
+        description: 'Deal has been deleted successfully'
+      })
+      
+      return true
+      
+    } catch (error) {
+      console.error('Error deleting deal:', error)
+      console.error('Full error stack:', error)
+      
+      toast({
+        title: 'Error Deleting Deal',
+        description: error instanceof Error ? error.message : 'Failed to delete deal',
+        variant: 'destructive'
+      })
+      
+      return false
     }
   }
 
-  const createApprovalWorkflow = async (dealId: string, workflowType: string) => {
-    if (!isAuthenticated) {
-      return
+  const createTerritory = async (territoryData: Partial<Territory>): Promise<Territory | null> => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to create territories',
+        variant: 'destructive'
+      })
+      return null
     }
 
     try {
-      console.log('Creating approval workflow:', dealId, workflowType)
+      console.log('Creating new territory:', territoryData)
       
       const { data, error } = await supabase
-        .from('approval_workflows')
+        .from('territories')
         .insert([{
-          deal_id: dealId,
-          workflow_type: workflowType,
-          status: 'pending'
+          ...territoryData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }])
         .select()
+        .single()
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Territories table does not exist, cannot create territory')
+          return null
+        }
         throw error
       }
 
-      console.log('Approval workflow created successfully')
-      await fetchApprovalWorkflows()
+      console.log('Territory created successfully:', data)
       
-      return data?.[0]
-    } catch (error: any) {
-      console.error('Error creating approval workflow:', error)
-      throw error
+      // Add to local state
+      setTerritories(prev => [data, ...prev])
+      
+      toast({
+        title: 'Territory Created',
+        description: 'New territory has been created successfully'
+      })
+      
+      return data
+      
+    } catch (error) {
+      console.error('Error creating territory:', error)
+      console.error('Full error stack:', error)
+      
+      toast({
+        title: 'Error Creating Territory',
+        description: error instanceof Error ? error.message : 'Failed to create territory',
+        variant: 'destructive'
+      })
+      
+      return null
     }
   }
 
-  const createWinLossReport = async (dealId: string, outcome: 'won' | 'lost', reportData: any) => {
-    if (!isAuthenticated) {
-      return
+  const updateTerritory = async (id: string, updates: Partial<Territory>): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to update territories',
+        variant: 'destructive'
+      })
+      return false
     }
 
     try {
-      console.log('Creating win/loss report:', dealId, outcome, reportData)
+      console.log('Updating territory:', id, updates)
       
       const { data, error } = await supabase
-        .from('win_loss_reports')
-        .insert([{
-          deal_id: dealId,
-          outcome,
-          reason: reportData.reason || '',
-          notes: reportData.notes || ''
-        }])
+        .from('territories')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
         .select()
+        .single()
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Territories table does not exist, cannot update territory')
+          return false
+        }
         throw error
       }
 
-      console.log('Win/loss report created successfully')
-      await fetchWinLossReports()
+      console.log('Territory updated successfully:', data)
       
-      return data?.[0]
-    } catch (error: any) {
-      console.error('Error creating win/loss report:', error)
-      throw error
+      // Update local state
+      setTerritories(prev => prev.map(territory => 
+        territory.id === id ? { ...territory, ...data } : territory
+      ))
+      
+      toast({
+        title: 'Territory Updated',
+        description: 'Territory has been updated successfully'
+      })
+      
+      return true
+      
+    } catch (error) {
+      console.error('Error updating territory:', error)
+      console.error('Full error stack:', error)
+      
+      toast({
+        title: 'Error Updating Territory',
+        description: error instanceof Error ? error.message : 'Failed to update territory',
+        variant: 'destructive'
+      })
+      
+      return false
     }
   }
 
-  const getDealMetrics = () => {
-    const totalDeals = deals.length
-    const totalValue = deals.reduce((sum, deal) => sum + (deal.amount || 0), 0)
-    const wonDeals = deals.filter(deal => deal.stage === 'Closed Won').length
-    const lostDeals = deals.filter(deal => deal.stage === 'Closed Lost').length
-    const winRate = totalDeals > 0 ? (wonDeals / (wonDeals + lostDeals)) * 100 : 0
-    const averageDealSize = totalDeals > 0 ? totalValue / totalDeals : 0
-    const averageSalesCycle = 21 // Mock value - in real app, calculate from deal data
+  const deleteTerritory = async (id: string): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to delete territories',
+        variant: 'destructive'
+      })
+      return false
+    }
 
-    return {
-      totalDeals,
-      totalValue,
-      wonDeals,
-      lostDeals,
-      winRate,
-      averageDealSize,
-      averageSalesCycle
+    try {
+      console.log('Deleting territory:', id)
+      
+      const { error } = await supabase
+        .from('territories')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('Territories table does not exist, cannot delete territory')
+          return false
+        }
+        throw error
+      }
+
+      console.log('Territory deleted successfully')
+      
+      // Remove from local state
+      setTerritories(prev => prev.filter(territory => territory.id !== id))
+      
+      toast({
+        title: 'Territory Deleted',
+        description: 'Territory has been deleted successfully'
+      })
+      
+      return true
+      
+    } catch (error) {
+      console.error('Error deleting territory:', error)
+      console.error('Full error stack:', error)
+      
+      toast({
+        title: 'Error Deleting Territory',
+        description: error instanceof Error ? error.message : 'Failed to delete territory',
+        variant: 'destructive'
+      })
+      
+      return false
     }
   }
 
   return {
-    deals,
-    territories,
-    approvalWorkflows,
-    winLossReports,
-    createDeal,
-    updateDealStage,
-    assignTerritory,
-    createApprovalWorkflow,
-    createWinLossReport,
-    getDealMetrics,
+    // Data
+    deals: deals || [],
+    territories: territories || [],
+    winLossReports: winLossReports || [],
+    approvalWorkflows: approvalWorkflows || [],
+    
+    // State
     loading,
     error,
-    refetch: fetchAllData
+    
+    // Actions
+    createDeal,
+    updateDeal,
+    deleteDeal,
+    createTerritory,
+    updateTerritory,
+    deleteTerritory,
+    refreshData: fetchAllData
   }
 }
