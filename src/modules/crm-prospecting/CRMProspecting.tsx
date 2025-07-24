@@ -209,12 +209,12 @@ function LeadsList() {
                       </div>
                       {Object.entries(selectedLead.customFields || {}).map(([key, value]) => (
                         <div key={key}>
-                          <label className="text-sm font-medium text-muted-foreground capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </label>
-                          <p className="font-medium">{value}</p>
-                        </div>
-                      ))}
+                            <label className="text-sm font-medium text-muted-foreground capitalize">
+                              {status.replace('_', ' ')}
+                            </label>
+                            <p className="font-medium">{count}</p>
+                          </div>
+                        ))}
                     </div>
                     {selectedLead.notes && (
                       <div className="mt-4">

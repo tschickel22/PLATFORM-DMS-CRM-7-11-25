@@ -28,10 +28,6 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
     email: '',
     phone: '',
     source: '',
-    sourceId: '',
-    assignedTo: '',
-    notes: '',
-    customFields: {
       budget: '',
       timeframe: '',
       experience: '',
@@ -39,6 +35,10 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
       preferredContact: 'email'
     }
   })
+
+  // Static configuration data
+  const leadSources = ['Walk-In', 'Referral', 'Website', 'Phone Call', 'Social Media', 'Trade Show']
+  const leadStatuses = ['New', 'Contacted', 'Qualified', 'Lost', 'Converted']
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
