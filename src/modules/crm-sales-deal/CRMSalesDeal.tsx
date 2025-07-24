@@ -21,7 +21,6 @@ import { DealForm } from './components/DealForm'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
 
-import { WinLossAnalysis } from './components/WinLossAnalysis'
 import { DealDetail } from './components/DealDetail'
 import { TerritoryManagement } from './components/TerritoryManagement'
 import { ApprovalWorkflows } from './components/ApprovalWorkflows'
