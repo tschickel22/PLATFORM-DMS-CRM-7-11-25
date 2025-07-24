@@ -7,12 +7,79 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Target, Plus, Search, Filter, DollarSign, TrendingUp, Users, MapPin, Settings, BarChart3 } from 'lucide-react'
-import { Deal, DealStage, DealStatus, Territory, ApprovalWorkflow, WinLossReport } from './types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { useDealManagement } from './hooks/useDealManagement.ts'
 import { DealPipeline } from './components/DealPipeline'
+// Static configuration data
+const dealStages = ['New', 'Qualified', 'Proposal Sent', 'Negotiation', 'Closed Won', 'Closed Lost']
+const dealSources = ['Walk-in', 'Online', 'Referral', 'Trade Show', 'Phone Call', 'Email Campaign']
+const dealTypes = ['New Sale', 'Trade-in', 'Lease', 'Financing']
+const priorities = ['Low', 'Medium', 'High', 'Urgent']
+
+const stageColors = {
+  'New': 'bg-gray-100 text-gray-800',
+  'Qualified': 'bg-blue-100 text-blue-800',
+  'Proposal Sent': 'bg-yellow-100 text-yellow-800',
+  'Negotiation': 'bg-orange-100 text-orange-800',
+  'Closed Won': 'bg-green-100 text-green-800',
+  'Closed Lost': 'bg-red-100 text-red-800'
+}
+
+const priorityColors = {
+  'Low': 'bg-gray-100 text-gray-800',
+  'Medium': 'bg-blue-100 text-blue-800',
+  'High': 'bg-orange-100 text-orange-800',
+  'Urgent': 'bg-red-100 text-red-800'
+}
+
+// Mock data for now - will be replaced with Supabase in future phases
+const sampleDeals = [
+  {
+    id: 'deal-001',
+    customerId: 'cust-001',
+    customerName: 'John Smith',
+    customerEmail: 'john.smith@email.com',
+    customerPhone: '(555) 123-4567',
+    vehicleId: 'veh-001',
+    vehicleInfo: '2023 Forest River Cherokee 274RK',
+    stage: 'Qualified',
+    amount: 35000,
+    source: 'Referral',
+    type: 'New Sale',
+    priority: 'High',
+    repId: 'rep-001',
+    repName: 'Jamie Closer',
+    probability: 75,
+    expectedCloseDate: '2024-02-15',
+    createdAt: '2024-01-10T09:30:00Z',
+    updatedAt: '2024-01-20T14:22:00Z',
+    notes: 'Customer very interested, ready to move forward with financing'
+  },
+  {
+    id: 'deal-002',
+    customerId: 'cust-002',
+    customerName: 'Maria Rodriguez',
+    customerEmail: 'maria.rodriguez@email.com',
+    customerPhone: '(555) 987-6543',
+    vehicleId: 'veh-002',
+    vehicleInfo: '2024 Keystone Montana 3761FL',
+    stage: 'Proposal Sent',
+    amount: 62000,
+    source: 'Trade Show',
+    type: 'New Sale',
+    priority: 'Medium',
+    repId: 'rep-002',
+    repName: 'Avery Seller',
+    probability: 60,
+    expectedCloseDate: '2024-02-28',
+    createdAt: '2024-01-05T11:15:00Z',
+    updatedAt: '2024-01-18T16:45:00Z',
+    notes: 'Proposal sent, waiting for customer decision'
+  }
+]
+
 import { DealMetrics } from './components/DealMetrics'
 import { WinLossAnalysis } from './components/WinLossAnalysis'
 import { DealDetail } from './components/DealDetail'
@@ -35,7 +102,7 @@ function DealsList() {
     createApprovalWorkflow,
     createWinLossReport,
     getDealMetrics
-  } = useDealManagement()
+function DealsList({ deals = [] }: { deals?: Deal[] }) {
 
   const { leads, salesReps } = useLeadManagement()
   const { vehicles } = useInventoryManagement()
@@ -44,6 +111,9 @@ function DealsList() {
   const [stageFilter, setStageFilter] = useState<string>('all')
   const [repFilter, setRepFilter] = useState<string>('all')
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
+  
+  // Use sample deals for now - will be replaced with Supabase hook in future phases
+  const deals = sampleDeals
   const [showDealForm, setShowDealForm] = useState(false)
   const [activeTab, setActiveTab] = useState('pipeline')
   const [showDealDetail, setShowDealDetail] = useState(false)
@@ -152,6 +222,8 @@ function DealsList() {
       id: 'prod-002',
       name: 'Premium Interior Upgrade',
       price: 2200,
+    if (!deals || !Array.isArray(deals)) return []
+    
       category: 'upgrade'
     },
     {
@@ -160,7 +232,7 @@ function DealsList() {
       price: 3500,
       category: 'accessory'
     }
-  ])
+  }, [deals, searchQuery, stageFilter, repFilter])
 
   return (
     <div className="space-y-8">
@@ -361,7 +433,7 @@ function DealsList() {
                             <Target className="h-3 w-3 mr-2 text-purple-500" />
                             {deal.probability}% probability
                           </span>
-                          <span className="flex items-center">
+            {dealStages.map(stage => (
                             <MapPin className="h-3 w-3 mr-2 text-orange-500" />
                             {territories.find(t => t.id === deal.territoryId)?.name || 'No Territory'}
                           </span>
@@ -375,7 +447,7 @@ function DealsList() {
                     </div>
                     <div className="ri-action-buttons">
                       <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-                        e.stopPropagation()
+            {['Jamie Closer', 'Avery Seller', 'Morgan Deal'].map(rep => (
                         handleDealClick(deal)
                       }}>
                         View
@@ -385,7 +457,7 @@ function DealsList() {
                           e.stopPropagation()
                           handleCreateApproval(deal.id, 'deal_value')
                         }}>
-                          Request Approval
+        {filteredDeals?.map((deal) => (
                         </Button>
                       )}
                     </div>
@@ -393,13 +465,13 @@ function DealsList() {
                 ))}
 
                 {filteredDeals.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
+                <Badge className={stageColors[deal.stage as keyof typeof stageColors] || 'bg-gray-100 text-gray-800'}>
                     <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     <p>No deals found</p>
-                    <p className="text-sm">Create your first deal to get started</p>
+                <Badge className={priorityColors[deal.priority as keyof typeof priorityColors] || 'bg-gray-100 text-gray-800'}>
                   </div>
                 )}
-              </div>
+              <DealsList deals={deals} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -439,11 +511,11 @@ function DealsList() {
         <TabsContent value="approvals" className="space-y-6">
           <ApprovalWorkflows 
             deals={deals}
-            approvalWorkflows={approvalWorkflows}
+          <DealPipeline deals={deals} />
             onApprove={() => {}}
             onReject={() => {}}
             onEscalate={() => {}}
-          />
+          <DealMetrics deals={deals} />
         </TabsContent>
       </Tabs>
     </div>
