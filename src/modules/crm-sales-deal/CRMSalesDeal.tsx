@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { getmetrics } from './hooks/useDealManagement'
+import { getDealMetrics } from './hooks/useDealManagement'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Target, Plus, Search, Filter, DollarSign, TrendingUp, Users, MapPin, Settings, BarChart3 } from 'lucide-react'
@@ -49,7 +49,7 @@ const {
   assignTerritory,
   createApprovalWorkflow,
   createWinLossReport,
-  getmetrics,
+  getDealMetrics,
   loading,
   error
 } = useDealManagement()
@@ -87,16 +87,16 @@ const {
   const [showDealForm, setShowDealForm] = useState(false)
   
   // Get metrics using the standalone function
-  const metrics = React.useMemo(() => {
+  const dealMetrics = React.useMemo(() => {
     try {
-      if (typeof getmetrics === 'function') {
-        return getmetrics()
+      if (typeof getDealMetrics === 'function') {
+        return getDealMetrics()
       } else {
-        console.error('getmetrics is not defined or not a function')
+        console.error('getDealMetrics is not defined or not a function')
         return null
       }
     } catch (error) {
-      console.error('Error calling getmetrics:', error)
+      console.error('Error calling getDealMetrics:', error)
       return null
     }
   }, [])
@@ -265,10 +265,10 @@ const {
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{formatCurrency(metrics.totalValue)}</div>
+            <div className="text-2xl font-bold text-blue-900">{formatCurrency(dealMetrics?.totalValue || 0)}</div>
             <p className="text-xs text-blue-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {metrics.totalDeals} active deals
+              {dealMetrics?.totalDeals || 0} active deals
             </p>
           </CardContent>
         </Card>
@@ -278,10 +278,10 @@ const {
             <Target className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">{metrics.winRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-green-900">{dealMetrics?.winRate?.toFixed(1) || '0.0'}%</div>
             <p className="text-xs text-green-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {metrics.wonDeals} won deals
+              {dealMetrics?.wonDeals} won deals
             </p>
           </CardContent>
         </Card>
@@ -291,10 +291,10 @@ const {
             <DollarSign className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">{formatCurrency(metrics.averageDealSize)}</div>
+            <div className="text-2xl font-bold text-purple-900">{formatCurrency(dealMetrics?.averageDealSize)}</div>
             <p className="text-xs text-purple-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {metrics.averageSalesCycle.toFixed(0)} day cycle
+              {dealMetrics?.averageSalesCycle?.toFixed(0) || '0'} day cycle
             </p>
           </CardContent>
         </Card>
@@ -459,7 +459,7 @@ const {
             </TabsList>
 
             <TabsContent value="metrics">
-              <metrics metrics={metrics} />
+              <Metrics metrics={dealMetrics} />
             </TabsContent>
 
             <TabsContent value="win-loss">
