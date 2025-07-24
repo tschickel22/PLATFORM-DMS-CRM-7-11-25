@@ -21,13 +21,13 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-  // Static configuration data
-  const leadSources = ['Walk-In', 'Referral', 'Website', 'Phone Call', 'Social Media', 'Trade Show']
-  const leadStatuses = ['New', 'Contacted', 'Qualified', 'Lost', 'Converted']
-  
     email: '',
     phone: '',
     source: '',
+    sourceId: '',
+    assignedTo: '',
+    notes: '',
+    customFields: {
       budget: '',
       timeframe: '',
       experience: '',
@@ -213,7 +213,7 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                 
                 <div>
                   <Label htmlFor="phone">Phone Number *</Label>
-                    {leadSources.map(source => (
+                  <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
@@ -351,7 +351,7 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select contact method" />
-                    {leadStatuses.map(status => (
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="email">Email</SelectItem>
                       <SelectItem value="phone">Phone</SelectItem>
