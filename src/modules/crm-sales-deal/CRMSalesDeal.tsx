@@ -21,13 +21,6 @@ import { DealForm } from './components/DealForm'
 import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
 
-import { DealDetail } from './components/DealDetail'
-import { TerritoryManagement } from './components/TerritoryManagement'
-import { ApprovalWorkflows } from './components/ApprovalWorkflows'
-import { DealForm } from './components/DealForm'
-import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
-import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
-
 // Static configuration data
 const dealStages = ['New', 'Qualified', 'Proposal Sent', 'Negotiation', 'Closed Won', 'Closed Lost']
 const dealSources = ['Walk-in', 'Online', 'Referral', 'Trade Show', 'Phone Call', 'Email Campaign']
