@@ -355,7 +355,7 @@ function InventoryDashboard() {
   )
 }
 
-export default function InventoryManagement() {
+function InventoryManagement() {
   return (
     <Routes>
       <Route path="/" element={<InventoryDashboard />} />
@@ -363,3 +363,5 @@ export default function InventoryManagement() {
     </Routes>
   )
 }
+
+export default InventoryManagement
