@@ -19,6 +19,9 @@ export function usePdiSupabase() {
   const [usingFallback, setUsingFallback] = useState(false)
   const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
   const [connectionAttempted, setConnectionAttempted] = useState(false)
+  const [supabaseStatus, setSupabaseStatus] = useState<{
+    checklists: { connected: boolean; error: string | undefined; count: number };
+    settings: { connected: boolean; error: string | undefined; count: number };
   }>({
     checklists: { connected: false, error: undefined, count: 0 },
     settings: { connected: false, error: undefined, count: 0 }
@@ -28,9 +31,9 @@ export function usePdiSupabase() {
   // UUID validation regex (avoiding external dependency)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-        console.warn('⚠️ Invalid companyId. Using fallback PDI data.')
   useEffect(() => {
     if (!session?.user?.app_metadata?.company_id) {
+      console.warn('⚠️ Invalid companyId. Using fallback PDI data.')
       console.warn('⚠️ No valid company ID found. PDI settings using fallback UUID.')
     }
   }, [session?.user?.app_metadata?.company_id])
@@ -208,7 +211,7 @@ export function usePdiSupabase() {
       setLoading(false)
     }
   }
-      let query = supabase
+
   const loadPdiSettings = async (companyId: string) => {
     console.log('📋 [PDI Settings] Loading settings for company:', companyId)
     
@@ -230,7 +233,7 @@ export function usePdiSupabase() {
     
     try {
       console.log('⏳ [PDI Settings] Executing Supabase query for pdi_settings...')
-      const { data, error } = await supabase
+      let query = supabase
         .from('pdi_settings')
         .select('*')
         .order('created_at', { ascending: false })
@@ -328,7 +331,7 @@ export function usePdiSupabase() {
     
     try {
       // Use upsert to create or update the setting
-      let query = supabase
+      const { data, error } = await supabase
         .from('pdi_settings')
         .upsert({
           company_id: companyId,
@@ -381,12 +384,7 @@ export function usePdiSupabase() {
         title: 'Error',
         description: 'Failed to update PDI setting',
         variant: 'destructive'
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId)
-      }
-      
-      const { data, error } = await query
+      })
       throw error
     }
   }
@@ -431,6 +429,7 @@ export function usePdiSupabase() {
         technician: data.technician || '',
         status: data.status || 'Not Started',
         checklist_data: data.checklist_data || []
+      }
 
       // Insert into Supabase
       const { data: insertedData, error } = await supabase
@@ -496,13 +495,14 @@ export function usePdiSupabase() {
       Object.keys(updateData).forEach(key => {
         if (updateData[key as keyof typeof updateData] === undefined) {
           delete updateData[key as keyof typeof updateData]
+        }
       })
 
       // Update in Supabase
       const { data, error } = await supabase
         .from('pdi_checklists')
         .update(updateData)
-        .upsert([{ ...settingData, ...(companyId && { company_id: companyId }) }])
+        .eq('id', id)
         .select()
         .single()
 
@@ -542,22 +542,9 @@ export function usePdiSupabase() {
     try {
       // Delete from Supabase
       const { error } = await supabase
-    const rawCompanyId = session?.user?.app_metadata?.company_id
-    const isValidCompanyId = uuidRegex.test(rawCompanyId)
-    const companyId = isValidCompanyId ? rawCompanyId : null
-    
-    if (!companyId) {
-      console.warn('⚠️ Invalid companyId. Cannot get PDI setting.')
-      let query = supabase
-    }
-
+        .from('pdi_checklists')
         .delete()
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId)
-      }
-      
-      const { data, error } = await query.single()
+        .eq('id', id)
 
       if (error) {
         console.error('❌ [PDI Checklists] Delete error:', error.message)
@@ -600,4 +587,4 @@ export function usePdiSupabase() {
   }
 
   return hookReturn
-};
+}
