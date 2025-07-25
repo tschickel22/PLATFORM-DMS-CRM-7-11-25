@@ -1,3 +1,28 @@
+              <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Agreement Vault</h1>
+      
+      {loading && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-2">Loading agreements...</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+          <p className="text-red-800">Error: {error}</p>
+        </div>
+      )}
+      
+      {!loading && !error && (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="bg-white p-4 rounded-lg border">
+              <h3 className="font-semibold">Total Agreements</h3>
+              <p className="text-2xl font-bold">{agreements.length}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg border">
+              <h3 className="font-semibold">Templates</h3>
               <p className="text-2xl font-bold">{templates.length}</p>
             </div>
             <div className="bg-white p-4 rounded-lg border">
@@ -35,28 +60,4 @@
           </div>
         </div>
       )}
-          <p className="text-red-800">Error: {error}</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-      )}
-      {error && (
-      
-      
-      {!loading && !error && (
-      )}
-        <div className="space-y-4">
-        </div>
-          <div className="grid gap-4 md:grid-cols-3">
-          <p className="text-muted-foreground mt-2">Loading agreements...</p>
-            <div className="bg-white p-4 rounded-lg border">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <h3 className="font-semibold">Total Agreements</h3>
-        <div className="text-center py-8">
-              <p className="text-2xl font-bold">{agreements.length}</p>
-      {loading && (
-            </div>
-      
-            <div className="bg-white p-4 rounded-lg border">
-      <h1 className="text-2xl font-bold mb-4">Agreement Vault</h1>
-              <h3 className="font-semibold">Templates</h3>
-    <div className="p-6">
+    </div>
