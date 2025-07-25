@@ -120,9 +120,8 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.length > 0 ? (
+        {stats.length > 0 ? 
           stats.map((stat) => (
-            
           <Card key={stat.name}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -139,8 +138,8 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
-        ))
-        ) : (
+          ))
+         : (
           <div className="col-span-4 text-center py-8 text-muted-foreground">
             <p>No stats available</p>
           </div>

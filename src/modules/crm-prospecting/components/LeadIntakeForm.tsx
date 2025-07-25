@@ -8,8 +8,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 import { Plus, Save, X } from 'lucide-react'
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 import { LeadIntakeForm, LeadFormField, LeadSource } from '../types'
 import { useLeadManagement } from '../hooks/useLeadManagement'
 
