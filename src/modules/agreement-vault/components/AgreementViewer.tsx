@@ -7,7 +7,6 @@ import { FileText, Download, Send, Eye, Calendar, User, Car, FileCheck, Clock, M
 import { Agreement, Document } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { mockAgreements } from '@/mocks/agreementsMock'
-import { mockAgreements } from '@/mocks/agreementsMock'
 import { formatDate, formatDateTime } from '@/lib/utils'
 
 interface AgreementViewerProps {
