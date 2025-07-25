@@ -119,7 +119,7 @@ export default function PDISettings() {
       case 'boolean':
         return (
           <div className="flex items-center space-x-2">
-            <Checkbox
+            <Switch
               id={key}
               checked={value === 'true'}
               onCheckedChange={(checked) => handleSettingChange(key, checked ? 'true' : 'false')}
