@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,7 +31,6 @@ function LeadsList() {
     leads,
     sources,
     activities,
-    salesReps,
     updateLeadStatus,
     assignLead,
     getActivitiesByLead,
