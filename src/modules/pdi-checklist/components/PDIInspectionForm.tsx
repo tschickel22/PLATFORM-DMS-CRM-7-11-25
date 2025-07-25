@@ -15,8 +15,6 @@ interface PDIInspectionFormProps {
   onCancel: () => void
 }
 
-export function PDIInspectionForm({ inspection, onSave, onCancel }: PDIInspectionFormProps) {
-  const { toast } = useToast()
   const [vehicleId, setVehicleId] = useState(inspection?.vehicle_id || '')
   const [technician, setTechnician] = useState(inspection?.technician || '')
   const [status, setStatus] = useState(inspection?.status || 'not_started')
