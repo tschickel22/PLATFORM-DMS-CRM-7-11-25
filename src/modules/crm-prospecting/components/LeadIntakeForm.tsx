@@ -43,8 +43,17 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
     setLoading(true)
     try {
       const newContact = await createContact({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+      onSuccess(newContact)
+    } catch (error) {
+      console.error('Error creating contact:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create contact. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
         status: 'new',
         assigned_to: formData.assignedTo || undefined
       })
