@@ -112,8 +112,8 @@ export function useAgreementVault() {
         .select('*')
         .order('signed_at', { ascending: false })
 
-      if (error) {
-        console.warn('Supabase signatures query failed, using fallback:', error.message)
+      if (signaturesError) {
+        console.warn('Supabase signatures query failed, using fallback:', signaturesError.message)
         // Use fallback mock data if Supabase is offline or has issues
         setSignatures([
           {
@@ -128,13 +128,17 @@ export function useAgreementVault() {
           }
         ])
         return
+      } else {
+        setSignatures(signaturesData || [])
       }
-        console.error('Error loading signatures:', signaturesError)
-        setSignatures([])
-      }
+    } catch (error) {
       console.warn('Error loading signatures, using fallback:', error)
       // Graceful fallback to mock data
-      setSignatures([])
+      const mockSignatures = [
+        {
+          id: 'sig-001',
+          agreement_id: 'agr-001',
+          signer_email: 'john.smith@email.com',
           signer_name: 'John Smith',
           status: 'signed',
           signed_at: '2024-01-15T14:30:00Z',
