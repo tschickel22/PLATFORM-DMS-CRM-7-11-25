@@ -12,7 +12,6 @@ import { DealForm } from './components/DealForm'
 import { DealDetail } from './components/DealDetail'
 import { DealPipeline } from './components/DealPipeline'
 import { DealMetrics } from './components/DealMetrics'
-import { formatCurrency, formatDate } from '@/lib/utils'
 
 function CRMSalesDealDashboard() {
   const { deals, loading, getDealsMetrics } = useDealManagement()
@@ -43,14 +42,6 @@ function CRMSalesDealDashboard() {
     { id: 'rep-3', name: 'Mike Davis' },
     { id: 'rep-4', name: 'Lisa Chen' }
   ]
-
-  // Filter deals based on search and filters
-  const filteredDeals = React.useMemo(() => {
-    let filtered = deals
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
       filtered = filtered.filter(deal =>
         deal.customer_name.toLowerCase().includes(query) ||
         (deal.customer_email && deal.customer_email.toLowerCase().includes(query)) ||
