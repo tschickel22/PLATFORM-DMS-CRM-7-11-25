@@ -22,6 +22,7 @@ export function usePdiSupabase() {
   const [supabaseStatus, setSupabaseStatus] = useState<{
     checklists: { connected: boolean; error: string | undefined; count: number };
     settings: { connected: boolean; error: string | undefined; count: number };
+  }
   const [supabaseStatus, setSupabaseStatus] = useState<{
     checklists: { connected: boolean; error?: string; count: number }
     settings: { connected: boolean; error?: string; count: number }
