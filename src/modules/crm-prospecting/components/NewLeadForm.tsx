@@ -55,40 +55,6 @@ export function NewLeadForm({ lead, onClose, onSuccess, embedded = false }: NewL
     }
   }
 
-  // If embedded, render without modal wrapper
-  if (embedded) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{lead ? 'Edit Lead' : 'New Lead'}</CardTitle>
-          <CardDescription>
-            {lead ? 'Update lead information' : 'Add a new lead to your CRM'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {renderFormFields()}
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {lead ? 'Updating...' : 'Creating...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {lead ? 'Update Lead' : 'Create Lead'}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    )
-  }
-
   const renderFormFields = () => (
     <>
       <div className="grid gap-4 md:grid-cols-2">
@@ -202,6 +168,40 @@ export function NewLeadForm({ lead, onClose, onSuccess, embedded = false }: NewL
     </>
   )
 
+  // If embedded, render without modal wrapper
+  if (embedded) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{lead ? 'Edit Lead' : 'New Lead'}</CardTitle>
+          <CardDescription>
+            {lead ? 'Update lead information' : 'Add a new lead to your CRM'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {renderFormFields()}
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {lead ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {lead ? 'Update Lead' : 'Create Lead'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const leadSources = ['Walk-In', 'Referral', 'Website', 'Phone Call', 'Social Media', 'Trade Show']
   const leadStatuses = ['new', 'contacted', 'qualified', 'lost', 'converted']
 
@@ -242,6 +242,16 @@ export function NewLeadForm({ lead, onClose, onSuccess, embedded = false }: NewL
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name *</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    placeholder="Enter last name"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
             {renderFormFields()}
 
             {/* Form Actions */}
