@@ -10,6 +10,12 @@ export default defineConfig({
     },
   },
   server: {
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+    },
+  },
+  server: {
     port: 3000,
     host: true
   }
