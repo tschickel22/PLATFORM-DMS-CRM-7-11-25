@@ -130,26 +130,29 @@ export interface Vehicle {
 
 export interface Quote {
   id: string
-  customerId: string
-  vehicleId: string
-  items: QuoteItem[]
-  subtotal: number
-  tax: number
-  total: number
-  status: QuoteStatus
-  validUntil: Date
-  notes: string
-  customFields: Record<string, any>
-  createdAt: Date
-  updatedAt: Date
+  customer_id: string
+  inventory_id: string
+  price: number
+  discount: number
+  status: string
+  notes?: string
+  valid_until?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface QuoteItem {
   id: string
+  quote_id: string
   description: string
   quantity: number
-  unitPrice: number
-  total: number
+  unit_price: number
+  total_price: number
+  created_at?: string
+}
+
+export interface QuoteWithItems extends Quote {
+  items: QuoteItem[]
 }
 
 export interface Agreement {
