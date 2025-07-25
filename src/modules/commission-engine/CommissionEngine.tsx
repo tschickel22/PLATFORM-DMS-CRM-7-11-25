@@ -1,7 +1,10 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { useToast } from '@/hooks/use-toast'
 
 function CommissionEngineDashboard() {
+  const { toast } = useToast()
+  
   return (
     <div className="space-y-6">
       {/* Page Header */}
