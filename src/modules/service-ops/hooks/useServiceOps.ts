@@ -1,51 +1,51 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { ServiceRequest, ServiceLog } from '../types'
-import { mockServiceOps } from '@/mocks/serviceOpsMock'
 import { useToast } from '@/hooks/use-toast'
+import { mockServiceOps } from '@/mocks/serviceOpsMock'
+
+export interface ServiceRequest {
+  id: string
+  title: string
+  description?: string
+  status: string
+  priority?: string
+  assigned_to?: string
+  customer_id?: string
+  requested_date?: string
+  completed_date?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ServiceLog {
+  id: string
+  request_id: string
+  note: string
+  created_by?: string
+  created_at?: string
+}
 
 export function useServiceOps() {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([])
+  const [serviceLogs, setServiceLogs] = useState<ServiceLog[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
-  useEffect(() => {
-    loadServiceRequests()
-  }, [])
-
   const loadServiceRequests = async () => {
-    setLoading(true)
     try {
+      setLoading(true)
       const { data, error } = await supabase
         .from('service_requests')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
-
-      const transformedRequests: ServiceRequest[] = (data || []).map(row => ({
-        id: row.id,
-        title: row.title,
-        description: row.description,
-        status: row.status,
-        priority: row.priority,
-        assigned_to: row.assigned_to,
-        customer_id: row.customer_id,
-        requested_date: row.requested_date,
-        completed_date: row.completed_date,
-        created_at: row.created_at,
-        updated_at: row.updated_at
-      }))
-      setServiceRequests(transformedRequests)
+      
+      setServiceRequests(data || [])
     } catch (err) {
-      console.warn('Supabase failed to load service requests, falling back to mock data:', err)
-      toast({
-        title: 'Data Load Error',
-        description: 'Failed to load service requests from Supabase. Using mock data.',
-        variant: 'destructive'
-      })
+      console.warn('Supabase failed, fallback to mock data:', err)
       // Fallback to mock data
-      const mockRequests: ServiceRequest[] = mockServiceOps.sampleTickets.map(ticket => ({
+      setServiceRequests(mockServiceOps.sampleTickets.map(ticket => ({
         id: ticket.id,
         title: ticket.title,
         description: ticket.description,
@@ -54,63 +54,152 @@ export function useServiceOps() {
         assigned_to: ticket.assignedTo,
         customer_id: ticket.customerId,
         requested_date: ticket.scheduledDate,
-        completed_date: null, // Mock data doesn't have this directly
+        completed_date: ticket.completedDate,
         created_at: ticket.createdAt,
         updated_at: ticket.updatedAt
-      }))
-      setServiceRequests(mockRequests)
+      })))
     } finally {
       setLoading(false)
     }
   }
 
-  const getServiceLogs = async (requestId: string): Promise<ServiceLog[]> => {
+  const loadServiceLogs = async (requestId: string) => {
     try {
       const { data, error } = await supabase
         .from('service_logs')
         .select('*')
         .eq('request_id', requestId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
-
-      const transformedLogs: ServiceLog[] = (data || []).map(row => ({
-        id: row.id,
-        request_id: row.request_id,
-        note: row.note,
-        created_by: row.created_by,
-        created_at: row.created_at
-      }))
-      return transformedLogs
+      
+      return data || []
     } catch (err) {
-      console.warn(`Supabase failed to load service logs for request ${requestId}, falling back to mock data:`, err)
-      // Fallback to mock data from serviceOpsMock.ts timeline
-      const mockTicket = mockServiceOps.sampleTickets.find(ticket => ticket.id === requestId)
-      if (mockTicket && mockTicket.timeline) {
-        return mockTicket.timeline.map(log => ({
-          id: log.id,
-          request_id: requestId,
-          note: log.details,
-          created_by: log.user,
-          created_at: log.timestamp
-        }))
-      }
-      return []
+      console.warn('Supabase failed for service logs, fallback to mock:', err)
+      // Fallback to mock timeline data
+      const mockTicket = mockServiceOps.sampleTickets.find(t => t.id === requestId)
+      return mockTicket?.timeline?.map(entry => ({
+        id: entry.id,
+        request_id: requestId,
+        note: `${entry.action}: ${entry.details}`,
+        created_by: entry.user,
+        created_at: entry.timestamp
+      })) || []
     }
   }
 
-  // Placeholder for future CRUD operations
-  const createServiceRequest = async (newRequest: Partial<ServiceRequest>) => { /* ... */ }
-  const updateServiceRequest = async (id: string, updates: Partial<ServiceRequest>) => { /* ... */ }
-  const deleteServiceRequest = async (id: string) => { /* ... */ }
+  const createServiceRequest = async (requestData: Partial<ServiceRequest>) => {
+    try {
+      const { data, error } = await supabase
+        .from('service_requests')
+        .insert([{
+          title: requestData.title,
+          description: requestData.description,
+          status: requestData.status || 'open',
+          priority: requestData.priority,
+          assigned_to: requestData.assigned_to,
+          customer_id: requestData.customer_id,
+          requested_date: requestData.requested_date
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+      
+      // Refresh the list
+      await loadServiceRequests()
+      
+      toast({
+        title: 'Service Request Created',
+        description: 'New service request has been created successfully.'
+      })
+      
+      return data
+    } catch (err) {
+      console.error('Failed to create service request:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to create service request. Please try again.',
+        variant: 'destructive'
+      })
+      throw err
+    }
+  }
+
+  const updateServiceRequest = async (id: string, updates: Partial<ServiceRequest>) => {
+    try {
+      const { data, error } = await supabase
+        .from('service_requests')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      
+      // Refresh the list
+      await loadServiceRequests()
+      
+      toast({
+        title: 'Service Request Updated',
+        description: 'Service request has been updated successfully.'
+      })
+      
+      return data
+    } catch (err) {
+      console.error('Failed to update service request:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to update service request. Please try again.',
+        variant: 'destructive'
+      })
+      throw err
+    }
+  }
+
+  const addServiceLog = async (requestId: string, note: string, createdBy?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('service_logs')
+        .insert([{
+          request_id: requestId,
+          note: note,
+          created_by: createdBy
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+      
+      toast({
+        title: 'Note Added',
+        description: 'Service log note has been added successfully.'
+      })
+      
+      return data
+    } catch (err) {
+      console.error('Failed to add service log:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to add service log. Please try again.',
+        variant: 'destructive'
+      })
+      throw err
+    }
+  }
+
+  useEffect(() => {
+    loadServiceRequests()
+  }, [])
 
   return {
     serviceRequests,
+    serviceLogs,
     loading,
     loadServiceRequests,
-    getServiceLogs,
+    loadServiceLogs,
     createServiceRequest,
     updateServiceRequest,
-    deleteServiceRequest
+    addServiceLog
   }
 }
