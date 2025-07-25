@@ -11,8 +11,10 @@ import { useContacts } from '@/hooks/useCrmSupabase'
 import { useContacts } from '@/hooks/useCrmSupabase'
 import { useToast } from '@/hooks/use-toast'
 import { Lead } from '@/types'
+import { X, Save } from 'lucide-react'
 
 interface LeadIntakeFormProps {
+  onClose: () => void
   onSuccess: (lead: CRMContact) => void
   onSuccess?: (lead: Lead) => void
 }
@@ -41,16 +43,17 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
       toast({
         title: 'Validation Error',
         description: 'First name and last name are required',
-      if (newContact) {
-        onSuccess(newContact)
-        onClose()
-      }
+      })
       return
     }
 
     setLoading(true)
     try {
       const newContact = await createContact(formData)
+      if (newContact) {
+        onSuccess(newContact)
+        onClose()
+      }
     } finally {
       setLoading(false)
     }
