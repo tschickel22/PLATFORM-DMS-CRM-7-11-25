@@ -6,6 +6,23 @@ export const mockCrmProspecting = {
   pipelines: ['New Inquiry', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost'],
   sequences: ['Initial Outreach', 'Second Touch', 'Final Attempt'],
   
+  // Mock reps data for getRepById function
+  reps: [
+    { id: 'rep-001', name: 'Jamie Closer', email: 'jamie@company.com' },
+    { id: 'rep-002', name: 'Avery Seller', email: 'avery@company.com' },
+    { id: 'rep-003', name: 'Morgan Deal', email: 'morgan@company.com' }
+  ],
+  
+  // Mock lead forms data for useLeadManagement
+  leadForms: [
+    {
+      id: 'form-001',
+      name: 'Standard Lead Form',
+      description: 'Basic lead intake form',
+      fields: []
+    }
+  ],
+  
   // Mock nurture sequence data
   nurtureSequences: [
     {
