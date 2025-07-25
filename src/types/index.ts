@@ -348,6 +348,22 @@ export interface Payment {
   updatedAt: Date
 }
 
+export interface PdiChecklist {
+  id: string
+  vehicle_id: string
+  technician: string
+  status: string
+  checklist_data: ChecklistItem[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ChecklistItem {
+  step: string
+  status: string
+  notes?: string
+}
+
 export interface Task {
   id: string
   contact_id: string

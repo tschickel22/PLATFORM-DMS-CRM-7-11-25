@@ -5,17 +5,24 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, Eye, Edit, CheckCircle, XCircle, Clock } from 'lucide-react'
-import { mockPDI } from '@/mocks/pdiMock'
+import { Edit, Eye, FileText, Trash2 } from 'lucide-react'
+import { PdiChecklist } from '@/types'
 import { formatDate } from '@/lib/utils'
 
 interface PDIInspectionListProps {
-  onNewInspection: () => void
-  onViewInspection: (id: string) => void
+  inspections: PdiChecklist[]
+  onEditInspection: (inspection: PdiChecklist) => void
+  onDeleteInspection: (id: string) => void
+  loading: boolean
   onEditInspection: (id: string) => void
 }
 
-export function PDIInspectionList({ onNewInspection, onViewInspection, onEditInspection }: PDIInspectionListProps) {
+export function PDIInspectionList({ 
+  inspections, 
+  onEditInspection, 
+  onDeleteInspection,
+  loading 
+}: PDIInspectionListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [technicianFilter, setTechnicianFilter] = useState('all')
@@ -24,8 +31,15 @@ export function PDIInspectionList({ onNewInspection, onViewInspection, onEditIns
   const inspections = mockPDI.sampleInspections
 
   const getStatusColor = (status: string) => {
-    return mockPDI.statusColors[status] || 'bg-gray-100 text-gray-800'
-  }
+    const statusColors: Record<string, string> = {
+      'not_started': 'bg-gray-100 text-gray-800',
+      'in_progress': 'bg-blue-100 text-blue-800',
+      'complete': 'bg-green-100 text-green-800',
+      'failed': 'bg-red-100 text-red-800',
+      'pending_review': 'bg-yellow-100 text-yellow-800',
+      'approved': 'bg-emerald-100 text-emerald-800'
+    }
+    return statusColors[status] || 'bg-gray-100 text-gray-800'
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -50,6 +64,25 @@ export function PDIInspectionList({ onNewInspection, onViewInspection, onEditIns
     if (!inspection.findings || inspection.findings.length === 0) return 0
     const completedItems = inspection.findings.filter((f: any) => f.status === 'Pass' || f.status === 'Fail').length
     return Math.round((completedItems / inspection.findings.length) * 100)
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="text-muted-foreground mt-2">Loading PDI checklists...</p>
+      </div>
+    )
+  }
+
+  if (inspections.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+        <p>No PDI checklists found</p>
+        <p className="text-sm">Create your first inspection to get started</p>
+      </div>
+    )
   }
 
   return (
@@ -97,22 +130,33 @@ export function PDIInspectionList({ onNewInspection, onViewInspection, onEditIns
                     {status}
                   </SelectItem>
                 ))}
-              </SelectContent>
+                Vehicle: {inspection.vehicle_id}
             </Select>
-            
-            <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+              <Badge className={getStatusColor(inspection.status)}>
+                {inspection.status.replace('_', ' ').toUpperCase()}
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All technicians" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Technicians</SelectItem>
-                {mockPDI.technicianOptions.map(tech => (
-                  <SelectItem key={tech.id} value={tech.id}>
-                    {tech.name}
-                  </SelectItem>
-                ))}
+              ID: {inspection.id} • 
+              Technician: {inspection.technician} • 
+              Created: {new Date(inspection.created_at).toLocaleDateString()}
+              {inspection.updated_at !== inspection.created_at && (
+                <span> • Updated: {new Date(inspection.updated_at).toLocaleDateString()}</span>
               </SelectContent>
             </Select>
+            <div className="text-sm text-muted-foreground mt-1">
+              Steps: {inspection.checklist_data.length} • 
+              Completed: {inspection.checklist_data.filter(item => item.status === 'complete').length} • 
+              Pending: {inspection.checklist_data.filter(item => item.status === 'pending').length}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDeleteInspection(inspection.id)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
           </div>
 
           <Table>

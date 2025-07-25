@@ -17,7 +17,8 @@ import {
   ClipboardCheck, 
   Clock, 
   Image as ImageIcon,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react'
 import { 
   PDIInspection, 
@@ -29,772 +30,296 @@ import {
   PDIInspectionStatus
 } from '../types'
 import { Vehicle } from '@/types'
-import { mockPDI } from '@/mocks/pdiMock'
+import { PdiChecklist, ChecklistItem } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { useDropzone } from 'react-dropzone'
 
 interface PDIInspectionFormProps {
-  inspection: PDIInspection
-  vehicles: Vehicle[]
-  onSave: (inspectionData: Partial<PDIInspection>) => Promise<void>
-  onComplete: (inspectionId: string, notes?: string) => Promise<void>
-  onUpdateItem: (inspectionId: string, itemId: string, itemData: Partial<PDIInspectionItem>) => Promise<void>
-  onAddDefect: (inspectionId: string, defectData: Partial<PDIDefect>) => Promise<void>
-  onAddPhoto: (inspectionId: string, photoData: Partial<PDIPhoto>) => Promise<void>
+  inspection?: PdiChecklist
+  onSave: (data: Partial<PdiChecklist>) => void
   onCancel: () => void
 }
 
-export default function PDIInspectionForm({
-  inspection,
-  vehicles,
-  onSave,
-  onComplete,
-  onUpdateItem,
-  onAddDefect,
-  onAddPhoto,
-  onCancel
-}: PDIInspectionFormProps) {
+export function PDIInspectionForm({ inspection, onSave, onCancel }: PDIInspectionFormProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('checklist')
-  const [notes, setNotes] = useState(inspection.notes || '')
-  const [showDefectForm, setShowDefectForm] = useState(false)
-  const [currentItemId, setCurrentItemId] = useState<string | null>(null)
-  const [newDefect, setNewDefect] = useState<Partial<PDIDefect>>({
-    title: '',
-    description: '',
-    severity: PDIDefectSeverity.MEDIUM
+  const [formData, setFormData] = useState<Partial<PdiChecklist>>({
+    vehicle_id: '',
+    technician: '',
+    status: 'not_started',
+    checklist_data: []
   })
-  const [showPhotoUpload, setShowPhotoUpload] = useState(false)
-  const [photoCaption, setPhotoCaption] = useState('')
-  const [formData, setFormData] = useState({
-    unitId: inspection?.unitId || mockPDI.formDefaults.unitId,
-    technicianId: inspection?.technicianId || mockPDI.formDefaults.technicianId,
-    templateId: inspection?.templateId || mockPDI.formDefaults.templateId,
-    status: inspection?.status || mockPDI.formDefaults.status,
-    startedDate: inspection?.startedDate || mockPDI.formDefaults.startedDate,
-    notes: inspection?.notes || mockPDI.formDefaults.notes,
-    customerNotified: inspection?.customerNotified || mockPDI.formDefaults.customerNotified,
-    deliveryApproved: inspection?.deliveryApproved || mockPDI.formDefaults.deliveryApproved
-  })
+  const [overallNotes, setOverallNotes] = useState('')
 
+  // Initialize form with inspection data if editing
   useEffect(() => {
-    setNotes(inspection.notes || '')
+    if (inspection) {
+      setFormData({
+        vehicle_id: inspection.vehicle_id || '',
+        technician: inspection.technician || '',
+        status: inspection.status || 'not_started',
+        checklist_data: inspection.checklist_data || []
+      })
+    }
   }, [inspection])
 
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      'image/*': []
-    },
-    onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length === 0) return
-      
-      // In a real app, you would upload these files to a storage service
-      // For this demo, we'll create object URLs
-      const file = acceptedFiles[0]
-      const photoUrl = URL.createObjectURL(file)
-      
-      handleAddPhoto(photoUrl)
-    }
-  })
+  const statusOptions = [
+    { value: 'not_started', label: 'Not Started' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'complete', label: 'Complete' },
+    { value: 'failed', label: 'Failed' },
+    { value: 'pending_review', label: 'Pending Review' },
+    { value: 'approved', label: 'Approved' }
+  ]
 
-  const handleSave = async () => {
-    setLoading(true)
-    try {
-      await onSave({
-        notes
-      })
-      toast({
-        title: 'Success',
-        description: 'Inspection saved successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save inspection',
-        variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
+  const technicianOptions = ['Mike Johnson', 'Sarah Davis', 'Tom Wilson', 'Lisa Chen']
+
+  const stepStatusOptions = [
+    { value: 'pending', label: 'Pending', icon: Clock, color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'complete', label: 'Complete', icon: CheckCircle, color: 'bg-green-100 text-green-800' },
+    { value: 'failed', label: 'Failed', icon: AlertTriangle, color: 'bg-red-100 text-red-800' },
+    { value: 'n/a', label: 'N/A', icon: X, color: 'bg-gray-100 text-gray-800' }
+  ]
+
+  const handleAddChecklistItem = () => {
+    const newItem: ChecklistItem = {
+      step: 'New inspection step',
+      status: 'pending',
+      notes: ''
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      checklist_data: [...(prev.checklist_data || []), newItem]
+    }))
   }
 
-  const handleComplete = async () => {
-    // Check if all required items have been completed
-    const pendingRequiredItems = inspection.items.filter(item => {
-      const templateItem = item.templateItem
-      return templateItem?.isRequired && item.status === PDIInspectionItemStatus.PENDING
-    })
-
-    if (pendingRequiredItems.length > 0) {
-      toast({
-        title: 'Incomplete Inspection',
-        description: `${pendingRequiredItems.length} required items are still pending`,
-        variant: 'destructive'
-      })
-      return
-    }
-
-    setLoading(true)
-    try {
-      await onComplete(inspection.id, notes)
-      toast({
-        title: 'Success',
-        description: 'Inspection completed successfully',
-      })
-      onCancel() // Close the form
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to complete inspection',
-        variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
-    }
+  const handleRemoveChecklistItem = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      checklist_data: (prev.checklist_data || []).filter((_, i) => i !== index)
+    }))
   }
 
-  const handleUpdateItem = async (itemId: string, status: PDIInspectionItemStatus, value?: string, notes?: string) => {
-    try {
-      await onUpdateItem(inspection.id, itemId, {
-        status,
-        value,
-        notes
-      })
-      
-      // If status is failed, prompt to add a defect
-      if (status === PDIInspectionItemStatus.FAILED) {
-        setCurrentItemId(itemId)
-        setShowDefectForm(true)
+  const handleChecklistItemChange = (index: number, field: keyof ChecklistItem, value: string) => {
+    setFormData(prev => {
+      const updatedData = [...(prev.checklist_data || [])]
+      updatedData[index] = { ...updatedData[index], [field]: value }
+      return {
+        ...prev,
+        checklist_data: updatedData
       }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update item',
-        variant: 'destructive'
-      })
-    }
+    })
   }
 
-  const handleAddDefect = async () => {
-    if (!newDefect.title || !newDefect.description) {
-      toast({
-        title: 'Validation Error',
-        description: 'Title and description are required',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    try {
-      await onAddDefect(inspection.id, {
-        ...newDefect,
-        inspectionItemId: currentItemId || undefined
-      })
-      
-      setNewDefect({
-        title: '',
-        description: '',
-        severity: PDIDefectSeverity.MEDIUM
-      })
-      setCurrentItemId(null)
-      setShowDefectForm(false)
-      
-      toast({
-        title: 'Success',
-        description: 'Defect added successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to add defect',
-        variant: 'destructive'
-      })
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave({
+      ...formData,
+      updated_at: new Date().toISOString()
+    })
   }
 
-  const handleAddPhoto = async (photoUrl: string) => {
-    try {
-      await onAddPhoto(inspection.id, {
-        url: photoUrl,
-        inspectionItemId: currentItemId || undefined,
-        caption: photoCaption
-      })
-      
-      setPhotoCaption('')
-      setShowPhotoUpload(false)
-      
-      toast({
-        title: 'Success',
-        description: 'Photo added successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to add photo',
-        variant: 'destructive'
-      })
-    }
+  const getStatusIcon = (status: string) => {
+    const statusOption = stepStatusOptions.find(opt => opt.value === status)
+    return statusOption ? statusOption.icon : Clock
   }
 
-  const getStatusColor = (status: PDIInspectionItemStatus) => {
-    switch (status) {
-      case PDIInspectionItemStatus.PENDING:
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-      case PDIInspectionItemStatus.PASSED:
-        return 'bg-green-50 text-green-700 border-green-200'
-      case PDIInspectionItemStatus.FAILED:
-        return 'bg-red-50 text-red-700 border-red-200'
-      case PDIInspectionItemStatus.NA:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
-    }
+  const getStatusColor = (status: string) => {
+    const statusOption = stepStatusOptions.find(opt => opt.value === status)
+    return statusOption ? statusOption.color : 'bg-gray-100 text-gray-800'
   }
-
-  const getSeverityColor = (severity: PDIDefectSeverity) => {
-    switch (severity) {
-      case PDIDefectSeverity.LOW:
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case PDIDefectSeverity.MEDIUM:
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-      case PDIDefectSeverity.HIGH:
-        return 'bg-orange-50 text-orange-700 border-orange-200'
-      case PDIDefectSeverity.CRITICAL:
-        return 'bg-red-50 text-red-700 border-red-200'
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
-    }
-  }
-
-  const vehicle = vehicles.find(v => v.id === inspection.vehicleId)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>PDI Inspection</CardTitle>
+              <CardTitle>
+                {inspection ? 'Edit PDI Checklist' : 'New PDI Checklist'}
+              </CardTitle>
               <CardDescription>
-                {vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : inspection.vehicleId}
+                Pre-delivery inspection checklist and findings
               </CardDescription>
             </div>
-            <div className="flex items-center space-x-2">
-              <Badge className={cn(
-                "ri-badge-status",
-                inspection.status === PDIInspectionStatus.IN_PROGRESS ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
-                inspection.status === PDIInspectionStatus.COMPLETED ? "bg-blue-50 text-blue-700 border-blue-200" :
-                inspection.status === PDIInspectionStatus.APPROVED ? "bg-green-50 text-green-700 border-green-200" :
-                "bg-red-50 text-red-700 border-red-200"
-              )}>
-                {inspection.status.replace('_', ' ').toUpperCase()}
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={onCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="checklist">Checklist</TabsTrigger>
-              <TabsTrigger value="defects">
-                Defects
-                {inspection.defects.length > 0 && (
-                  <Badge className="ml-2 bg-red-50 text-red-700 border-red-200">
-                    {inspection.defects.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="photos">
-                Photos
-                {inspection.photos.length > 0 && (
-                  <Badge className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
-                    {inspection.photos.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="checklist" className="space-y-6">
-              {/* Defect Form Modal */}
-              {showDefectForm && (
-                <Card className="border-2 border-red-200">
-                  <CardHeader className="bg-red-50">
-                    <CardTitle className="text-lg text-red-700 flex items-center">
-                      <AlertTriangle className="h-5 w-5 mr-2" />
-                      Report Defect
-                    </CardTitle>
-                    <CardDescription className="text-red-600">
-                      Record details about the issue found
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6 space-y-4">
-                    <div>
-                      <Label htmlFor="defectTitle">Defect Title *</Label>
-                      <Input
-                        id="defectTitle"
-                        value={newDefect.title}
-                        onChange={(e) => setNewDefect(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="e.g., Damaged Roof Seal"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="defectDescription">Description *</Label>
-                      <Textarea
-                        id="defectDescription"
-                        value={newDefect.description}
-                        onChange={(e) => setNewDefect(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Describe the defect in detail"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="defectSeverity">Severity</Label>
-                      <Select 
-                        value={newDefect.severity} 
-                        onValueChange={(value: PDIDefectSeverity) => 
-                          setNewDefect(prev => ({ ...prev, severity: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={PDIDefectSeverity.LOW}>Low</SelectItem>
-                          <SelectItem value={PDIDefectSeverity.MEDIUM}>Medium</SelectItem>
-                          <SelectItem value={PDIDefectSeverity.HIGH}>High</SelectItem>
-                          <SelectItem value={PDIDefectSeverity.CRITICAL}>Critical</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => {
-                          setShowDefectForm(false)
-                          setCurrentItemId(null)
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="button" onClick={handleAddDefect}>
-                        Add Defect
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Photo Upload Modal */}
-              {showPhotoUpload && (
-                <Card className="border-2 border-blue-200">
-                  <CardHeader className="bg-blue-50">
-                    <CardTitle className="text-lg text-blue-700 flex items-center">
-                      <Camera className="h-5 w-5 mr-2" />
-                      Add Photo
-                    </CardTitle>
-                    <CardDescription className="text-blue-600">
-                      Upload a photo for documentation
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6 space-y-4">
-                    <div {...getRootProps()} className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/10">
-                      <input {...getInputProps()} />
-                      <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Drag & drop an image here, or click to select a file
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="photoCaption">Caption (Optional)</Label>
-                      <Input
-                        id="photoCaption"
-                        value={photoCaption}
-                        onChange={(e) => setPhotoCaption(e.target.value)}
-                        placeholder="e.g., Front view of vehicle"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => {
-                          setShowPhotoUpload(false)
-                          setCurrentItemId(null)
-                          setPhotoCaption('')
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="button" 
-                        onClick={() => {
-                          // In a real app, this would be handled by the file upload
-                          // For demo purposes, we'll use a placeholder image
-                          handleAddPhoto('https://images.pexels.com/photos/1319515/pexels-photo-1319515.jpeg')
-                        }}
-                      >
-                        Simulate Upload
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Checklist Sections */}
-              {inspection.template?.sections.map((section) => (
-                <div key={section.id} className="space-y-4">
-                  <h3 className="text-lg font-semibold">{section.name}</h3>
-                  {section.description && (
-                    <p className="text-sm text-muted-foreground">{section.description}</p>
-                  )}
-                  
-                  <div className="space-y-3">
-                    {section.items.map((templateItem) => {
-                      const inspectionItem = inspection.items.find(i => i.templateItemId === templateItem.id)
-                      if (!inspectionItem) return null
-
-                      return (
-                        <Card key={templateItem.id} className="shadow-sm">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h4 className="font-medium">{templateItem.name}</h4>
-                                  {templateItem.isRequired && (
-                                    <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-                                      Required
-                                    </Badge>
-                                  )}
-                                  <Badge className={cn("ri-badge-status text-xs", getStatusColor(inspectionItem.status))}>
-                                    {inspectionItem.status.toUpperCase()}
-                                  </Badge>
-                                </div>
-                                {templateItem.description && (
-                                  <p className="text-sm text-muted-foreground mb-3">
-                                    {templateItem.description}
-                                  </p>
-                                )}
-                                
-                                {/* Item-specific input based on type */}
-                                {templateItem.itemType === 'text' && (
-                                  <div className="mb-3">
-                                    <Input
-                                      value={inspectionItem.value || ''}
-                                      onChange={(e) => handleUpdateItem(
-                                        inspectionItem.id, 
-                                        PDIInspectionItemStatus.PASSED, 
-                                        e.target.value
-                                      )}
-                                      placeholder="Enter text"
-                                    />
-                                  </div>
-                                )}
-                                
-                                {templateItem.itemType === 'number' && (
-                                  <div className="mb-3">
-                                    <Input
-                                      type="number"
-                                      value={inspectionItem.value || ''}
-                                      onChange={(e) => handleUpdateItem(
-                                        inspectionItem.id, 
-                                        PDIInspectionItemStatus.PASSED, 
-                                        e.target.value
-                                      )}
-                                      placeholder="Enter number"
-                                    />
-                                  </div>
-                                )}
-                                
-                                {templateItem.itemType === 'photo' && (
-                                  <div className="mb-3">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => {
-                                        setCurrentItemId(inspectionItem.id)
-                                        setShowPhotoUpload(true)
-                                      }}
-                                    >
-                                      <Camera className="h-4 w-4 mr-2" />
-                                      Add Photo
-                                    </Button>
-                                    
-                                    {/* Display photos for this item */}
-                                    {inspection.photos.filter(p => p.inspectionItemId === inspectionItem.id).length > 0 && (
-                                      <div className="grid grid-cols-3 gap-2 mt-2">
-                                        {inspection.photos
-                                          .filter(p => p.inspectionItemId === inspectionItem.id)
-                                          .map((photo) => (
-                                            <div key={photo.id} className="relative">
-                                              <img 
-                                                src={photo.url} 
-                                                alt={photo.caption || 'Inspection photo'} 
-                                                className="h-20 w-full object-cover rounded-md"
-                                              />
-                                              {photo.caption && (
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
-                                                  {photo.caption}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))
-                                        }
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {/* Notes field */}
-                                {inspectionItem.notes && (
-                                  <div className="mb-3 p-2 bg-muted/30 rounded-md">
-                                    <p className="text-sm text-muted-foreground">
-                                      <span className="font-medium">Notes:</span> {inspectionItem.notes}
-                                    </p>
-                                  </div>
-                                )}
-                                
-                                {/* Add notes field */}
-                                {inspectionItem.status !== PDIInspectionItemStatus.PENDING && (
-                                  <div className="mb-3">
-                                    <Textarea
-                                      value={inspectionItem.notes || ''}
-                                      onChange={(e) => handleUpdateItem(
-                                        inspectionItem.id, 
-                                        inspectionItem.status, 
-                                        inspectionItem.value,
-                                        e.target.value
-                                      )}
-                                      placeholder="Add notes (optional)"
-                                      rows={2}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Action buttons */}
-                              {templateItem.itemType === 'checkbox' && (
-                                <div className="flex items-center space-x-2 ml-4">
-                                  <Button 
-                                    variant={inspectionItem.status === PDIInspectionItemStatus.PASSED ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleUpdateItem(inspectionItem.id, PDIInspectionItemStatus.PASSED)}
-                                    className={inspectionItem.status === PDIInspectionItemStatus.PASSED ? "" : "border-green-200 text-green-700"}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Pass
-                                  </Button>
-                                  <Button 
-                                    variant={inspectionItem.status === PDIInspectionItemStatus.FAILED ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleUpdateItem(inspectionItem.id, PDIInspectionItemStatus.FAILED)}
-                                    className={inspectionItem.status === PDIInspectionItemStatus.FAILED ? "" : "border-red-200 text-red-700"}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Fail
-                                  </Button>
-                                  <Button 
-                                    variant={inspectionItem.status === PDIInspectionItemStatus.NA ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleUpdateItem(inspectionItem.id, PDIInspectionItemStatus.NA)}
-                                    className={inspectionItem.status === PDIInspectionItemStatus.NA ? "" : "border-gray-200 text-gray-700"}
-                                  >
-                                    N/A
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              {/* Notes and Completion */}
-              <div className="space-y-4 pt-6 border-t">
+        <CardContent className="overflow-y-auto max-h-[calc(90vh-120px)]">
+          <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="inspectionNotes">Inspection Notes</Label>
-                  <Textarea
-                    id="inspectionNotes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add general notes about this inspection"
-                    rows={3}
+                  <Label htmlFor="vehicle_id">Vehicle ID</Label>
+                  <Input
+                    id="vehicle_id"
+                    value={formData.vehicle_id || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vehicle_id: e.target.value }))}
+                    placeholder="Enter vehicle ID"
+                    required
                   />
                 </div>
-
-                <div className="flex justify-end space-x-3">
-                  <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-                    Cancel
-                  </Button>
-                  <Button type="button" onClick={handleSave} disabled={loading}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Progress
-                  </Button>
-                  <Button 
-                    type="button" 
-                    onClick={handleComplete} 
-                    disabled={loading || inspection.status !== 'in_progress'}
+                
+                <div>
+                  <Label htmlFor="technician">Technician</Label>
+                  <Select
+                    value={formData.technician || ''}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, technician: value }))}
                   >
-                    <ClipboardCheck className="h-4 w-4 mr-2" />
-                    Complete Inspection
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select technician" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {technicianOptions.map(tech => (
+                        <SelectItem key={tech} value={tech}>
+                          {tech}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status || 'not_started'}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map(status => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Checklist Items */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Checklist Items</h3>
+                  <Button type="button" onClick={handleAddChecklistItem}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
                   </Button>
                 </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="defects" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Defects</h3>
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    setCurrentItemId(null)
-                    setShowDefectForm(true)
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Defect
-                </Button>
-              </div>
-
-              {inspection.defects.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No defects reported</p>
-                  <p className="text-sm">Add defects when issues are found</p>
-                </div>
-              ) : (
+                
                 <div className="space-y-4">
-                  {inspection.defects.map((defect) => (
-                    <Card key={defect.id} className="shadow-sm">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <h4 className="font-semibold">{defect.title}</h4>
-                            <Badge className={cn("ri-badge-status", getSeverityColor(defect.severity))}>
-                              {defect.severity.toUpperCase()}
-                            </Badge>
-                            <Badge className={
-                              defect.status === 'open' ? 'bg-red-50 text-red-700 border-red-200' :
-                              defect.status === 'in_progress' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                              defect.status === 'resolved' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                              'bg-green-50 text-green-700 border-green-200'
-                            }>
-                              {defect.status.replace('_', ' ').toUpperCase()}
-                            </Badge>
+                  {(formData.checklist_data || []).map((item, index) => {
+                    const StatusIcon = getStatusIcon(item.status)
+                    return (
+                    <Card key={index} className="border-l-4 border-l-primary">
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between mb-4">
+                          <h4 className="font-medium">Step #{index + 1}</h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveChecklistItem(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <Label>Step Description</Label>
+                            <Input
+                              value={item.step}
+                              onChange={(e) => handleChecklistItemChange(index, 'step', e.target.value)}
+                              placeholder="e.g., Inspect exterior condition"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label>Status</Label>
+                            <Select
+                              value={item.status}
+                              onValueChange={(value) => handleChecklistItemChange(index, 'status', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue>
+                                  <div className="flex items-center space-x-2">
+                                    <StatusIcon className="h-4 w-4" />
+                                    <span>{stepStatusOptions.find(opt => opt.value === item.status)?.label || item.status}</span>
+                                  </div>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {stepStatusOptions.map(statusOpt => {
+                                  const Icon = statusOpt.icon
+                                  return (
+                                    <SelectItem key={statusOpt.value} value={statusOpt.value}>
+                                      <div className="flex items-center space-x-2">
+                                        <Icon className="h-4 w-4" />
+                                        <span>{statusOpt.label}</span>
+                                      </div>
+                                    </SelectItem>
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {defect.description}
-                        </p>
                         
-                        {/* Display photos for this defect */}
-                        {inspection.photos.filter(p => p.defectId === defect.id).length > 0 && (
-                          <div className="mb-4">
-                            <h5 className="text-sm font-medium mb-2">Photos</h5>
-                            <div className="grid grid-cols-3 gap-2">
-                              {inspection.photos
-                                .filter(p => p.defectId === defect.id)
-                                .map((photo) => (
-                                  <div key={photo.id} className="relative">
-                                    <img 
-                                      src={photo.url} 
-                                      alt={photo.caption || 'Defect photo'} 
-                                      className="h-24 w-full object-cover rounded-md"
-                                    />
-                                    {photo.caption && (
-                                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
-                                        {photo.caption}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))
-                              }
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="text-sm text-muted-foreground">
-                            {defect.assignedTo ? (
-                              <span>Assigned to: {defect.assignedTo}</span>
-                            ) : (
-                              <span>Unassigned</span>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setCurrentItemId(null)
-                                setShowPhotoUpload(true)
-                                // In a real app, you would set the defect ID here
-                              }}
-                            >
-                              <Camera className="h-3 w-3 mr-1" />
-                              Add Photo
-                            </Button>
-                          </div>
+                        <div className="mt-4">
+                          <Label>Notes</Label>
+                          <Textarea
+                            value={item.notes || ''}
+                            onChange={(e) => handleChecklistItemChange(index, 'notes', e.target.value)}
+                            placeholder="Additional notes about this step"
+                            rows={2}
+                          />
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    )
+                  })}
+                  
+                  {(!formData.checklist_data || formData.checklist_data.length === 0) && (
+                    <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                      <p>No checklist items added yet</p>
+                      <p className="text-sm">Click "Add Item" to start building the checklist</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="photos" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Photos</h3>
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    setCurrentItemId(null)
-                    setShowPhotoUpload(true)
-                  }}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Add Photo
-                </Button>
               </div>
 
-              {inspection.photos.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No photos added</p>
-                  <p className="text-sm">Add photos to document the inspection</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {inspection.photos.map((photo) => (
-                    <div key={photo.id} className="relative">
-                      <img 
-                        src={photo.url} 
-                        alt={photo.caption || 'Inspection photo'} 
-                        className="h-40 w-full object-cover rounded-md"
-                      />
-                      {photo.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 truncate">
-                          {photo.caption}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+              {/* Notes */}
+              <div>
+                <Label htmlFor="overallNotes">Notes</Label>
+                <Textarea
+                  id="overallNotes"
+                  value={overallNotes}
+                  onChange={(e) => setOverallNotes(e.target.value)}
+                  placeholder="General notes about the inspection"
+                  rows={4}
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-3 pt-6 border-t">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Inspection
+                </Button>
+              </div>
+            </form>
+          </div>
         </CardContent>
       </Card>
     </div>
