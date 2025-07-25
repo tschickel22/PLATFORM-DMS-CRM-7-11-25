@@ -17,6 +17,24 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 function CRMSalesDealDashboard() {
   const { deals, loading, getDealsMetrics } = useDealManagement()
   const [activeTab, setActiveTab] = useState('pipeline')
+
+  // Define deal stages for the CRM pipeline
+  const dealStages = [
+    'New',
+    'Qualified',
+    'Proposal',
+    'Negotiation',
+    'Closed Won',
+    'Closed Lost'
+  ]
+
+  // Define sales reps for metrics
+  const salesReps = [
+    { id: 'rep-1', name: 'John Smith' },
+    { id: 'rep-2', name: 'Sarah Johnson' },
+    { id: 'rep-3', name: 'Mike Davis' },
+    { id: 'rep-4', name: 'Lisa Chen' }
+  ]
   const [showNewDealForm, setShowNewDealForm] = useState(false)
   const [selectedDeal, setSelectedDeal] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -333,11 +351,11 @@ function CRMSalesDealDashboard() {
         </TabsContent>
 
         <TabsContent value="metrics" className="space-y-4">
-          <DealMetrics deals={deals} />
+          <DealMetrics dealStages={dealStages} salesReps={salesReps} />
         </TabsContent>
       </Tabs>
     </div>
-  )
+          <DealPipeline dealStages={dealStages} />
 }
 
 export default function CRMSalesDeal() {
