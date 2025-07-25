@@ -814,6 +814,17 @@ function FinanceApplicationDashboard() {
                   </div>
                 )}
                 
+                {/* Debug Information */}
+                {!loading && (
+                  <div className="text-xs text-muted-foreground mb-4 p-2 bg-muted/20 rounded">
+                    <strong>Debug Info:</strong> 
+                    Total: {applications.length}, 
+                    Filtered: {filteredApplications.length}, 
+                    Using Fallback: {usingFallback ? 'Yes' : 'No'}, 
+                    Loading: {loading ? 'Yes' : 'No'}
+                  </div>
+                )}
+                
                 {filteredApplications.map((application) => (
                   <div
                     key={application.id}
@@ -821,7 +832,9 @@ function FinanceApplicationDashboard() {
                   >
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <h4 className="font-semibold">{application.customerName || 'Unnamed Application'}</h4>
+                        <h4 className="font-semibold">
+                          {application.customerName || `Application #${application.id.slice(-6).toUpperCase()}`}
+                        </h4>
                         <Badge className={getStatusColor(application.status)}>
                           {application.status.replace('_', ' ').toUpperCase()}
                         </Badge>
@@ -832,6 +845,7 @@ function FinanceApplicationDashboard() {
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
+                        ID: {application.id} • 
                         {application.customerEmail && (
                           <span>{application.customerEmail} • </span>
                         )}
@@ -857,10 +871,15 @@ function FinanceApplicationDashboard() {
                 {!loading && filteredApplications.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    {applications.length === 0 ? (
+                    {applications.length === 0 && !usingFallback ? (
                       <>
-                        <p>No finance applications yet</p>
-                        <p className="text-sm">Create your first application to get started</p>
+                        <p>No finance applications found in database</p>
+                        <p className="text-sm">Applications will appear here when they are added to the system</p>
+                      </>
+                    ) : applications.length === 0 && usingFallback ? (
+                      <>
+                        <p>No demo applications available</p>
+                        <p className="text-sm">Check Supabase connection for live data</p>
                       </>
                     ) : (
                       <>
@@ -868,6 +887,10 @@ function FinanceApplicationDashboard() {
                         <p className="text-sm">Try adjusting your search or filters</p>
                       </>
                     )}
+                    <div className="mt-4 text-xs text-muted-foreground">
+                      <p>Data Source: {usingFallback ? 'Mock Data (Fallback)' : 'Supabase Database'}</p>
+                      <p>Total Applications: {applications.length}</p>
+                    </div>
                   </div>
                 )}
               </div>

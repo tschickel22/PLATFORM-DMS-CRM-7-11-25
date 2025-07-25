@@ -44,6 +44,20 @@ export function useFinanceApplications() {
       console.log('📄 [Finance Applications] Data:', data)
       console.log('📊 [Finance Applications] Data type:', typeof data)
       console.log('📊 [Finance Applications] Data length:', data?.length)
+      console.log('🔍 [Finance Applications] Raw Supabase response structure:', JSON.stringify(data, null, 2))
+      
+      // Log each application's structure
+      if (data && Array.isArray(data) && data.length > 0) {
+        console.log('📋 [Finance Applications] First application structure:')
+        console.log('  - ID:', data[0].id)
+        console.log('  - Customer ID:', data[0].customer_id)
+        console.log('  - Customer Name:', data[0].customer_name)
+        console.log('  - Customer Email:', data[0].customer_email)
+        console.log('  - Template ID:', data[0].template_id)
+        console.log('  - Status:', data[0].status)
+        console.log('  - Created At:', data[0].created_at)
+        console.log('  - All fields:', Object.keys(data[0]))
+      }
 
       if (error) {
         console.error('❌ [Finance Applications] Supabase error details:', {
@@ -59,7 +73,7 @@ export function useFinanceApplications() {
         throw error
       }
 
-      if (!data) {
+      if (data === null || data === undefined) {
         console.warn('⚠️ [Finance Applications] Supabase returned null data')
         setSupabaseStatus(prev => ({
           ...prev,
@@ -68,8 +82,20 @@ export function useFinanceApplications() {
         throw new Error('No data returned from Supabase')
       }
 
+      // Handle empty array as valid response (not an error)
+      if (Array.isArray(data) && data.length === 0) {
+        console.log('📭 [Finance Applications] Supabase returned empty array - no applications in database')
+        setSupabaseStatus(prev => ({
+          ...prev,
+          applications: { connected: true, error: undefined, count: 0 }
+        }))
+        setApplications([])
+        setUsingFallback(false)
+        setLoading(false)
+        return
+      }
+
       console.log('✅ [Finance Applications] Supabase fetch successful:', data.length, 'applications')
-      console.log('📋 [Finance Applications] Sample application data:', data[0])
       
       setSupabaseStatus(prev => ({
         ...prev,
@@ -77,13 +103,21 @@ export function useFinanceApplications() {
       }))
       
       // Transform Supabase data to application format
-      const transformedApplications: FinanceApplication[] = (data || []).map(row => ({
+      const transformedApplications: FinanceApplication[] = data.map((row, index) => {
+        console.log(`🔄 [Finance Applications] Transforming application ${index + 1}:`, {
+          id: row.id,
+          customer_name: row.customer_name,
+          status: row.status,
+          template_id: row.template_id
+        })
+        
+        return {
         id: row.id,
-        customerId: row.customer_id,
-        customerName: row.customer_name,
-        customerEmail: row.customer_email,
-        customerPhone: row.customer_phone,
-        templateId: row.template_id,
+        customerId: row.customer_id || '',
+        customerName: row.customer_name || 'Unnamed Application',
+        customerEmail: row.customer_email || '',
+        customerPhone: row.customer_phone || '',
+        templateId: row.template_id || '',
         status: row.status,
         data: row.data || {},
         uploadedFiles: row.uploaded_files || [],
@@ -96,9 +130,11 @@ export function useFinanceApplications() {
         reviewedBy: row.reviewed_by,
         notes: row.notes,
         adminNotes: row.admin_notes
-      }))
+        }
+      })
 
       console.log('🔄 [Finance Applications] Transformed applications:', transformedApplications.length)
+      console.log('📋 [Finance Applications] First transformed application:', transformedApplications[0])
       setApplications(transformedApplications)
       setUsingFallback(false)
     } catch (error) {
