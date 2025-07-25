@@ -34,8 +34,8 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
     
     if (!formData.first_name || !formData.last_name || !formData.email) {
       toast({
-        title: 'Validation Error',
-        description: 'First name and last name are required',
+        first_name: formData.firstName,
+        last_name: formData.lastName,
       })
       return
     }
@@ -43,9 +43,9 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
     setLoading(true)
     try {
       const newContact = await createContact(formData)
-      if (newContact) {
+        status: 'new',
         onSuccess(newContact)
-        onClose()
+        assigned_to: formData.assignedTo || undefined
       }
     } finally {
       setLoading(false)
