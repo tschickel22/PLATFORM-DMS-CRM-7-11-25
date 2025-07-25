@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { v4 as uuidv4, validate as validateUUID } from 'uuid'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
@@ -22,8 +23,12 @@ export function usePdiChecklists() {
   })
   const { toast } = useToast()
   
-  // Dynamic company ID resolution with UUID fallback
-  const companyId = user?.tenantId || '00000000-0000-0000-0000-000000000000'
+  // Dynamically resolve a valid company ID (fallback if invalid)
+  let companyId = user?.tenantId
+  if (!validateUUID(companyId)) {
+    console.warn('⚠️ Invalid tenantId:', companyId, '- using fallback UUID')
+    companyId = '00000000-0000-0000-0000-000000000000'
+  }
 
   // Warn if no valid company ID is found
   useEffect(() => {
