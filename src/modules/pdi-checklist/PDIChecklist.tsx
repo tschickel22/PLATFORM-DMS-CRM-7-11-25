@@ -235,7 +235,6 @@ function PDIChecklistDashboard() {
         <TabsList>
           <TabsTrigger value="inspections">Inspections</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inspections" className="space-y-4">
@@ -318,11 +317,6 @@ function PDIChecklistDashboard() {
 
         <TabsContent value="settings" className="space-y-4">
           <PDISettings />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
 
 export default function PDIChecklist() {
   return (

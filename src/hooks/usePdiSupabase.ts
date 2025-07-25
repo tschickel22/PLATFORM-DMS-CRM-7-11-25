@@ -10,6 +10,8 @@ export function usePdiChecklists() {
   const [loading, setLoading] = useState(true)
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [usingFallback, setUsingFallback] = useState(false)
+  const [settingsLoading, setSettingsLoading] = useState(false)
+  const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
   const [connectionAttempted, setConnectionAttempted] = useState(false)
   const [supabaseStatus, setSupabaseStatus] = useState<{
     checklists: { connected: boolean; error?: string; count: number }
@@ -29,6 +31,141 @@ export function usePdiChecklists() {
     setConnectionAttempted(true)
     loadChecklists()
   }, [])
+
+  const loadPdiSettings = async (companyId?: string) => {
+    setSettingsLoading(true)
+    try {
+      // Use the provided companyId or get from user context
+      const targetCompanyId = companyId || user?.tenantId
+      
+      if (!targetCompanyId) {
+        console.warn('⚠️ [PDI Settings] No company ID available, using fallback')
+        setPdiSettings(mockPDI.sampleSettings)
+        setUsingFallback(true)
+        return
+      }
+
+      // Check if we have a valid UUID format (basic check)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(targetCompanyId)) {
+        console.warn('⚠️ [PDI Settings] Invalid UUID format for company ID:', targetCompanyId, 'using fallback')
+        setPdiSettings(mockPDI.sampleSettings)
+        setUsingFallback(true)
+        return
+      }
+
+      console.log('📋 [PDI Settings] Loading settings for company:', targetCompanyId)
+      
+      const { data, error } = await supabase
+        .from('pdi_settings')
+        .select('*')
+        .eq('company_id', targetCompanyId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('❌ [PDI Settings] Supabase error:', error.message)
+        setPdiSettings(mockPDI.sampleSettings)
+        setUsingFallback(true)
+        return
+      }
+
+      console.log(`✅ [PDI Settings] Loaded ${data.length} settings from Supabase`)
+      
+      // Transform data to match our interface
+      const transformedSettings: PdiSetting[] = data.map(row => ({
+        id: row.id,
+        company_id: row.company_id,
+        key: row.key,
+        value: row.value,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }))
+
+      setPdiSettings(transformedSettings)
+      setUsingFallback(false)
+      
+    } catch (error) {
+      console.error('💥 [PDI Settings] Load failed:', error)
+      setPdiSettings(mockPDI.sampleSettings)
+      setUsingFallback(true)
+    } finally {
+      setSettingsLoading(false)
+    }
+  }
+
+  const updatePdiSetting = async (companyId: string, key: string, value: string) => {
+    try {
+      // Check if we have a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(companyId)) {
+        throw new Error(`Invalid UUID format for company ID: ${companyId}`)
+      }
+
+      console.log('💾 [PDI Settings] Updating setting:', { companyId, key, value })
+      
+      const { data, error } = await supabase
+        .from('pdi_settings')
+        .upsert({
+          company_id: companyId,
+          key,
+          value,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'company_id,key'
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [PDI Settings] Update error:', error.message)
+        throw error
+      }
+
+      console.log('✅ [PDI Settings] Setting updated:', data.id)
+      
+      // Update local state
+      setPdiSettings(prev => {
+        const existingIndex = prev.findIndex(s => s.company_id === companyId && s.key === key)
+        if (existingIndex >= 0) {
+          // Update existing setting
+          const updated = [...prev]
+          updated[existingIndex] = {
+            id: data.id,
+            company_id: data.company_id,
+            key: data.key,
+            value: data.value,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          }
+          return updated
+        } else {
+          // Add new setting
+          return [...prev, {
+            id: data.id,
+            company_id: data.company_id,
+            key: data.key,
+            value: data.value,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          }]
+        }
+      })
+      
+    } catch (error) {
+      console.error('Error updating PDI setting:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update PDI setting',
+        variant: 'destructive'
+      })
+      throw error
+    }
+  }
+
+  const getPdiSetting = (key: string): string | undefined => {
+    const setting = pdiSettings.find(s => s.key === key)
+    return setting?.value
+  }
 
   const loadChecklists = async () => {
     console.log('📋 [PDI Checklists] Fetching checklists from Supabase...')
@@ -519,6 +656,8 @@ export function usePdiChecklists() {
     loading,
     settingsLoading,
     usingFallback,
+    settingsLoading,
+    pdiSettings,
     supabaseStatus,
     createChecklist,
     updateChecklist,
@@ -526,6 +665,9 @@ export function usePdiChecklists() {
     getChecklistById,
     getChecklistsByVehicle,
     loadChecklists,
+    loadPdiSettings,
+    updatePdiSetting,
+    getInspectionById,
     loadPdiSettings,
     updatePdiSetting,
     getPdiSetting
