@@ -40,22 +40,36 @@
        )
 e] Executing Supabase query for loans...')
        const { data, error } = await supabase
-         .from('deals') // Assuming 'deals' table is used for loans based on schema
-         .select('*')
--        .eq('company_id', companyId) // Assuming loans are tied to a company_id
          .order('created_at', { ascending: false })
- 
+      let query = supabase
+        .from('deals')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      // Only add company_id filter if we have a valid companyId
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
        console.log('📊 [Finance] Loans Supabase response:', { 
 @@ .. @@
           }
        )
     console.log('⏳ [Finance] Executing Supabase query for loan_payments...')
        const { data, error } = await supabase
-         .from('finance_applications') // Using finance_applications as a proxy for payments
-         .select('*')
--        .eq('company_id', companyId) // Assuming payments are tied to a company_id
          .order('created_at', { ascending: false }) // Using created_at as payment_date
- 
+      let query = supabase
+        .from('finance_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      // Only add company_id filter if we have a valid companyId
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
        console.log('📊 [Finance] Payments Supabase response:', { 
 @@ .. @@
    const createLoan = async (data: Partial<Loan>): Promise<Loan> => {
@@ -64,8 +78,17 @@ e] Executing Supabase query for loans...')
 CompanyId = session?.user?.app_metadata?.company_id;
      const isValidCompanyId = uuidRegex.test(rawCompanyId);
 -    const companyId = isValidCompanyId ? rawCompanyId : '00000000-0000-0000-0000-000000000000';
+    const companyId = isValidCompanyId ? rawCompanyId : null;
+    const companyId = isValidCompanyId ? rawCompanyId : null;
 -    if (!isValidCompanyId) {
 -      console.warn("⚠️ Invalid company_id format in createLoan, using fallback UUID.");
+      console.warn("❌ Invalid company_id format in createLoan, cannot create loan.");
+      toast({
+        title: 'Error',
+        description: 'Invalid company ID format',
+        variant: 'destructive'
+      });
+      throw new Error('Invalid company ID format');
 +    const companyId = isValidCompanyId ? rawCompanyId : null;
 +    
 +    if (!companyId) {
@@ -85,6 +108,7 @@ CompanyId = session?.user?.app_metadata?.company_id;
   }
      .from('deals') // Assuming 'deals' table for loans
 -        .insert([{ ...loanData, company_id: companyId }]) // Add company_id to inserted data
+        .insert([{ ...loanData, ...(companyId && { company_id: companyId }) }])
 +        .insert([loanData])
          .select()
          .single()
@@ -93,9 +117,16 @@ CompanyId = session?.user?.app_metadata?.company_id;
    const createPayment = async (data: Partial<LoanPayment>): Promise<LoanPayment> => {
      const rawCompanyId = session?.user?.app_metadata?.company_id;
      const isValidCompanyId = uuidRegex.test(rawCompanyId);
--    const companyId = isValidCompanyId ? rawCompanyId : '00000000-0000-0000-0000-000000000000';
+    const companyId = isValidCompanyId ? rawCompanyId : null;
 -    if (!isValidCompanyId) {
 -      console.warn("⚠️ Invalid company_id format in createPayment, using fallback UUID.");
+      console.warn("❌ Invalid company_id format in createPayment, cannot create payment.");
+      toast({
+        title: 'Error',
+        description: 'Invalid company ID format',
+        variant: 'destructive'
+      });
+      throw new Error('Invalid company ID format');
 +    const companyId = isValidCompanyId ? rawCompanyId : null;
 +    
 +    if (!companyId) {
@@ -105,7 +136,12 @@ CompanyId = session?.user?.app_metadata?.company_id;
 +        description: 'Invalid company ID format',
 +        variant: 'destructive'
 +      });
-+      throw new Error('Invalid company ID format');
+      console.warn("❌ Invalid company_id format in initial load, skipping Supabase operations.");
+      setLoans(mockFinance.sampleLoans);
+      setPayments(mockFinance.samplePayments);
+      setUsingFallback(true);
+      setLoading(false);
+      return;
      }
  
      try {
@@ -113,6 +149,7 @@ CompanyId = session?.user?.app_metadata?.company_id;
        const { data: insertedData, error } = await supabase
          .from('finance_applications') // Using finance_applications as a proxy for payments
 -        .insert([{ ...paymentData, company_id: companyId }]) // Add company_id to inserted data
+        .insert([{ ...paymentData, ...(companyId && { company_id: companyId }) }])
 +        .insert([paymentData])
          .select()
          .single()
