@@ -28,7 +28,6 @@ function CRMProspectingDashboard() {
   const [selectedLead, setSelectedLead] = useState<CRMContact | null>(null)
   const [sourceFilter, setSourceFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
-
   // Filter contacts based on search and filters
   const filteredContacts = React.useMemo(() => {
     let filtered = contacts
