@@ -18,7 +18,6 @@ import { PortalApplicationView } from './components/PortalApplicationView'
 import { InviteCustomerModal } from './components/InviteCustomerModal'
 import { useFinanceApplications } from './hooks/useFinanceApplications'
 import { FinanceApplication as FinanceApplicationType } from './types'
-import { mockFinanceApplications } from './mocks/financeApplicationMock'
 
 function FinanceApplicationDashboard() {
   const { tenant } = useTenant()
@@ -42,6 +41,7 @@ function FinanceApplicationDashboard() {
   const {
     applications,
     templates,
+    loading,
     createApplication,
     updateApplication,
     deleteApplication,
@@ -202,7 +202,7 @@ function FinanceApplicationDashboard() {
       
       toast({
         title: 'Status Updated',
-        description: `Application status changed to ${mockFinanceApplications.statusOptions.find(s => s.value === newStatus)?.label || newStatus}.`
+        description: `Application status changed to ${newStatus.replace('_', ' ')}.`
       })
     }
   }
@@ -295,7 +295,7 @@ function FinanceApplicationDashboard() {
       toast({
         title: isStatusChanging ? 'Status and Notes Updated' : 'Admin Notes Saved',
         description: isStatusChanging 
-          ? `Application status changed to ${mockFinanceApplications.statusOptions.find(s => s.value === newStatusToApply)?.label || newStatusToApply} and notes saved.`
+          ? `Application status changed to ${newStatusToApply.replace('_', ' ')} and notes saved.`
           : 'Internal notes have been saved successfully.'
       })
     }
@@ -393,10 +393,18 @@ function FinanceApplicationDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockFinanceApplications.statusOptions.map(option => (
+                      {[
+                        { value: 'draft', label: 'Draft' },
+                        { value: 'submitted', label: 'Submitted' },
+                        { value: 'under_review', label: 'Under Review' },
+                        { value: 'approved', label: 'Approved' },
+                        { value: 'conditionally_approved', label: 'Conditionally Approved' },
+                        { value: 'denied', label: 'Denied' },
+                        { value: 'completed', label: 'Completed' }
+                      ].map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           <div className="flex items-center space-x-2">
-                            <div className={`w-2 h-2 rounded-full ${option.color.split(' ')[0]}`}></div>
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                             <span>{option.label}</span>
                           </div>
                         </SelectItem>
@@ -653,7 +661,7 @@ function FinanceApplicationDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{applications.length}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {loading ? 'Loading...' : '+12% from last month'}
             </p>
           </CardContent>
         </Card>
@@ -668,7 +676,7 @@ function FinanceApplicationDashboard() {
               {applications.filter(app => app.status === 'under_review').length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Awaiting approval
+              {loading ? 'Loading...' : 'Awaiting approval'}
             </p>
           </CardContent>
         </Card>
@@ -681,7 +689,7 @@ function FinanceApplicationDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">78%</div>
             <p className="text-xs text-muted-foreground">
-              +5% from last month
+              {loading ? 'Loading...' : '+5% from last month'}
             </p>
           </CardContent>
         </Card>
@@ -694,7 +702,7 @@ function FinanceApplicationDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">2.3 days</div>
             <p className="text-xs text-muted-foreground">
-              -0.5 days from last month
+              {loading ? 'Loading...' : '-0.5 days from last month'}
             </p>
           </CardContent>
         </Card>
@@ -736,7 +744,15 @@ function FinanceApplicationDashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    {mockFinanceApplications.statusOptions.map(option => (
+                    {[
+                      { value: 'draft', label: 'Draft' },
+                      { value: 'submitted', label: 'Submitted' },
+                      { value: 'under_review', label: 'Under Review' },
+                      { value: 'approved', label: 'Approved' },
+                      { value: 'conditionally_approved', label: 'Conditionally Approved' },
+                      { value: 'denied', label: 'Denied' },
+                      { value: 'completed', label: 'Completed' }
+                    ].map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -753,6 +769,13 @@ function FinanceApplicationDashboard() {
               </div>
 
               <div className="space-y-4">
+                {loading && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2">Loading applications...</p>
+                  </div>
+                )}
+                
                 {filteredApplications.map((application) => (
                   <div
                     key={application.id}
@@ -793,7 +816,7 @@ function FinanceApplicationDashboard() {
                   </div>
                 ))}
                 
-                {filteredApplications.length === 0 && (
+                {!loading && filteredApplications.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     {applications.length === 0 ? (

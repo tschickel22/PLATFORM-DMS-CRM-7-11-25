@@ -1,79 +1,261 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 import { FinanceApplication, ApplicationTemplate, ApplicationData, UploadedFile, ApplicationHistoryEntry } from '../types'
-import { mockFinanceApplications } from '../mocks/financeApplicationMock'
-import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 export function useFinanceApplications() {
   const [applications, setApplications] = useState<FinanceApplication[]>([])
   const [templates, setTemplates] = useState<ApplicationTemplate[]>([])
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
-  // Load data from localStorage on mount
+  // Load data from Supabase on mount
   useEffect(() => {
-    // Always load fresh mock data for testing purposes
-    // This ensures the latest mock applications with all statuses are always available
-    setApplications(mockFinanceApplications.sampleApplications)
-    setTemplates(mockFinanceApplications.defaultTemplates)
+    loadApplications()
+    loadTemplates()
   }, [])
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    saveToLocalStorage('financeApplications', applications)
-  }, [applications])
+  const loadApplications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('finance_applications')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-  useEffect(() => {
-    saveToLocalStorage('applicationTemplates', templates)
-  }, [templates])
+      if (error) throw error
 
-  const createApplication = (data: Partial<FinanceApplication>): FinanceApplication => {
-    const newApplication: FinanceApplication = {
-      id: `app-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      customerId: data.customerId || '',
-      customerName: data.customerName || '',
-      customerEmail: data.customerEmail || '',
-      customerPhone: data.customerPhone || '',
-      templateId: data.templateId || templates[0]?.id || '',
-      status: data.status || 'draft',
-      data: data.data || {},
-      uploadedFiles: data.uploadedFiles || [],
-      history: [{
-        id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: new Date().toISOString(),
-        action: 'Application Created',
-        userId: 'current-user', // In real app, get from auth context
-        userName: 'Current User', // In real app, get from auth context
-        details: `Application created with status: ${data.status || 'draft'}`
-      }],
-      fraudCheckStatus: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      notes: data.notes || ''
+      // Transform Supabase data to application format
+      const transformedApplications: FinanceApplication[] = (data || []).map(row => ({
+        id: row.id,
+        customerId: row.customer_id,
+        customerName: row.customer_name,
+        customerEmail: row.customer_email,
+        customerPhone: row.customer_phone,
+        templateId: row.template_id,
+        status: row.status,
+        data: row.data || {},
+        uploadedFiles: row.uploaded_files || [],
+        history: row.history || [],
+        fraudCheckStatus: row.fraud_check_status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        submittedAt: row.submitted_at,
+        reviewedAt: row.reviewed_at,
+        reviewedBy: row.reviewed_by,
+        notes: row.notes,
+        adminNotes: row.admin_notes
+      }))
+
+      setApplications(transformedApplications)
+    } catch (error) {
+      console.error('Error loading applications:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load finance applications',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
     }
-
-    setApplications(prev => [newApplication, ...prev])
-    return newApplication
   }
 
-  const updateApplication = (id: string, updates: Partial<FinanceApplication>) => {
-    setApplications(prev => prev.map(app => 
-      app.id === id 
-        ? { 
-            ...app, 
-            ...updates, 
-            updatedAt: new Date().toISOString(),
-            submittedAt: updates.status === 'submitted' && !app.submittedAt 
-              ? new Date().toISOString() 
-              : app.submittedAt,
-            history: [
-              ...app.history,
-              ...createHistoryEntries(app, updates)
-            ]
-          }
-        : app
-    ))
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('application_templates')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Transform Supabase data to template format
+      const transformedTemplates: ApplicationTemplate[] = (data || []).map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        sections: row.sections || [],
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }))
+
+      setTemplates(transformedTemplates)
+    } catch (error) {
+      console.error('Error loading templates:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load application templates',
+        variant: 'destructive'
+      })
+    }
   }
 
-  const deleteApplication = (id: string) => {
-    setApplications(prev => prev.filter(app => app.id !== id))
+  const createApplication = async (data: Partial<FinanceApplication>): Promise<FinanceApplication> => {
+    try {
+      const applicationData = {
+        customer_id: data.customerId || '',
+        customer_name: data.customerName || '',
+        customer_email: data.customerEmail || '',
+        customer_phone: data.customerPhone || '',
+        template_id: data.templateId || null,
+        status: data.status || 'draft',
+        data: data.data || {},
+        uploaded_files: data.uploadedFiles || [],
+        history: [{
+          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: new Date().toISOString(),
+          action: 'Application Created',
+          userId: 'current-user',
+          userName: 'Current User',
+          details: `Application created with status: ${data.status || 'draft'}`
+        }],
+        fraud_check_status: 'pending',
+        notes: data.notes || ''
+      }
+
+      const { data: insertedData, error } = await supabase
+        .from('finance_applications')
+        .insert([applicationData])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newApplication: FinanceApplication = {
+        id: insertedData.id,
+        customerId: insertedData.customer_id,
+        customerName: insertedData.customer_name,
+        customerEmail: insertedData.customer_email,
+        customerPhone: insertedData.customer_phone,
+        templateId: insertedData.template_id,
+        status: insertedData.status,
+        data: insertedData.data || {},
+        uploadedFiles: insertedData.uploaded_files || [],
+        history: insertedData.history || [],
+        fraudCheckStatus: insertedData.fraud_check_status,
+        createdAt: insertedData.created_at,
+        updatedAt: insertedData.updated_at,
+        submittedAt: insertedData.submitted_at,
+        reviewedAt: insertedData.reviewed_at,
+        reviewedBy: insertedData.reviewed_by,
+        notes: insertedData.notes,
+        adminNotes: insertedData.admin_notes
+      }
+
+      setApplications(prev => [newApplication, ...prev])
+      return newApplication
+    } catch (error) {
+      console.error('Error creating application:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create finance application',
+        variant: 'destructive'
+      })
+      throw error
+    }
+  }
+
+  const updateApplication = async (id: string, updates: Partial<FinanceApplication>) => {
+    try {
+      // Get current application for history tracking
+      const currentApp = applications.find(app => app.id === id)
+      if (!currentApp) throw new Error('Application not found')
+
+      // Create history entries for changes
+      const newHistoryEntries = createHistoryEntries(currentApp, updates)
+      const updatedHistory = [...currentApp.history, ...newHistoryEntries]
+
+      const updateData = {
+        customer_id: updates.customerId,
+        customer_name: updates.customerName,
+        customer_email: updates.customerEmail,
+        customer_phone: updates.customerPhone,
+        template_id: updates.templateId,
+        status: updates.status,
+        data: updates.data,
+        uploaded_files: updates.uploadedFiles,
+        history: updatedHistory,
+        fraud_check_status: updates.fraudCheckStatus,
+        notes: updates.notes,
+        admin_notes: updates.adminNotes,
+        submitted_at: updates.status === 'submitted' && !currentApp.submittedAt 
+          ? new Date().toISOString() 
+          : updates.submittedAt || currentApp.submittedAt,
+        reviewed_at: updates.reviewedAt,
+        reviewed_by: updates.reviewedBy
+      }
+
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key as keyof typeof updateData] === undefined) {
+          delete updateData[key as keyof typeof updateData]
+        }
+      })
+
+      const { data, error } = await supabase
+        .from('finance_applications')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Transform and update local state
+      const updatedApplication: FinanceApplication = {
+        id: data.id,
+        customerId: data.customer_id,
+        customerName: data.customer_name,
+        customerEmail: data.customer_email,
+        customerPhone: data.customer_phone,
+        templateId: data.template_id,
+        status: data.status,
+        data: data.data || {},
+        uploadedFiles: data.uploaded_files || [],
+        history: data.history || [],
+        fraudCheckStatus: data.fraud_check_status,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        submittedAt: data.submitted_at,
+        reviewedAt: data.reviewed_at,
+        reviewedBy: data.reviewed_by,
+        notes: data.notes,
+        adminNotes: data.admin_notes
+      }
+
+      setApplications(prev => prev.map(app => 
+        app.id === id ? updatedApplication : app
+      ))
+    } catch (error) {
+      console.error('Error updating application:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update finance application',
+        variant: 'destructive'
+      })
+      throw error
+    }
+  }
+
+  const deleteApplication = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('finance_applications')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setApplications(prev => prev.filter(app => app.id !== id))
+    } catch (error) {
+      console.error('Error deleting application:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete finance application',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
   const getApplicationById = (id: string): FinanceApplication | undefined => {
@@ -84,67 +266,193 @@ export function useFinanceApplications() {
     return applications.filter(app => app.customerId === customerId)
   }
 
-  const createTemplate = (data: Partial<ApplicationTemplate>): ApplicationTemplate => {
-    const newTemplate: ApplicationTemplate = {
-      id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: data.name || 'New Template',
-      description: data.description || '',
-      sections: data.sections || [],
-      isActive: data.isActive !== undefined ? data.isActive : true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  const createTemplate = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
+    try {
+      const templateData = {
+        name: data.name || 'New Template',
+        description: data.description || '',
+        sections: data.sections || [],
+        is_active: data.isActive !== undefined ? data.isActive : true
+      }
+
+      const { data: insertedData, error } = await supabase
+        .from('application_templates')
+        .insert([templateData])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newTemplate: ApplicationTemplate = {
+        id: insertedData.id,
+        name: insertedData.name,
+        description: insertedData.description,
+        sections: insertedData.sections || [],
+        isActive: insertedData.is_active,
+        createdAt: insertedData.created_at,
+        updatedAt: insertedData.updated_at
+      }
+
+      setTemplates(prev => [newTemplate, ...prev])
+      return newTemplate
+    } catch (error) {
+      console.error('Error creating template:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create application template',
+        variant: 'destructive'
+      })
+      throw error
     }
-
-    setTemplates(prev => [newTemplate, ...prev])
-    return newTemplate
   }
 
-  const updateTemplate = (id: string, updates: Partial<ApplicationTemplate>) => {
-    setTemplates(prev => prev.map(template => 
-      template.id === id 
-        ? { ...template, ...updates, updatedAt: new Date().toISOString() }
-        : template
-    ))
+  const updateTemplate = async (id: string, updates: Partial<ApplicationTemplate>) => {
+    try {
+      const updateData = {
+        name: updates.name,
+        description: updates.description,
+        sections: updates.sections,
+        is_active: updates.isActive
+      }
+
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key as keyof typeof updateData] === undefined) {
+          delete updateData[key as keyof typeof updateData]
+        }
+      })
+
+      const { data, error } = await supabase
+        .from('application_templates')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const updatedTemplate: ApplicationTemplate = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        sections: data.sections || [],
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      }
+
+      setTemplates(prev => prev.map(template => 
+        template.id === id ? updatedTemplate : template
+      ))
+    } catch (error) {
+      console.error('Error updating template:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update application template',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
-  const deleteTemplate = (id: string) => {
-    setTemplates(prev => prev.filter(template => template.id !== id))
+  const deleteTemplate = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('application_templates')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setTemplates(prev => prev.filter(template => template.id !== id))
+    } catch (error) {
+      console.error('Error deleting template:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete application template',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
   const getTemplateById = (id: string): ApplicationTemplate | undefined => {
     return templates.find(template => template.id === id)
   }
 
-  const uploadFile = (applicationId: string, fieldId: string, file: File): Promise<UploadedFile> => {
-    return new Promise((resolve) => {
-      // Mock file upload - in real app, this would upload to storage service
+  const uploadFile = async (applicationId: string, fieldId: string, file: File): Promise<UploadedFile> => {
+    try {
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${applicationId}/${fieldId}/${Date.now()}.${fileExt}`
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('application-files')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('application-files')
+        .getPublicUrl(fileName)
+
       const uploadedFile: UploadedFile = {
         id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         fieldId,
         name: file.name,
         type: file.type,
         size: file.size,
-        url: URL.createObjectURL(file), // Mock URL - in real app, this would be storage URL
+        url: publicUrl,
         uploadedAt: new Date().toISOString()
       }
 
-      // Add file to application
-      updateApplication(applicationId, {
-        uploadedFiles: [
-          ...(getApplicationById(applicationId)?.uploadedFiles || []),
-          uploadedFile
-        ]
-      })
+      // Update application with new file
+      const application = getApplicationById(applicationId)
+      if (application) {
+        const updatedFiles = [...application.uploadedFiles, uploadedFile]
+        await updateApplication(applicationId, { uploadedFiles: updatedFiles })
+      }
 
-      resolve(uploadedFile)
-    })
+      return uploadedFile
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to upload file',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
-  const removeFile = (applicationId: string, fileId: string) => {
-    const application = getApplicationById(applicationId)
-    if (application) {
-      const updatedFiles = application.uploadedFiles.filter(file => file.id !== fileId)
-      updateApplication(applicationId, { uploadedFiles: updatedFiles })
+  const removeFile = async (applicationId: string, fileId: string) => {
+    try {
+      const application = getApplicationById(applicationId)
+      if (application) {
+        const fileToRemove = application.uploadedFiles.find(file => file.id === fileId)
+        
+        // Remove from Supabase Storage if it exists
+        if (fileToRemove && fileToRemove.url.includes('supabase')) {
+          const fileName = fileToRemove.url.split('/').pop()
+          if (fileName) {
+            await supabase.storage
+              .from('application-files')
+              .remove([`${applicationId}/${fileToRemove.fieldId}/${fileName}`])
+          }
+        }
+
+        const updatedFiles = application.uploadedFiles.filter(file => file.id !== fileId)
+        await updateApplication(applicationId, { uploadedFiles: updatedFiles })
+      }
+    } catch (error) {
+      console.error('Error removing file:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to remove file',
+        variant: 'destructive'
+      })
+      throw error
     }
   }
 
@@ -226,6 +534,7 @@ export function useFinanceApplications() {
   return {
     applications,
     templates,
+    loading,
     createApplication,
     updateApplication,
     deleteApplication,
@@ -236,6 +545,8 @@ export function useFinanceApplications() {
     deleteTemplate,
     getTemplateById,
     uploadFile,
-    removeFile
+    removeFile,
+    loadApplications,
+    loadTemplates
   }
 }

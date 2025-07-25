@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, GripVertical, Save, X } from 'lucide-react'
 import { ApplicationTemplate, ApplicationSection, ApplicationField, FieldType } from '../types'
-import { mockFinanceApplications } from '../mocks/financeApplicationMock'
 import { useToast } from '@/hooks/use-toast'
 
 interface AdminApplicationBuilderProps {
@@ -33,7 +32,20 @@ export function AdminApplicationBuilder({
   const [showNewTemplateOptions, setShowNewTemplateOptions] = useState(false)
   const [selectedSourceTemplate, setSelectedSourceTemplate] = useState<string>('')
 
-  const fieldTypes = mockFinanceApplications.fieldTypes
+  const fieldTypes = [
+    { value: 'text', label: 'Text Input' },
+    { value: 'email', label: 'Email' },
+    { value: 'phone', label: 'Phone Number' },
+    { value: 'number', label: 'Number' },
+    { value: 'currency', label: 'Currency' },
+    { value: 'date', label: 'Date' },
+    { value: 'select', label: 'Dropdown' },
+    { value: 'radio', label: 'Radio Buttons' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'textarea', label: 'Text Area' },
+    { value: 'file', label: 'File Upload' },
+    { value: 'signature', label: 'Electronic Signature' }
+  ]
 
   const handleCreateTemplate = (sourceTemplateId?: string) => {
     let templateData: Partial<ApplicationTemplate> = {

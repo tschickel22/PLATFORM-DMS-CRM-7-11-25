@@ -18,6 +18,7 @@ export function PortalApplicationView() {
   const {
     applications,
     templates,
+    loading,
     createApplication,
     updateApplication,
     getApplicationsByCustomer
@@ -244,6 +245,13 @@ export function PortalApplicationView() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {loading && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading applications...</p>
+            </div>
+          )}
+          
           <div className="space-y-4">
             {customerApplications.map((application) => {
               const progress = getApplicationProgress(application)
@@ -322,7 +330,7 @@ export function PortalApplicationView() {
               )
             })}
             
-            {customerApplications.length === 0 && (
+            {!loading && customerApplications.length === 0 && (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-semibold mb-2">No Applications Yet</h3>
