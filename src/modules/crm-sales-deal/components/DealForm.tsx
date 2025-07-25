@@ -6,32 +6,33 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, Save } from 'lucide-react'
-import { useDeals } from '@/hooks/useCrmSupabase'
+import { useDealManagement, Deal } from '../hooks/useDealManagement'
 import { useToast } from '@/hooks/use-toast'
 
 interface DealFormProps {
-  deal?: any
+  deal?: Deal
   onClose: () => void
-  onSuccess?: (deal: any) => void
+  onSuccess?: (deal: Deal) => void
 }
 
 export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
-  const { createDeal, updateDeal } = useDeals()
+  const { createDeal, updateDeal } = useDealManagement()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  
   const [formData, setFormData] = useState({
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    vehicleInfo: '',
+    customer_name: '',
+    customer_email: '',
+    customer_phone: '',
+    vehicle_info: '',
     stage: 'New',
     amount: 0,
     source: '',
     type: 'New Sale',
     priority: 'Medium',
-    repName: '',
+    rep_name: '',
     probability: 25,
-    expectedCloseDate: '',
+    expected_close_date: '',
     notes: ''
   })
 
@@ -39,18 +40,18 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
   useEffect(() => {
     if (deal) {
       setFormData({
-        customerName: deal.customer_name || '',
-        customerEmail: deal.customer_email || '',
-        customerPhone: deal.customer_phone || '',
-        vehicleInfo: deal.vehicle_info || '',
+        customer_name: deal.customer_name || '',
+        customer_email: deal.customer_email || '',
+        customer_phone: deal.customer_phone || '',
+        vehicle_info: deal.vehicle_info || '',
         stage: deal.stage || 'New',
         amount: deal.amount || 0,
         source: deal.source || '',
         type: deal.type || 'New Sale',
         priority: deal.priority || 'Medium',
-        repName: deal.rep_name || '',
+        rep_name: deal.rep_name || '',
         probability: deal.probability || 25,
-        expectedCloseDate: deal.expected_close_date || '',
+        expected_close_date: deal.expected_close_date || '',
         notes: deal.notes || ''
       })
     }
@@ -59,7 +60,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.customerName) {
+    if (!formData.customer_name.trim()) {
       toast({
         title: 'Validation Error',
         description: 'Customer name is required',
@@ -69,26 +70,36 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
     }
 
     setLoading(true)
+    
     try {
       let result
       if (deal) {
         result = await updateDeal(deal.id, formData)
+        if (result && onSuccess) {
+          onSuccess({ ...deal, ...formData })
+        }
       } else {
         result = await createDeal(formData)
+        if (result && onSuccess) {
+          onSuccess(result)
+        }
       }
       
-      toast({
-        title: 'Success',
-        description: `Deal ${deal ? 'updated' : 'created'} successfully`
-      })
-      
-      onSuccess?.(result)
-      onClose()
+      if (result) {
+        onClose()
+      }
     } catch (error) {
-      // Error handling is done in the hook
+      console.error('Error saving deal:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   const dealStages = ['New', 'Qualified', 'Proposal Sent', 'Negotiation', 'Closed Won', 'Closed Lost']
@@ -98,7 +109,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -112,48 +123,49 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="overflow-y-auto">
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Customer Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Customer Information</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="customerName">Customer Name *</Label>
+                  <Label htmlFor="customer_name">Customer Name *</Label>
                   <Input
-                    id="customerName"
-                    value={formData.customerName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                    id="customer_name"
+                    value={formData.customer_name}
+                    onChange={(e) => handleInputChange('customer_name', e.target.value)}
                     placeholder="Enter customer name"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="customerEmail">Email</Label>
+                  <Label htmlFor="customer_email">Email</Label>
                   <Input
-                    id="customerEmail"
+                    id="customer_email"
                     type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
-                    placeholder="Enter email address"
+                    value={formData.customer_email}
+                    onChange={(e) => handleInputChange('customer_email', e.target.value)}
+                    placeholder="customer@email.com"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="customerPhone">Phone</Label>
+                  <Label htmlFor="customer_phone">Phone</Label>
                   <Input
-                    id="customerPhone"
-                    value={formData.customerPhone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
+                    id="customer_phone"
+                    type="tel"
+                    value={formData.customer_phone}
+                    onChange={(e) => handleInputChange('customer_phone', e.target.value)}
                     placeholder="(555) 123-4567"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="vehicleInfo">Vehicle/Home Info</Label>
+                  <Label htmlFor="vehicle_info">Vehicle/Home Info</Label>
                   <Input
-                    id="vehicleInfo"
-                    value={formData.vehicleInfo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, vehicleInfo: e.target.value }))}
-                    placeholder="e.g., 2023 Forest River Cherokee"
+                    id="vehicle_info"
+                    value={formData.vehicle_info}
+                    onChange={(e) => handleInputChange('vehicle_info', e.target.value)}
+                    placeholder="2024 Forest River Cherokee"
                   />
                 </div>
               </div>
@@ -167,7 +179,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                   <Label htmlFor="stage">Stage</Label>
                   <Select
                     value={formData.stage}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, stage: value }))}
+                    onValueChange={(value) => handleInputChange('stage', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -187,7 +199,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                     id="amount"
                     type="number"
                     value={formData.amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                    onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
                     placeholder="0"
                     min="0"
                     step="0.01"
@@ -197,7 +209,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                   <Label htmlFor="source">Source</Label>
                   <Select
                     value={formData.source}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, source: value }))}
+                    onValueChange={(value) => handleInputChange('source', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select source" />
@@ -212,10 +224,10 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="type">Deal Type</Label>
+                  <Label htmlFor="type">Type</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                    onValueChange={(value) => handleInputChange('type', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -233,7 +245,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                   <Label htmlFor="priority">Priority</Label>
                   <Select
                     value={formData.priority}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
+                    onValueChange={(value) => handleInputChange('priority', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -248,11 +260,11 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="repName">Sales Rep</Label>
+                  <Label htmlFor="rep_name">Sales Rep</Label>
                   <Input
-                    id="repName"
-                    value={formData.repName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, repName: e.target.value }))}
+                    id="rep_name"
+                    value={formData.rep_name}
+                    onChange={(e) => handleInputChange('rep_name', e.target.value)}
                     placeholder="Enter sales rep name"
                   />
                 </div>
@@ -262,18 +274,19 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
                     id="probability"
                     type="number"
                     value={formData.probability}
-                    onChange={(e) => setFormData(prev => ({ ...prev, probability: Number(e.target.value) }))}
+                    onChange={(e) => handleInputChange('probability', parseInt(e.target.value) || 0)}
+                    placeholder="25"
                     min="0"
                     max="100"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="expectedCloseDate">Expected Close Date</Label>
+                  <Label htmlFor="expected_close_date">Expected Close Date</Label>
                   <Input
-                    id="expectedCloseDate"
+                    id="expected_close_date"
                     type="date"
-                    value={formData.expectedCloseDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, expectedCloseDate: e.target.value }))}
+                    value={formData.expected_close_date}
+                    onChange={(e) => handleInputChange('expected_close_date', e.target.value)}
                   />
                 </div>
               </div>
@@ -285,7 +298,7 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
               <Textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
                 placeholder="Add any additional notes about this deal..."
                 rows={4}
               />

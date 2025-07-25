@@ -3,118 +3,184 @@ import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Search, Filter, TrendingUp, Users, DollarSign, Target } from 'lucide-react'
-import { useDeals, useApprovalWorkflows, useTerritories } from '@/hooks/useCrmSupabase'
-import { createDeal, updateDealStage, createApprovalWorkflow, createWinLossReport } from './hooks/useDealManagement'
-import { useToast } from '@/hooks/use-toast'
+import { Plus, Search, Eye, Edit, Filter } from 'lucide-react'
+import { useDealManagement, Deal } from './hooks/useDealManagement'
 import { DealForm } from './components/DealForm'
 import { DealDetail } from './components/DealDetail'
 import { DealPipeline } from './components/DealPipeline'
 import { DealMetrics } from './components/DealMetrics'
-import { TerritoryManagement } from './components/TerritoryManagement'
-import { ApprovalWorkflows } from './components/ApprovalWorkflows'
-import { WinLossAnalysis } from './components/WinLossAnalysis'
-import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
+import { formatCurrency, formatDate } from '@/lib/utils'
 
 function CRMSalesDealDashboard() {
-  const { deals, loading: dealsLoading } = useDeals()
-  const { approvalWorkflows, loading: workflowsLoading } = useApprovalWorkflows()
-  const { territories, loading: territoriesLoading } = useTerritories()
-  const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState('deals')
+  const { deals, loading, getDealsMetrics } = useDealManagement()
+  const [activeView, setActiveView] = useState<'list' | 'pipeline' | 'metrics'>('list')
+  const [showNewDealForm, setShowNewDealForm] = useState(false)
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
+  const [showDealDetail, setShowDealDetail] = useState(false)
+  
+  // Search and filter states
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [showDealForm, setShowDealForm] = useState(false)
-  const [selectedDeal, setSelectedDeal] = useState<any>(null)
+  const [stageFilter, setStageFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
 
-  // Filter deals based on search and status
+  // Filter deals based on search and filters
   const filteredDeals = React.useMemo(() => {
-    if (dealsLoading) return []
-    
-    let currentDeals = deals
+    let filtered = deals
 
     // Search filter
-    if (searchQuery.trim()) {
-      const lowerCaseQuery = searchQuery.toLowerCase()
-      currentDeals = currentDeals.filter(deal =>
-        (deal.customer_name && deal.customer_name.toLowerCase().includes(lowerCaseQuery)) ||
-        (deal.vehicle_info && deal.vehicle_info.toLowerCase().includes(lowerCaseQuery)) ||
-        (deal.rep_name && deal.rep_name.toLowerCase().includes(lowerCaseQuery))
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(deal =>
+        deal.customer_name.toLowerCase().includes(query) ||
+        (deal.customer_email && deal.customer_email.toLowerCase().includes(query)) ||
+        (deal.vehicle_info && deal.vehicle_info.toLowerCase().includes(query)) ||
+        (deal.rep_name && deal.rep_name.toLowerCase().includes(query))
       )
     }
 
-    // Status filter
-    if (statusFilter !== 'all') {
-      currentDeals = currentDeals.filter(deal => deal.stage === statusFilter)
+    // Stage filter
+    if (stageFilter !== 'all') {
+      filtered = filtered.filter(deal => deal.stage === stageFilter)
     }
 
-    return currentDeals
-  }, [deals, dealsLoading, searchQuery, statusFilter])
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(deal => deal.priority === priorityFilter)
+    }
 
-  const handleCreateDeal = async (dealData: any) => {
-    try {
-      await createDeal(dealData)
-      toast({
-        title: 'Deal Created',
-        description: 'New deal has been created successfully.'
-      })
-      setShowDealForm(false)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create deal. Please try again.',
-        variant: 'destructive'
-      })
+    return filtered
+  }, [deals, searchQuery, stageFilter, priorityFilter])
+
+  const handleViewDeal = (deal: Deal) => {
+    setSelectedDeal(deal)
+    setShowDealDetail(true)
+  }
+
+  const handleEditDeal = (deal: Deal) => {
+    setSelectedDeal(deal)
+    setShowNewDealForm(true)
+  }
+
+  const handleDealSuccess = () => {
+    setShowNewDealForm(false)
+    setSelectedDeal(null)
+  }
+
+  const handleDealUpdate = (updatedDeal: Deal) => {
+    setSelectedDeal(updatedDeal)
+  }
+
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'New':
+        return 'bg-gray-100 text-gray-800'
+      case 'Qualified':
+        return 'bg-blue-100 text-blue-800'
+      case 'Proposal Sent':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'Negotiation':
+        return 'bg-orange-100 text-orange-800'
+      case 'Closed Won':
+        return 'bg-green-100 text-green-800'
+      case 'Closed Lost':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const handleUpdateDealStage = async (dealId: string, newStage: string) => {
-    try {
-      await updateDealStage(dealId, newStage)
-      toast({
-        title: 'Deal Updated',
-        description: 'Deal stage has been updated successfully.'
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update deal stage. Please try again.',
-        variant: 'destructive'
-      })
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'Low':
+        return 'bg-gray-100 text-gray-800'
+      case 'Medium':
+        return 'bg-blue-100 text-blue-800'
+      case 'High':
+        return 'bg-orange-100 text-orange-800'
+      case 'Urgent':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
-  if (dealsLoading || workflowsLoading || territoriesLoading) {
+  if (showDealDetail && selectedDeal) {
     return (
-      <div className="space-y-6">
-        <div className="ri-page-header">
-          <h1 className="ri-page-title">CRM Sales & Deals</h1>
-          <p className="ri-page-description">Loading...</p>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
+      <DealDetail
+        deal={selectedDeal}
+        onClose={() => {
+          setShowDealDetail(false)
+          setSelectedDeal(null)
+        }}
+        onUpdate={handleDealUpdate}
+      />
     )
   }
 
+  if (activeView === 'pipeline') {
+    return <DealPipeline />
+  }
+
+  if (activeView === 'metrics') {
+    return <DealMetrics />
+  }
+
+  const metrics = getDealsMetrics()
+
   return (
     <div className="space-y-6">
+      {/* New Deal Form Modal */}
+      {showNewDealForm && (
+        <DealForm
+          deal={selectedDeal || undefined}
+          onClose={() => {
+            setShowNewDealForm(false)
+            setSelectedDeal(null)
+          }}
+          onSuccess={handleDealSuccess}
+        />
+      )}
+
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="ri-page-title">CRM Sales & Deals</h1>
+            <h1 className="ri-page-title">Sales Deals</h1>
             <p className="ri-page-description">
-              Manage your sales pipeline, track deals, and analyze performance
+              Manage your sales pipeline and track deal progress
             </p>
           </div>
-          <Button onClick={() => setShowDealForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Deal
-          </Button>
+          <div className="flex items-center space-x-2">
+            <div className="flex bg-muted p-1 rounded-lg">
+              <Button
+                variant={activeView === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveView('list')}
+              >
+                List
+              </Button>
+              <Button
+                variant={activeView === 'pipeline' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveView('pipeline')}
+              >
+                Pipeline
+              </Button>
+              <Button
+                variant={activeView === 'metrics' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveView('metrics')}
+              >
+                Metrics
+              </Button>
+            </div>
+            <Button onClick={() => setShowNewDealForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Deal
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -126,181 +192,189 @@ function CRMSalesDealDashboard() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{deals.length}</div>
+            <div className="text-2xl font-bold">{metrics.totalDeals}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {loading ? 'Loading...' : 'All time'}
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Deals</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{deals.filter(d => !['Closed Won', 'Closed Lost'].includes(d.stage)).length}</div>
-            <p className="text-xs text-muted-foreground">
-              Pipeline value: $2.4M
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Won This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{deals.filter(d => d.stage === 'Closed Won').length}</div>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</div>
             <p className="text-xs text-muted-foreground">
-              $485K total value
+              {loading ? 'Loading...' : 'Total opportunity value'}
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">68%</div>
+            <div className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              +5% from last month
+              {loading ? 'Loading...' : `${metrics.wonDeals} deals won`}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Deal Size</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? 'Loading...' : 'Average deal value'}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Deal Form Modal */}
-      {showDealForm && (
-        <DealForm
-          onSave={handleCreateDeal}
-          onCancel={() => setShowDealForm(false)}
-        />
-      )}
-
-      {/* Deal Detail Modal */}
-      {selectedDeal && (
-        <DealDetail
-          deal={selectedDeal}
-          onUpdateStage={handleUpdateDealStage}
-          onClose={() => setSelectedDeal(null)}
-        />
-      )}
-
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="deals">Deals</TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="territories">Territories</TabsTrigger>
-          <TabsTrigger value="approvals">Approvals</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="deals" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deals Management</CardTitle>
+      {/* Deals List */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Deals</CardTitle>
               <CardDescription>
-                Track and manage your sales deals
+                Manage and track your sales deals
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Search and Filter Controls */}
-              <div className="flex flex-wrap gap-4 mb-6">
-                <div className="ri-search-bar">
-                  <Search className="ri-search-icon" />
-                  <Input
-                    placeholder="Search deals..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="ri-search-input"
-                  />
-                </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border rounded-md"
-                >
-                  <option value="all">All Stages</option>
-                  {mockCrmSalesDeal.dealStages.map(stage => (
-                    <option key={stage} value={stage}>{stage}</option>
-                  ))}
-                </select>
-              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Filter Controls */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="ri-search-bar">
+              <Search className="ri-search-icon" />
+              <Input
+                placeholder="Search deals..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ri-search-input"
+              />
+            </div>
+            <Select
+              value={stageFilter}
+              onValueChange={setStageFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stages</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Qualified">Qualified</SelectItem>
+                <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
+                <SelectItem value="Negotiation">Negotiation</SelectItem>
+                <SelectItem value="Closed Won">Closed Won</SelectItem>
+                <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={priorityFilter}
+              onValueChange={setPriorityFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="space-y-4">
-                {filteredDeals.map((deal) => (
-                  <div
-                    key={deal.id}
-                    className="ri-table-row cursor-pointer"
-                    onClick={() => setSelectedDeal(deal)}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="font-semibold">{deal.customer_name || 'Unnamed Deal'}</h4>
-                        <Badge className={mockCrmSalesDeal.stageColors[deal.stage] || 'bg-gray-100 text-gray-800'}>
-                          {deal.stage}
-                        </Badge>
-                        <Badge className={mockCrmSalesDeal.priorityColors[deal.priority] || 'bg-gray-100 text-gray-800'}>
-                          {deal.priority}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {deal.vehicle_info && <span>{deal.vehicle_info} • </span>}
-                        ${deal.amount?.toLocaleString() || '0'} • {deal.rep_name || 'Unassigned'}
-                      </div>
+          <div className="space-y-4">
+            {loading && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Loading deals...</p>
+              </div>
+            )}
+            
+            {filteredDeals.map((deal) => (
+              <div
+                key={deal.id}
+                className="ri-table-row"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <div>
+                      <h4 className="font-semibold">{deal.customer_name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {deal.vehicle_info || 'No vehicle specified'}
+                      </p>
                     </div>
-                    <div className="ri-action-buttons">
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(deal.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <Badge className={getStageColor(deal.stage)}>
+                      {deal.stage}
+                    </Badge>
+                    <Badge className={getPriorityColor(deal.priority || 'Medium')} variant="outline">
+                      {deal.priority || 'Medium'}
+                    </Badge>
                   </div>
-                ))}
-                
-                {filteredDeals.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    {deals.length === 0 ? (
-                      <>
-                        <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No deals yet</p>
-                        <p className="text-sm">Create your first deal to get started</p>
-                      </>
-                    ) : (
-                      <>
-                        <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No deals found matching your criteria</p>
-                        <p className="text-sm">Try adjusting your search or filters</p>
-                      </>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    <span className="font-medium">{formatCurrency(deal.amount || 0)}</span>
+                    {deal.rep_name && <span> • Rep: {deal.rep_name}</span>}
+                    <span> • Created: {formatDate(deal.created_at)}</span>
+                    {deal.expected_close_date && (
+                      <span> • Expected: {formatDate(deal.expected_close_date)}</span>
                     )}
                   </div>
+                </div>
+                <div className="ri-action-buttons">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewDeal(deal)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditDeal(deal)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            ))}
+            
+            {!loading && filteredDeals.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                {deals.length === 0 ? (
+                  <>
+                    <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No deals yet</p>
+                    <p className="text-sm">Create your first deal to get started</p>
+                  </>
+                ) : (
+                  <>
+                    <Filter className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No deals found</p>
+                    <p className="text-sm">Try adjusting your search or filters</p>
+                  </>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="pipeline" className="space-y-4">
-          <DealPipeline deals={filteredDeals} onUpdateStage={handleUpdateDealStage} />
-        </TabsContent>
-
-        <TabsContent value="territories" className="space-y-4">
-          <TerritoryManagement territories={territories} loading={territoriesLoading} />
-        </TabsContent>
-
-        <TabsContent value="approvals" className="space-y-4">
-          <ApprovalWorkflows workflows={approvalWorkflows} loading={workflowsLoading} />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <DealMetrics deals={deals} loading={dealsLoading} />
-          <WinLossAnalysis />
-        </TabsContent>
-      </Tabs>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -309,6 +383,8 @@ export default function CRMSalesDeal() {
   return (
     <Routes>
       <Route path="/" element={<CRMSalesDealDashboard />} />
+      <Route path="/pipeline" element={<DealPipeline />} />
+      <Route path="/metrics" element={<DealMetrics />} />
       <Route path="/*" element={<CRMSalesDealDashboard />} />
     </Routes>
   )
