@@ -1,77 +1,70 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Edit, Eye, FileText, Trash2 } from 'lucide-react'
+import { Eye, Edit, Trash2, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import { PdiChecklist } from '@/types'
-import { formatDate } from '@/lib/utils'
 
 interface PDIInspectionListProps {
   inspections: PdiChecklist[]
   onEditInspection: (inspection: PdiChecklist) => void
   onDeleteInspection: (id: string) => void
   loading: boolean
-  onEditInspection: (id: string) => void
 }
 
-export function PDIInspectionList({ 
-  inspections, 
-  onEditInspection, 
+export function PDIInspectionList({
+  inspections,
+  onEditInspection,
   onDeleteInspection,
-  loading 
+  loading
 }: PDIInspectionListProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [technicianFilter, setTechnicianFilter] = useState('all')
-
-  // Use mock data as fallback - in real app, fetch from API
-  const inspections = mockPDI.sampleInspections
-
   const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      'not_started': 'bg-gray-100 text-gray-800',
-      'in_progress': 'bg-blue-100 text-blue-800',
-      'complete': 'bg-green-100 text-green-800',
-      'failed': 'bg-red-100 text-red-800',
-      'pending_review': 'bg-yellow-100 text-yellow-800',
-      'approved': 'bg-emerald-100 text-emerald-800'
+    switch (status.toLowerCase()) {
+      case 'not_started':
+        return 'bg-gray-100 text-gray-800'
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800'
+      case 'complete':
+        return 'bg-green-100 text-green-800'
+      case 'failed':
+        return 'bg-red-100 text-red-800'
+      case 'pending_review':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'approved':
+        return 'bg-emerald-100 text-emerald-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
-    return statusColors[status] || 'bg-gray-100 text-gray-800'
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Complete': return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'In Progress': return <Clock className="h-4 w-4 text-blue-600" />
-      case 'Failed': return <XCircle className="h-4 w-4 text-red-600" />
-      default: return <Clock className="h-4 w-4 text-gray-600" />
+    switch (status.toLowerCase()) {
+      case 'not_started':
+        return <Clock className="h-4 w-4" />
+      case 'in_progress':
+        return <AlertTriangle className="h-4 w-4" />
+      case 'complete':
+      case 'approved':
+        return <CheckCircle className="h-4 w-4" />
+      case 'failed':
+        return <XCircle className="h-4 w-4" />
+      case 'pending_review':
+        return <Clock className="h-4 w-4" />
+      default:
+        return <Clock className="h-4 w-4" />
     }
   }
 
-  const filteredInspections = inspections.filter(inspection => {
-    const matchesSearch = inspection.unitInfo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inspection.stockNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inspection.technicianName.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || inspection.status === statusFilter
-    const matchesTechnician = technicianFilter === 'all' || inspection.technicianId === technicianFilter
-    
-    return matchesSearch && matchesStatus && matchesTechnician
-  })
-
-  const calculateProgress = (inspection: any) => {
-    if (!inspection.findings || inspection.findings.length === 0) return 0
-    const completedItems = inspection.findings.filter((f: any) => f.status === 'Pass' || f.status === 'Fail').length
-    return Math.round((completedItems / inspection.findings.length) * 100)
+  const getCompletedSteps = (checklistData: any[]) => {
+    if (!Array.isArray(checklistData)) return 0
+    return checklistData.filter(item => item.status === 'complete').length
   }
 
   if (loading) {
     return (
       <div className="text-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="text-muted-foreground mt-2">Loading PDI checklists...</p>
+        <p className="text-muted-foreground mt-2">Loading inspections...</p>
       </div>
     )
   }
@@ -79,135 +72,74 @@ export function PDIInspectionList({
   if (inspections.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-        <p>No PDI checklists found</p>
-        <p className="text-sm">Create your first inspection to get started</p>
+        <CheckCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+        <p>No PDI inspections found</p>
+        <p className="text-sm">Inspections will appear here when they are created</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">PDI Inspections</h1>
-          <p className="text-muted-foreground">
-            Manage pre-delivery inspections for RVs and vehicles
-          </p>
-        </div>
-        <Button onClick={onNewInspection}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Inspection
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Inspection List</CardTitle>
-          <CardDescription>
-            View and manage all PDI inspections
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search inspections..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+    <div className="space-y-4">
+      {inspections.map((inspection) => (
+        <Card key={inspection.id} className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center space-x-3">
+                  {getStatusIcon(inspection.status)}
+                  <div>
+                    <h4 className="font-semibold">
+                      Vehicle: {inspection.vehicle_id}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Technician: {inspection.technician}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <Badge className={getStatusColor(inspection.status)}>
+                    {inspection.status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Steps: {getCompletedSteps(inspection.checklist_data)}/{inspection.checklist_data?.length || 0} complete
+                  </span>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  Created: {new Date(inspection.created_at).toLocaleDateString()}
+                  {inspection.updated_at && inspection.updated_at !== inspection.created_at && (
+                    <span> • Updated: {new Date(inspection.updated_at).toLocaleDateString()}</span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 ml-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEditInspection(inspection)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this inspection?')) {
+                      onDeleteInspection(inspection.id)
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {mockPDI.checklistStatuses.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All technicians" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Technicians</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Unit Info</TableHead>
-                <TableHead>Stock #</TableHead>
-                <TableHead>Technician</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Started</TableHead>
-                <TableHead>Completed</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInspections.map((inspection) => (
-                <TableRow key={inspection.id}>
-                  <TableCell className="font-medium">{inspection.unitInfo}</TableCell>
-                  <TableCell>{inspection.stockNumber}</TableCell>
-                  <TableCell>{inspection.technicianName}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(inspection.status)}
-                      <Badge className={getStatusColor(inspection.status)}>
-                        {inspection.status}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">{calculateProgress(inspection)}% Complete</div>
-                  </TableCell>
-                  <TableCell>{formatDate(inspection.startedDate)}</TableCell>
-                  <TableCell>
-                    {inspection.completedDate ? formatDate(inspection.completedDate) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onViewInspection(inspection.id)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEditInspection(inspection.id)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {filteredInspections.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No inspections found matching your criteria.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }
