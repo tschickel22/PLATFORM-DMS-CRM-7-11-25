@@ -14,6 +14,9 @@ export const usePdiChecklists = usePdiSupabase
 export function usePdiSupabase() {
   const { session } = useAuth()
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
+  const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
+  const [connectionAttempted, setConnectionAttempted] = useState(false)
+  const [usingFallback, setUsingFallback] = useState(false)
   const [loading, setLoading] = useState(true)
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [supabaseStatus, setSupabaseStatus] = useState<{

@@ -21,7 +21,7 @@ import { PdiChecklist } from '@/types'
 function PDIChecklistDashboard() {
   const {
     checklists,
-    loading,
+  const { pdiChecklists, pdiSettings, loading, usingFallback, supabaseStatus, createChecklist, updateChecklist, deleteChecklist } = usePdiSupabase()
     usingFallback,
     supabaseStatus,
     createChecklist,
