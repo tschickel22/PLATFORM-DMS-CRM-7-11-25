@@ -1,266 +1,225 @@
 import { useState, useEffect } from 'react'
-import { ServiceTicket, ServiceStatus, Priority, ServicePart, ServiceLabor } from '@/types'
-import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
+import { supabase } from '@/lib/supabaseClient'
+import { useToast } from '@/hooks/use-toast'
+import { mockServiceOps } from '@/mocks/serviceOpsMock'
+
+export interface ServiceTicket {
+  id: string
+  title: string
+  description: string
+  category: string
+  priority: string
+  status: string
+  customer_id?: string
+  customer_name?: string
+  customer_phone?: string
+  customer_email?: string
+  vehicle_id?: string
+  vehicle_info?: string
+  assigned_to?: string
+  assigned_tech_name?: string
+  scheduled_date?: string
+  created_at: string
+  updated_at: string
+  estimated_hours?: number
+  actual_hours?: number
+  parts?: ServicePart[]
+  labor?: ServiceLabor[]
+  timeline?: ServiceTimelineEntry[]
+  notes?: string
+  total_cost?: number
+  customer_approved?: boolean
+}
+
+export interface ServicePart {
+  id: string
+  name: string
+  quantity: number
+  cost: number
+}
+
+export interface ServiceLabor {
+  id: string
+  description: string
+  hours: number
+  rate: number
+}
+
+export interface ServiceTimelineEntry {
+  id: string
+  timestamp: string
+  action: string
+  user: string
+  details: string
+}
 
 export function useServiceManagement() {
   const [tickets, setTickets] = useState<ServiceTicket[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [usingFallback, setUsingFallback] = useState(false)
+  const { toast } = useToast()
 
-  useEffect(() => {
-    initializeMockData()
-  }, [])
-
-  const initializeMockData = () => {
-    // Load existing tickets from localStorage or use mock data
-    const savedTickets = loadFromLocalStorage('renter-insight-service-tickets', [
-      {
-        id: '1',
-        customerId: 'cust-1',
-        vehicleId: 'veh-1',
-        title: 'Annual Maintenance Service',
-        description: 'Complete annual maintenance including oil change, filter replacement, and system checks',
-        priority: Priority.MEDIUM,
-        status: ServiceStatus.IN_PROGRESS,
-        assignedTo: 'Tech-001',
-        scheduledDate: new Date('2024-01-20'),
-        parts: [
-          {
-            id: '1',
-            partNumber: 'OIL-001',
-            description: 'Engine Oil Filter',
-            quantity: 1,
-            unitCost: 25.99,
-            total: 25.99
-          }
-        ],
-        labor: [
-          {
-            id: '1',
-            description: 'Annual Maintenance',
-            hours: 3,
-            rate: 85,
-            total: 255
-          }
-        ],
-        notes: 'Customer requested additional inspection of brake system',
-        customFields: {
-          warrantyStatus: 'not_covered',
-          estimatedCompletionDate: '2024-01-22',
-          customerAuthorization: true,
-          technicianNotes: 'Check brake pads and rotors during service',
-          customerPortalAccess: true
-        },
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-18')
-      },
-      {
-        id: '2',
-        customerId: 'cust-2',
-        vehicleId: 'veh-2',
-        title: 'AC System Repair',
-        description: 'Air conditioning not cooling properly, needs diagnostic and repair',
-        priority: Priority.HIGH,
-        status: ServiceStatus.WAITING_PARTS,
-        assignedTo: 'Tech-002',
-        scheduledDate: new Date('2024-01-22'),
-        parts: [
-          {
-            id: '2',
-            partNumber: 'AC-COMP-001',
-            description: 'AC Compressor',
-            quantity: 1,
-            unitCost: 450.00,
-            total: 450.00
-          }
-        ],
-        labor: [
-          {
-            id: '2',
-            description: 'AC System Diagnostic',
-            hours: 2,
-            rate: 85,
-            total: 170
-          }
-        ],
-        notes: 'Waiting for compressor part to arrive',
-        customFields: {
-          warrantyStatus: 'partial',
-          estimatedCompletionDate: '2024-01-25',
-          customerAuthorization: true,
-          technicianNotes: 'Compressor needs replacement, on order from supplier',
-          customerPortalAccess: true
-        },
-        createdAt: new Date('2024-01-12'),
-        updatedAt: new Date('2024-01-16')
-      }
-    ])
-
-    setTickets(savedTickets)
-  }
-
-  const saveTicketsToStorage = (updatedTickets: ServiceTicket[]) => {
-    saveToLocalStorage('renter-insight-service-tickets', updatedTickets)
-  }
-
-  const getTicketsByCustomerId = (customerId: string) => {
-    return tickets.filter(ticket => ticket.customerId === customerId)
-  }
-
-  const getTicketsByVehicleId = (vehicleId: string) => {
-    return tickets.filter(ticket => ticket.vehicleId === vehicleId)
-  }
-
-  const getTicketById = (ticketId: string) => {
-    return tickets.find(ticket => ticket.id === ticketId)
-  }
-
-  const createTicket = async (ticketData: Partial<ServiceTicket>) => {
+  // Load tickets from Supabase
+  const loadTickets = async () => {
+    console.log('[Service Ops] Starting Supabase fetch from service_tickets table...')
     setLoading(true)
+    setError(null)
+    
     try {
-      const newTicket: ServiceTicket = {
-        id: Math.random().toString(36).substr(2, 9),
-        customerId: ticketData.customerId || '',
-        vehicleId: ticketData.vehicleId,
-        title: ticketData.title || '',
-        description: ticketData.description || '',
-        priority: ticketData.priority || Priority.MEDIUM,
-        status: ticketData.status || ServiceStatus.OPEN,
-        assignedTo: ticketData.assignedTo,
-        scheduledDate: ticketData.scheduledDate,
-        parts: ticketData.parts || [],
-        labor: ticketData.labor || [],
-        notes: ticketData.notes || '',
-        customFields: ticketData.customFields || {},
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Note: Using a hypothetical service_tickets table structure
+      // In reality, you might need to adjust the table name and fields
+      const { data, error: supabaseError } = await supabase
+        .from('service_tickets')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (supabaseError) {
+        throw supabaseError
       }
 
-      const updatedTickets = [...tickets, newTicket]
-      setTickets(updatedTickets)
-      saveTicketsToStorage(updatedTickets)
+      console.log('[Service Ops] Supabase fetch successful:', data?.length || 0, 'tickets')
+      
+      // Transform Supabase data to match our interface
+      const transformedTickets: ServiceTicket[] = (data || []).map(row => ({
+        id: row.id,
+        title: row.title || 'Untitled Ticket',
+        description: row.description || '',
+        category: row.category || 'General',
+        priority: row.priority || 'Medium',
+        status: row.status || 'Open',
+        customer_id: row.customer_id,
+        customer_name: row.customer_name,
+        customer_phone: row.customer_phone,
+        customer_email: row.customer_email,
+        vehicle_id: row.vehicle_id,
+        vehicle_info: row.vehicle_info,
+        assigned_to: row.assigned_to,
+        assigned_tech_name: row.assigned_tech_name,
+        scheduled_date: row.scheduled_date,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        estimated_hours: row.estimated_hours,
+        actual_hours: row.actual_hours,
+        parts: row.parts || [],
+        labor: row.labor || [],
+        timeline: row.timeline || [],
+        notes: row.notes || '',
+        total_cost: row.total_cost,
+        customer_approved: row.customer_approved
+      }))
 
-      return newTicket
+      setTickets(transformedTickets)
+      setUsingFallback(false)
+      
+    } catch (error) {
+      console.warn('[Service Ops] Supabase fetch failed, activating fallback mode:', error)
+      
+      // Fallback to mock data
+      setTickets(mockServiceOps.sampleTickets.map(ticket => ({
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description,
+        category: ticket.category,
+        priority: ticket.priority,
+        status: ticket.status,
+        customer_id: ticket.customerId,
+        customer_name: ticket.customerName,
+        customer_phone: ticket.customerPhone,
+        customer_email: ticket.customerEmail,
+        vehicle_id: ticket.vehicleId,
+        vehicle_info: ticket.vehicleInfo,
+        assigned_to: ticket.assignedTo,
+        assigned_tech_name: ticket.assignedTechName,
+        scheduled_date: ticket.scheduledDate,
+        created_at: ticket.createdAt,
+        updated_at: ticket.updatedAt,
+        estimated_hours: ticket.estimatedHours,
+        actual_hours: ticket.actualHours,
+        parts: ticket.parts,
+        labor: ticket.labor,
+        timeline: ticket.timeline,
+        notes: ticket.notes,
+        total_cost: ticket.totalCost,
+        customer_approved: ticket.customerApproved
+      })))
+      
+      setUsingFallback(true)
+      setError('Failed to connect to Supabase. Using fallback data.')
+      
+      toast({
+        title: 'Connection Issue',
+        description: 'Using offline data. Some features may be limited.',
+        variant: 'destructive'
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const updateTicket = async (ticketId: string, ticketData: Partial<ServiceTicket>) => {
-    const updatedTickets = tickets.map(ticket => 
-      ticket.id === ticketId 
-        ? { 
-            ...ticket, 
-            ...ticketData,
-            updatedAt: new Date() 
-          }
-        : ticket
-    )
-    setTickets(updatedTickets)
-    saveTicketsToStorage(updatedTickets)
+  // Load data on mount
+  useEffect(() => {
+    loadTickets()
+  }, [])
+
+  // Disabled write operations for Phase 1
+  const createTicket = async (ticketData: Partial<ServiceTicket>) => {
+    console.log('[Service Ops] Create operation disabled in Phase 1 read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Create operations are disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return null
   }
 
-  const deleteTicket = async (ticketId: string) => {
-    const updatedTickets = tickets.filter(ticket => ticket.id !== ticketId)
-    setTickets(updatedTickets)
-    saveTicketsToStorage(updatedTickets)
+  const updateTicket = async (id: string, updates: Partial<ServiceTicket>) => {
+    console.log('[Service Ops] Update operation disabled in Phase 1 read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Update operations are disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
   }
 
-  const updateTicketStatus = async (ticketId: string, status: ServiceStatus) => {
-    const updatedTickets = tickets.map(ticket => 
-      ticket.id === ticketId 
-        ? { 
-            ...ticket, 
-            status,
-            completedDate: status === ServiceStatus.COMPLETED ? new Date() : ticket.completedDate,
-            updatedAt: new Date() 
-          }
-        : ticket
-    )
-    setTickets(updatedTickets)
-    saveTicketsToStorage(updatedTickets)
+  const deleteTicket = async (id: string) => {
+    console.log('[Service Ops] Delete operation disabled in Phase 1 read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Delete operations are disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
   }
 
-  const assignTechnician = async (ticketId: string, technicianId: string) => {
-    const updatedTickets = tickets.map(ticket => 
-      ticket.id === ticketId 
-        ? { 
-            ...ticket, 
-            assignedTo: technicianId,
-            updatedAt: new Date() 
-          }
-        : ticket
-    )
-    setTickets(updatedTickets)
-    saveTicketsToStorage(updatedTickets)
+  const getTicketById = (id: string): ServiceTicket | undefined => {
+    return tickets.find(ticket => ticket.id === id)
   }
 
-  const addPart = async (ticketId: string, partData: Partial<ServicePart>) => {
-    const ticket = tickets.find(t => t.id === ticketId)
-    if (!ticket) return null
-
-    const newPart: ServicePart = {
-      id: Math.random().toString(36).substr(2, 9),
-      partNumber: partData.partNumber || '',
-      description: partData.description || '',
-      quantity: partData.quantity || 1,
-      unitCost: partData.unitCost || 0,
-      total: partData.total || 0
-    }
-
-    const updatedTickets = tickets.map(t => 
-      t.id === ticketId 
-        ? { 
-            ...t, 
-            parts: [...t.parts, newPart],
-            updatedAt: new Date() 
-          }
-        : t
-    )
-    setTickets(updatedTickets)
-    saveTicketsToStorage(updatedTickets)
-
-    return newPart
+  const getTicketsByStatus = (status: string): ServiceTicket[] => {
+    return tickets.filter(ticket => ticket.status === status)
   }
 
-  const addLabor = async (ticketId: string, laborData: Partial<ServiceLabor>) => {
-    const ticket = tickets.find(t => t.id === ticketId)
-    if (!ticket) return null
+  const getTicketsByTechnician = (techId: string): ServiceTicket[] => {
+    return tickets.filter(ticket => ticket.assigned_to === techId)
+  }
 
-    const newLabor: ServiceLabor = {
-      id: Math.random().toString(36).substr(2, 9),
-      description: laborData.description || '',
-      hours: laborData.hours || 1,
-      rate: laborData.rate || 85,
-      total: laborData.total || 85
-    }
-
-    const updatedTickets = tickets.map(t => 
-      t.id === ticketId 
-        ? { 
-            ...t, 
-            labor: [...t.labor, newLabor],
-            updatedAt: new Date() 
-          }
-        : t
-    )
-    setTickets(updatedTickets)
-    saveTicketsToStorage(updatedTickets)
-
-    return newLabor
+  const refreshData = () => {
+    console.log('[Service Ops] Manual refresh triggered')
+    loadTickets()
   }
 
   return {
     tickets,
     loading,
-    getTicketsByCustomerId,
-    getTicketsByVehicleId,
-    getTicketById,
+    error,
+    usingFallback,
     createTicket,
     updateTicket,
     deleteTicket,
-    updateTicketStatus,
-    assignTechnician,
-    addPart,
-    addLabor
+    getTicketById,
+    getTicketsByStatus,
+    getTicketsByTechnician,
+    refreshData,
+    loadTickets
   }
 }
