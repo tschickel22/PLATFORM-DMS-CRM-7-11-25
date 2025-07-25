@@ -236,6 +236,65 @@ export const mockPDI = {
     'Fail': 'bg-red-100 text-red-800',
     'N/A': 'bg-gray-100 text-gray-800',
     'Pending': 'bg-yellow-100 text-yellow-800'
+  },
+
+  sampleSettings: [
+    {
+      id: 'setting-001',
+      company_id: 'tenant-1',
+      key: 'default_inspection_status',
+      value: 'not_started',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'setting-002',
+      company_id: 'tenant-1',
+      key: 'allow_custom_steps',
+      value: 'true',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'setting-003',
+      company_id: 'tenant-1',
+      key: 'require_technician_signature',
+      value: 'false',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'setting-004',
+      company_id: 'tenant-1',
+      key: 'auto_complete_on_all_pass',
+      value: 'true',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    }
+  ],
+
+  settingDefinitions: {
+    'default_inspection_status': {
+      label: 'Default Inspection Status',
+      description: 'The default status for new PDI inspections',
+      type: 'select',
+      options: ['not_started', 'in_progress', 'complete', 'failed', 'pending_review', 'approved']
+    },
+    'allow_custom_steps': {
+      label: 'Allow Custom Steps',
+      description: 'Allow technicians to add custom checklist steps during inspection',
+      type: 'boolean'
+    },
+    'require_technician_signature': {
+      label: 'Require Technician Signature',
+      description: 'Require digital signature from technician to complete inspection',
+      type: 'boolean'
+    },
+    'auto_complete_on_all_pass': {
+      label: 'Auto-Complete on All Pass',
+      description: 'Automatically mark inspection as complete when all steps pass',
+      type: 'boolean'
+    }
   }
 }
 

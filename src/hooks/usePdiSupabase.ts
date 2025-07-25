@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { PdiChecklist, ChecklistItem } from '@/types'
+import { PdiChecklist, ChecklistItem, PdiSetting } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
 
 export function usePdiChecklists() {
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
+  const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
   const [loading, setLoading] = useState(true)
+  const [settingsLoading, setSettingsLoading] = useState(false)
   const [usingFallback, setUsingFallback] = useState(false)
   const [connectionAttempted, setConnectionAttempted] = useState(false)
   const [supabaseStatus, setSupabaseStatus] = useState<{
-    connected: boolean
-    error?: string
-    count: number
+    checklists: { connected: boolean; error?: string; count: number }
+    settings: { connected: boolean; error?: string; count: number }
   }>({
-    connected: false,
-    error: undefined,
-    count: 0
+    checklists: { connected: false, error: undefined, count: 0 },
+    settings: { connected: false, error: undefined, count: 0 }
   })
   const { toast } = useToast()
 
@@ -36,11 +36,14 @@ export function usePdiChecklists() {
     // Check if Supabase is configured
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
       console.log('⚠️ [PDI Checklists] Supabase not configured, using fallback')
-      setSupabaseStatus({
-        connected: false,
-        error: 'Supabase not configured',
-        count: 0
-      })
+      setSupabaseStatus(prev => ({
+        ...prev,
+        checklists: {
+          connected: false,
+          error: 'Supabase not configured',
+          count: 0
+        }
+      }))
       useFallbackData()
       return
     }
@@ -62,33 +65,42 @@ export function usePdiChecklists() {
 
       if (error) {
         console.error('❌ [PDI Checklists] Supabase error:', error.message)
-        setSupabaseStatus({
-          connected: false,
-          error: error.message,
-          count: 0
-        })
+        setSupabaseStatus(prev => ({
+          ...prev,
+          checklists: {
+            connected: false,
+            error: error.message,
+            count: 0
+          }
+        }))
         useFallbackData()
         return
       }
 
       if (!Array.isArray(data)) {
         console.warn('⚠️ [PDI Checklists] Supabase returned non-array data:', typeof data)
-        setSupabaseStatus({
-          connected: false,
-          error: 'Invalid data format',
-          count: 0
-        })
+        setSupabaseStatus(prev => ({
+          ...prev,
+          checklists: {
+            connected: false,
+            error: 'Invalid data format',
+            count: 0
+          }
+        }))
         useFallbackData()
         return
       }
 
       console.log(`✅ [PDI Checklists] Supabase connected successfully - ${data.length} checklists found`)
       
-      setSupabaseStatus({
-        connected: true,
-        error: undefined,
-        count: data.length
-      })
+      setSupabaseStatus(prev => ({
+        ...prev,
+        checklists: {
+          connected: true,
+          error: undefined,
+          count: data.length
+        }
+      }))
       
       if (data.length === 0) {
         console.log('📭 [PDI Checklists] Database is empty - showing empty state')
@@ -115,11 +127,14 @@ export function usePdiChecklists() {
       
     } catch (error) {
       console.error('💥 [PDI Checklists] Supabase fetch failed:', error)
-      setSupabaseStatus({
-        connected: false,
-        error: error instanceof Error ? error.message : 'Connection failed',
-        count: 0
-      })
+      setSupabaseStatus(prev => ({
+        ...prev,
+        checklists: {
+          connected: false,
+          error: error instanceof Error ? error.message : 'Connection failed',
+          count: 0
+        }
+      }))
       useFallbackData()
     } finally {
       setLoading(false)
@@ -146,6 +161,191 @@ export function usePdiChecklists() {
     
     setChecklists(mockChecklists)
     setUsingFallback(true)
+  }
+
+  const loadPdiSettings = async (companyId: string) => {
+    console.log('📋 [PDI Settings] Fetching settings from Supabase...')
+    setSettingsLoading(true)
+    
+    // Check if Supabase is configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.log('⚠️ [PDI Settings] Supabase not configured, using fallback')
+      setSupabaseStatus(prev => ({
+        ...prev,
+        settings: { connected: false, error: 'Supabase not configured', count: 0 }
+      }))
+      setPdiSettings(mockPDI.sampleSettings.filter(s => s.company_id === companyId))
+      setSettingsLoading(false)
+      return
+    }
+    
+    try {
+      console.log('⏳ [PDI Settings] Executing Supabase query for pdi_settings...')
+      const { data, error } = await supabase
+        .from('pdi_settings')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+
+      console.log('📊 [PDI Settings] Supabase response:', { 
+        error: error?.message || null, 
+        dataType: typeof data, 
+        dataLength: Array.isArray(data) ? data.length : 'not array'
+      })
+
+      if (error) {
+        console.error('❌ [PDI Settings] Supabase error:', error.message)
+        setSupabaseStatus(prev => ({
+          ...prev,
+          settings: { connected: false, error: error.message, count: 0 }
+        }))
+        // Use fallback data
+        setPdiSettings(mockPDI.sampleSettings.filter(s => s.company_id === companyId))
+        setSettingsLoading(false)
+        return
+      }
+
+      if (!Array.isArray(data)) {
+        console.warn('⚠️ [PDI Settings] Supabase returned non-array data:', typeof data)
+        setSupabaseStatus(prev => ({
+          ...prev,
+          settings: { connected: false, error: 'Invalid data format', count: 0 }
+        }))
+        setPdiSettings(mockPDI.sampleSettings.filter(s => s.company_id === companyId))
+        setSettingsLoading(false)
+        return
+      }
+
+      console.log(`✅ [PDI Settings] Supabase connected successfully - ${data.length} settings found`)
+      
+      setSupabaseStatus(prev => ({
+        ...prev,
+        settings: { connected: true, error: undefined, count: data.length }
+      }))
+      
+      if (data.length === 0) {
+        console.log('📭 [PDI Settings] Database is empty - using fallback settings')
+        setPdiSettings(mockPDI.sampleSettings.filter(s => s.company_id === companyId))
+        setSettingsLoading(false)
+        return
+      }
+
+      // Transform data safely
+      const transformedSettings: PdiSetting[] = data.map((row) => ({
+        id: row.id || `setting-${Date.now()}-${Math.random()}`,
+        company_id: row.company_id || companyId,
+        key: row.key || '',
+        value: row.value || '',
+        created_at: row.created_at || new Date().toISOString(),
+        updated_at: row.updated_at || new Date().toISOString()
+      }))
+
+      console.log(`🔄 [PDI Settings] Transformed ${transformedSettings.length} settings`)
+      setPdiSettings(transformedSettings)
+      
+    } catch (error) {
+      console.error('💥 [PDI Settings] Supabase fetch failed:', error)
+      setSupabaseStatus(prev => ({
+        ...prev,
+        settings: { 
+          connected: false, 
+          error: error instanceof Error ? error.message : 'Connection failed', 
+          count: 0 
+        }
+      }))
+      // Use fallback data
+      setPdiSettings(mockPDI.sampleSettings.filter(s => s.company_id === companyId))
+    } finally {
+      setSettingsLoading(false)
+    }
+  }
+
+  const updatePdiSetting = async (companyId: string, key: string, value: string) => {
+    console.log(`🔄 [PDI Settings] Updating setting ${key} = ${value}`)
+    
+    try {
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.log('⚠️ [PDI Settings] Supabase not configured, updating local state only')
+        // Update local state for demo purposes
+        setPdiSettings(prev => {
+          const existing = prev.find(s => s.company_id === companyId && s.key === key)
+          if (existing) {
+            return prev.map(s => 
+              s.company_id === companyId && s.key === key 
+                ? { ...s, value, updated_at: new Date().toISOString() }
+                : s
+            )
+          } else {
+            return [...prev, {
+              id: `setting-${Date.now()}-${Math.random()}`,
+              company_id: companyId,
+              key,
+              value,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]
+          }
+        })
+        return
+      }
+
+      // Upsert setting in Supabase
+      const { data, error } = await supabase
+        .from('pdi_settings')
+        .upsert({
+          company_id: companyId,
+          key,
+          value,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'company_id,key'
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [PDI Settings] Update error:', error.message)
+        throw error
+      }
+
+      console.log('✅ [PDI Settings] Setting updated:', data.id)
+
+      // Update local state
+      setPdiSettings(prev => {
+        const existing = prev.find(s => s.company_id === companyId && s.key === key)
+        if (existing) {
+          return prev.map(s => 
+            s.company_id === companyId && s.key === key 
+              ? { ...s, value, updated_at: data.updated_at }
+              : s
+          )
+        } else {
+          return [...prev, {
+            id: data.id,
+            company_id: data.company_id,
+            key: data.key,
+            value: data.value,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          }]
+        }
+      })
+
+    } catch (error) {
+      console.error('Error updating PDI setting:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update PDI setting',
+        variant: 'destructive'
+      })
+      throw error
+    }
+  }
+
+  const getPdiSetting = (companyId: string, key: string, defaultValue: string = ''): string => {
+    const setting = pdiSettings.find(s => s.company_id === companyId && s.key === key)
+    return setting?.value || defaultValue
   }
 
   const createChecklist = async (data: Partial<PdiChecklist>): Promise<PdiChecklist> => {
@@ -315,7 +515,9 @@ export function usePdiChecklists() {
 
   return {
     checklists,
+    pdiSettings,
     loading,
+    settingsLoading,
     usingFallback,
     supabaseStatus,
     createChecklist,
@@ -323,6 +525,9 @@ export function usePdiChecklists() {
     deleteChecklist,
     getChecklistById,
     getChecklistsByVehicle,
-    loadChecklists
+    loadChecklists,
+    loadPdiSettings,
+    updatePdiSetting,
+    getPdiSetting
   }
 }

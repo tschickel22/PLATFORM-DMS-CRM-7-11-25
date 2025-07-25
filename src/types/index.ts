@@ -364,6 +364,15 @@ export interface ChecklistItem {
   notes?: string
 }
 
+export interface PdiSetting {
+  id: string
+  company_id: string
+  key: string
+  value: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Task {
   id: string
   contact_id: string

@@ -14,6 +14,7 @@ import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle } f
 import { usePdiChecklists } from '@/hooks/usePdiSupabase'
 import { PDIInspectionList } from './components/PDIInspectionList'
 import PDIInspectionForm from './components/PDIInspectionForm'
+import PDISettings from './PDISettings'
 import { PDINewInspectionForm } from './components/PDINewInspectionForm'
 import { PdiChecklist } from '@/types'
 
@@ -234,6 +235,7 @@ function PDIChecklistDashboard() {
         <TabsList>
           <TabsTrigger value="inspections">Inspections</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inspections" className="space-y-4">
@@ -312,6 +314,10 @@ function PDIChecklistDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4">
+          <PDISettings />
         </TabsContent>
       </Tabs>
     </div>
