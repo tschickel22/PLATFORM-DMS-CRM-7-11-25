@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { CRMContact } from '@/types'
-import { useContacts } from '@/hooks/useCrmSupabase'
 import { useContacts, useDeals } from '@/hooks/useCrmSupabase'
 import { Lead } from '@/types'
 import { X, Save } from 'lucide-react'
