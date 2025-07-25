@@ -63,7 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           email,
           name: 'Admin User',
           role: UserRole.ADMIN,
-          tenantId: 'tenant-1',
+          tenantId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
           permissions: [
             { id: '1', name: 'All Access', resource: '*', action: '*' }
           ],
