@@ -10,7 +10,7 @@ import { useTenant } from '@/contexts/TenantContext'
 import { useAgreementVault } from './hooks/useAgreementVault'
 import { AgreementForm } from './components/AgreementForm'
 import { AgreementViewer } from './components/AgreementViewer'
-import { TemplateList } from './templates/TemplateList'
+import TemplateList from './templates/TemplateList'
 import { TemplateBuilder } from './templates/TemplateBuilder'
 
 function AgreementVaultDashboard() {

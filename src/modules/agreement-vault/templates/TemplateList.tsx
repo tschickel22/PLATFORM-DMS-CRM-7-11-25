@@ -1,248 +1,139 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { 
-  Plus, 
-  Edit, 
-  Copy, 
-  Trash2, 
-  Search, 
-  FileText, 
-  Calendar,
-  MoreVertical
-} from 'lucide-react'
-import { useTemplates } from './useTemplates'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Edit, Trash2, Search, FileText } from 'lucide-react'
+import { Template } from './templateTypes'
 import { useToast } from '@/hooks/use-toast'
-import { formatDate } from '@/lib/utils'
 
-export default function TemplateList() {
-  const navigate = useNavigate()
+interface TemplateListProps {
+  templates: Template[]
+  onCreateTemplate: () => void
+  onEditTemplate: (template: Template) => void
+  onDeleteTemplate: (templateId: string) => void
+}
+
+const TemplateList: React.FC<TemplateListProps> = ({
+  templates,
+  onCreateTemplate,
+  onEditTemplate,
+  onDeleteTemplate
+}) => {
   const { toast } = useToast()
-  const { templates, loading, deleteTemplate, duplicateTemplate } = useTemplates()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const filteredTemplates = templates.filter(template =>
-    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    template.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleCreateNew = () => {
-    navigate('/agreements/templates/new')
-  }
-
-  const handleEdit = (templateId: string) => {
-    navigate(`/agreements/templates/edit/${templateId}`)
-  }
-
-  const handleDuplicate = async (templateId: string) => {
-    try {
-      const duplicated = duplicateTemplate(templateId)
-      toast({
-        title: 'Template Duplicated',
-        description: `Created "${duplicated.name}" successfully.`,
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to duplicate template.',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const handleDelete = async (templateId: string) => {
-    try {
-      deleteTemplate(templateId)
-      setShowDeleteConfirm(null)
+  const handleDeleteTemplate = (templateId: string, templateName: string) => {
+    if (window.confirm(`Are you sure you want to delete "${templateName}"? This action cannot be undone.`)) {
+      onDeleteTemplate(templateId)
       toast({
         title: 'Template Deleted',
-        description: 'Template has been removed successfully.',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete template.',
-        variant: 'destructive'
+        description: `Template "${templateName}" has been deleted successfully.`
       })
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="ri-page-header">
-          <h1 className="ri-page-title">Agreement Templates</h1>
-          <p className="ri-page-description">
-            Manage your agreement templates
-          </p>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Delete Template</CardTitle>
-              <CardDescription>
-                Are you sure you want to delete this template? This action cannot be undone.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-end space-x-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowDeleteConfirm(null)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => handleDelete(showDeleteConfirm)}
-                >
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Page Header */}
-      <div className="ri-page-header">
+    <Card>
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="ri-page-title">Agreement Templates</h1>
-            <p className="ri-page-description">
-              Create and manage reusable agreement templates
-            </p>
+            <CardTitle>Agreement Templates</CardTitle>
+            <CardDescription>
+              Manage reusable agreement templates for different contract types
+            </CardDescription>
           </div>
-          <Button onClick={handleCreateNew} className="shadow-sm">
+          <Button onClick={onCreateTemplate}>
             <Plus className="h-4 w-4 mr-2" />
-            Create Template
+            New Template
           </Button>
         </div>
-      </div>
+      </CardHeader>
+      <CardContent>
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates by name or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-      {/* Search and Filters */}
-      <Card className="shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
-            <div className="ri-search-bar">
-              <Search className="ri-search-icon" />
-              <Input
-                placeholder="Search templates..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="ri-search-input"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Templates Grid */}
-      {filteredTemplates.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {template.description && (
-                      <CardDescription className="mt-1">
-                        {template.description}
-                      </CardDescription>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Badge variant={template.isActive ? "default" : "secondary"}>
+        {/* Templates List */}
+        <div className="space-y-4">
+          {filteredTemplates.length > 0 ? (
+            filteredTemplates.map((template) => (
+              <div
+                key={template.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <h4 className="font-semibold">{template.name}</h4>
+                    <Badge variant={template.isActive ? 'default' : 'secondary'}>
                       {template.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-1" />
-                    {template.fields.length} fields
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {formatDate(template.updatedAt)}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {template.description || 'No description provided'}
+                  </p>
+                  <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
+                    <span>{template.fields?.length || 0} fields</span>
+                    <span>Created {new Date(template.createdAt).toLocaleDateString()}</span>
+                    <span>Updated {new Date(template.updatedAt).toLocaleDateString()}</span>
                   </div>
                 </div>
-                
-                <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleEdit(template.id)}
-                    className="flex-1 mr-2"
+                    onClick={() => onEditTemplate(template)}
                   >
-                    <Edit className="h-3 w-3 mr-1" />
+                    <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
-                  
-                  <div className="flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDuplicate(template.id)}
-                      title="Duplicate"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowDeleteConfirm(template.id)}
-                      title="Delete"
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteTemplate(template.id, template.name)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              {searchQuery ? (
+                <>
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p>No templates found matching "{searchQuery}"</p>
+                  <p className="text-sm">Try adjusting your search terms</p>
+                </>
+              ) : (
+                <>
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p>No agreement templates created yet</p>
+                  <p className="text-sm">Create your first template to get started</p>
+                  <Button onClick={onCreateTemplate} className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Template
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
-      ) : (
-        <Card className="shadow-sm">
-          <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">
-              {searchTerm ? 'No templates found' : 'No templates yet'}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {searchTerm 
-                ? 'Try adjusting your search terms'
-                : 'Create your first agreement template to get started'
-              }
-            </p>
-            {!searchTerm && (
-              <Button onClick={handleCreateNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Template
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }
+
+export default TemplateList
