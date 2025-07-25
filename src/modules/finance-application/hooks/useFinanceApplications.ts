@@ -106,10 +106,10 @@ export function useFinanceApplications() {
       }))
       
       if (data.length === 0) {
-        console.log('📭 [Finance Applications] Database is empty - using mock data fallback')
-        // If Supabase is connected but returns no data, use mock data to provide a visual experience
-        setApplications(mockFinanceApplications.sampleApplications)
-        setUsingFallback(true)
+        console.log('📭 [Finance Applications] Database is empty - showing empty state')
+        // If Supabase is connected but returns no data, show empty state
+        setApplications([])
+        setUsingFallback(false)
         return
       }
 
@@ -231,6 +231,14 @@ export function useFinanceApplications() {
         templates: { connected: true, error: undefined, count: data.length }
       }))
 
+      if (data.length === 0) {
+        console.log('📭 [Finance Applications] Templates database is empty - showing empty state')
+        // If Supabase is connected but returns no templates, show empty state
+        setTemplates([])
+        setUsingFallback(false)
+        return
+      }
+
       // Transform data safely
       const transformedTemplates: ApplicationTemplate[] = data.map(row => ({
         id: row.id || `template-${Date.now()}-${Math.random()}`,
@@ -263,10 +271,9 @@ export function useFinanceApplications() {
           }
         }))
       } else {
-        console.log('📭 [Finance Applications] Templates database is empty - using mock data fallback')
-        // If Supabase is connected but returns no templates, use mock templates to provide a visual experience
-        setTemplates(mockFinanceApplications.defaultTemplates)
-        setUsingFallback(true)
+        console.log('🔄 [Finance Applications] Templates fetch failed - keeping empty state')
+        setTemplates([])
+        setUsingFallback(false)
         setSupabaseStatus(prev => ({
           ...prev,
           templates: { 
