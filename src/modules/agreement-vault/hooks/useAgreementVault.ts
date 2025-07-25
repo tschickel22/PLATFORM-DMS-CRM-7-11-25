@@ -37,25 +37,6 @@ export interface Agreement {
 }
 
 export interface AgreementTemplate {
-  id: string
-  name: string
-  description?: string
-  pdf_base64?: string
-  fields?: any[]
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface AgreementSignature {
-  id: string
-  agreement_id: string
-  signer_email: string
-  signer_name?: string
-  status: string
-  signed_at?: string
-  created_at: string
-  updated_at: string
 }
 
 export function useAgreementVault() {
