@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { Settings, Save, Shield, AlertTriangle } from 'lucide-react'
 import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { useAuth } from '@/contexts/AuthContext'
