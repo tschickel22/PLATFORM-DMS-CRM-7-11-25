@@ -5,6 +5,9 @@ import {
   PDITemplateItem,
   PDIInspection, 
   PDIInspectionItem, 
+// UUID validation regex
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
   PDIDefect, 
   PDIPhoto, 
   PDISignoff,
@@ -27,6 +30,18 @@ export function usePDIManagement() {
   }, [])
 
   const initializeMockData = () => {
+      const rawCompanyId = session?.user?.app_metadata?.company_id
+      const isValidCompanyId = uuidRegex.test(rawCompanyId)
+      const companyId = isValidCompanyId ? rawCompanyId : null
+      
+      if (!companyId) {
+        console.warn('⚠️ Invalid companyId. Using fallback PDI inspections.')
+        setInspections(mockPDI.sampleInspections)
+        setUsingFallback(true)
+        setLoading(false)
+        return
+      }
+
     // Load existing data from localStorage or use mock data
     const savedTemplates = loadFromLocalStorage('renter-insight-pdi-templates', [
       {
@@ -318,11 +333,16 @@ export function usePDIManagement() {
       updatedAt: new Date()
     }
 
-    const updatedTemplates = [...templates]
+        let query = supabase
     updatedTemplates[templateIndex] = updatedTemplate
 
-    setTemplates(updatedTemplates)
     saveTemplatesToStorage(updatedTemplates)
+        
+        if (companyId) {
+          query = query.eq('company_id', companyId)
+        }
+        
+        const { data, error } = await query
 
     return newItem
   }
@@ -354,18 +374,31 @@ export function usePDIManagement() {
             status: PDIInspectionItemStatus.PENDING,
             createdAt: new Date(),
             updatedAt: new Date()
+    const rawCompanyId = session?.user?.app_metadata?.company_id
+    const isValidCompanyId = uuidRegex.test(rawCompanyId)
+    const companyId = isValidCompanyId ? rawCompanyId : null
+    
+    if (!companyId) {
+      console.warn('⚠️ Invalid companyId. Cannot create PDI inspection.')
+      toast({
+        title: 'Error',
+        description: 'Invalid company configuration. Please contact support.',
+        variant: 'destructive'
+      })
+      throw new Error('Invalid company ID')
+    }
+
           })
         })
       })
 
       const newInspection: PDIInspection = {
         id: Math.random().toString(36).substr(2, 9),
-        templateId: inspectionData.templateId || '',
         template: template || undefined,
         vehicleId: inspectionData.vehicleId || '',
         inspectorId: inspectionData.inspectorId || '',
         status: PDIInspectionStatus.IN_PROGRESS,
-        startedAt: new Date(),
+        .insert([{ ...inspectionData, ...(companyId && { company_id: companyId }) }])
         notes: inspectionData.notes || '',
         items: [],
         defects: [],

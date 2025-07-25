@@ -5,6 +5,9 @@ import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
 import { PdiChecklist, PdiSetting } from '@/types'
 
+// UUID validation regex
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 // Export alias for backward compatibility
 export const usePdiChecklists = usePdiSupabase
 
@@ -16,9 +19,6 @@ export function usePdiSupabase() {
   const [usingFallback, setUsingFallback] = useState(false)
   const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
   const [connectionAttempted, setConnectionAttempted] = useState(false)
-  const [supabaseStatus, setSupabaseStatus] = useState<{
-    checklists: { connected: boolean; error?: string; count: number }
-    settings: { connected: boolean; error?: string; count: number }
   }>({
     checklists: { connected: false, error: undefined, count: 0 },
     settings: { connected: false, error: undefined, count: 0 }
@@ -28,7 +28,7 @@ export function usePdiSupabase() {
   // UUID validation regex (avoiding external dependency)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-  // Warn if no valid company ID is found
+        console.warn('⚠️ Invalid companyId. Using fallback PDI data.')
   useEffect(() => {
     if (!session?.user?.app_metadata?.company_id) {
       console.warn('⚠️ No valid company ID found. PDI settings using fallback UUID.')
@@ -208,7 +208,7 @@ export function usePdiSupabase() {
       setLoading(false)
     }
   }
-
+      let query = supabase
   const loadPdiSettings = async (companyId: string) => {
     console.log('📋 [PDI Settings] Loading settings for company:', companyId)
     
@@ -233,8 +233,13 @@ export function usePdiSupabase() {
       const { data, error } = await supabase
         .from('pdi_settings')
         .select('*')
-        .eq('company_id', companyId)
         .order('created_at', { ascending: false })
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId)
+      }
+      
+      const { data, error } = await query
 
       console.log('📊 [PDI Settings] Supabase response:', { 
         error: error?.message || null, 
@@ -323,7 +328,7 @@ export function usePdiSupabase() {
     
     try {
       // Use upsert to create or update the setting
-      const { data, error } = await supabase
+      let query = supabase
         .from('pdi_settings')
         .upsert({
           company_id: companyId,
@@ -376,7 +381,12 @@ export function usePdiSupabase() {
         title: 'Error',
         description: 'Failed to update PDI setting',
         variant: 'destructive'
-      })
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId)
+      }
+      
+      const { data, error } = await query
       throw error
     }
   }
@@ -401,18 +411,31 @@ export function usePdiSupabase() {
   }
 
   const createChecklist = async (data: Partial<PdiChecklist>): Promise<PdiChecklist> => {
+    const rawCompanyId = session?.user?.app_metadata?.company_id
+    const isValidCompanyId = uuidRegex.test(rawCompanyId)
+    const companyId = isValidCompanyId ? rawCompanyId : null
+    
+    if (!companyId) {
+      console.warn('⚠️ Invalid companyId. Cannot create PDI checklist.')
+      toast({
+        title: 'Error',
+        description: 'Invalid company configuration. Please contact support.',
+        variant: 'destructive'
+      })
+      throw new Error('Invalid company ID')
+    }
+
     try {
       const checklistData = {
         vehicle_id: data.vehicle_id || '',
         technician: data.technician || '',
         status: data.status || 'Not Started',
         checklist_data: data.checklist_data || []
-      }
 
       // Insert into Supabase
       const { data: insertedData, error } = await supabase
         .from('pdi_checklists')
-        .insert([checklistData])
+        .insert([{ ...checklistData, ...(companyId && { company_id: companyId }) }])
         .select()
         .single()
 
@@ -447,6 +470,20 @@ export function usePdiSupabase() {
   }
 
   const updateChecklist = async (id: string, updates: Partial<PdiChecklist>) => {
+    const rawCompanyId = session?.user?.app_metadata?.company_id
+    const isValidCompanyId = uuidRegex.test(rawCompanyId)
+    const companyId = isValidCompanyId ? rawCompanyId : null
+    
+    if (!companyId) {
+      console.warn('⚠️ Invalid companyId. Cannot update PDI setting.')
+      toast({
+        title: 'Error',
+        description: 'Invalid company configuration. Please contact support.',
+        variant: 'destructive'
+      })
+      return
+    }
+
     try {
       const updateData = {
         vehicle_id: updates.vehicle_id,
@@ -459,14 +496,13 @@ export function usePdiSupabase() {
       Object.keys(updateData).forEach(key => {
         if (updateData[key as keyof typeof updateData] === undefined) {
           delete updateData[key as keyof typeof updateData]
-        }
       })
 
       // Update in Supabase
       const { data, error } = await supabase
         .from('pdi_checklists')
         .update(updateData)
-        .eq('id', id)
+        .upsert([{ ...settingData, ...(companyId && { company_id: companyId }) }])
         .select()
         .single()
 
@@ -506,9 +542,22 @@ export function usePdiSupabase() {
     try {
       // Delete from Supabase
       const { error } = await supabase
-        .from('pdi_checklists')
+    const rawCompanyId = session?.user?.app_metadata?.company_id
+    const isValidCompanyId = uuidRegex.test(rawCompanyId)
+    const companyId = isValidCompanyId ? rawCompanyId : null
+    
+    if (!companyId) {
+      console.warn('⚠️ Invalid companyId. Cannot get PDI setting.')
+      let query = supabase
+    }
+
         .delete()
-        .eq('id', id)
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId)
+      }
+      
+      const { data, error } = await query.single()
 
       if (error) {
         console.error('❌ [PDI Checklists] Delete error:', error.message)
