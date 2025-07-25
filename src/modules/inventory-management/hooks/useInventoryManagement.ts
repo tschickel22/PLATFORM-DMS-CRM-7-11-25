@@ -1,271 +1,294 @@
 import { useState, useEffect } from 'react'
-import { Vehicle, VehicleStatus, VehicleType } from '@/types'
-import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
-import Papa from 'papaparse'
+import { supabase } from '@/lib/supabaseClient'
+import { useToast } from '@/hooks/use-toast'
+
+export interface InventoryItem {
+  id: string
+  name: string
+  type: string | null
+  status: string | null
+  serial_number: string | null
+  location: string | null
+  photos: string[]
+  assigned_to: string | null
+  purchase_date: string | null
+  warranty_expiration: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateInventoryItemData {
+  name: string
+  type?: string
+  status?: string
+  serial_number?: string
+  location?: string
+  photos?: string[]
+  assigned_to?: string
+  purchase_date?: string
+  warranty_expiration?: string
+}
+
+export interface UpdateInventoryItemData {
+  name?: string
+  type?: string
+  status?: string
+  serial_number?: string
+  location?: string
+  photos?: string[]
+  assigned_to?: string
+  purchase_date?: string
+  warranty_expiration?: string
+}
 
 export function useInventoryManagement() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [loading, setLoading] = useState(false)
+  const [items, setItems] = useState<InventoryItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
-  useEffect(() => {
-    initializeMockData()
-  }, [])
-
-  const initializeMockData = () => {
-    // Load existing vehicles from localStorage or use mock data
-    const savedVehicles = loadFromLocalStorage('renter-insight-vehicles', [
-      {
-        id: '1',
-        vin: '1FDXE4FS8KDC12345',
-        make: 'Forest River',
-        model: 'Georgetown',
-        year: 2024,
-        type: VehicleType.MOTORHOME,
-        status: VehicleStatus.AVAILABLE,
-        price: 125000,
-        cost: 95000,
-        location: 'Lot A-15',
-        features: ['Slide-out', 'Generator', 'Solar Panel'],
-        images: ['https://images.pexels.com/photos/1319515/pexels-photo-1319515.jpeg'],
-        customFields: {},
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-01-15')
-      },
-      {
-        id: '2',
-        vin: '1FDXE4FS8KDC67890',
-        make: 'Winnebago',
-        model: 'View',
-        year: 2023,
-        type: VehicleType.RV,
-        status: VehicleStatus.AVAILABLE,
-        price: 89000,
-        cost: 72000,
-        location: 'Lot B-08',
-        features: ['Compact Design', 'Fuel Efficient'],
-        images: ['https://images.pexels.com/photos/2506923/pexels-photo-2506923.jpeg'],
-        customFields: {},
-        createdAt: new Date('2024-01-08'),
-        updatedAt: new Date('2024-01-12')
-      },
-      {
-        id: '3',
-        vin: '1FDXE4FS8KDC11111',
-        make: 'Jayco',
-        model: 'Eagle',
-        year: 2024,
-        type: VehicleType.FIFTH_WHEEL,
-        status: VehicleStatus.AVAILABLE,
-        price: 75000,
-        cost: 58000,
-        location: 'Lot C-12',
-        features: ['Bunk Beds', 'Outdoor Kitchen', 'Fireplace'],
-        images: ['https://images.pexels.com/photos/1319515/pexels-photo-1319515.jpeg'],
-        customFields: {},
-        createdAt: new Date('2024-01-05'),
-        updatedAt: new Date('2024-01-10')
-      },
-      {
-        id: '4',
-        vin: '1FDXE4FS8KDC22222',
-        make: 'Airstream',
-        model: 'Flying Cloud',
-        year: 2024,
-        type: VehicleType.TRAVEL_TRAILER,
-        status: VehicleStatus.AVAILABLE,
-        price: 95000,
-        cost: 78000,
-        location: 'Lot D-05',
-        features: ['Aluminum Construction', 'Premium Interior', 'Smart Technology'],
-        images: ['https://images.pexels.com/photos/2506923/pexels-photo-2506923.jpeg'],
-        customFields: {},
-        createdAt: new Date('2024-01-03'),
-        updatedAt: new Date('2024-01-08')
-      },
-      {
-        id: '5',
-        vin: '1FDXE4FS8KDC33333',
-        make: 'Grand Design',
-        model: 'Momentum',
-        year: 2023,
-        type: VehicleType.TOY_HAULER,
-        status: VehicleStatus.AVAILABLE,
-        price: 110000,
-        cost: 88000,
-        location: 'Lot E-18',
-        features: ['Garage Space', 'Fuel Station', 'Generator'],
-        images: ['https://images.pexels.com/photos/1319515/pexels-photo-1319515.jpeg'],
-        customFields: {},
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-05')
-      },
-      {
-        id: '6',
-        vin: 'MH12345678901234',
-        make: 'Clayton Homes',
-        model: 'Inspiration',
-        year: 2024,
-        type: VehicleType.DOUBLE_WIDE,
-        status: VehicleStatus.AVAILABLE,
-        price: 125000,
-        cost: 95000,
-        location: 'MH Section A-10',
-        features: ['3 Bedroom', '2 Bathroom', 'Open Floor Plan', 'Energy Efficient'],
-        images: ['https://images.pexels.com/photos/2506923/pexels-photo-2506923.jpeg'],
-        customFields: {
-          length: '76',
-          width: '28',
-          squareFootage: '2128',
-          constructionType: 'Manufactured',
-          roofType: 'Shingle',
-          exteriorSiding: 'Vinyl',
-          insulationRating: 'R-21'
-        },
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15')
-      }
-    ])
-
-    setVehicles(savedVehicles)
-  }
-
-  const saveVehiclesToStorage = (updatedVehicles: Vehicle[]) => {
-    saveToLocalStorage('renter-insight-vehicles', updatedVehicles)
-  }
-
-  const getAvailableVehicles = () => {
-    return vehicles.filter(vehicle => vehicle.status === VehicleStatus.AVAILABLE)
-  }
-
-  const getVehicleById = (id: string) => {
-    return vehicles.find(vehicle => vehicle.id === id)
-  }
-
-  const updateVehicleStatus = async (vehicleId: string, status: VehicleStatus) => {
-    const updatedVehicles = vehicles.map(vehicle =>
-      vehicle.id === vehicleId
-        ? { ...vehicle, status, updatedAt: new Date() }
-        : vehicle
-    )
-    setVehicles(updatedVehicles)
-    saveVehiclesToStorage(updatedVehicles)
-  }
-
-  const deleteVehicle = async (vehicleId: string) => {
-    const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== vehicleId)
-    setVehicles(updatedVehicles)
-    saveVehiclesToStorage(updatedVehicles)
-  }
-
-  const createVehicle = async (vehicleData: Partial<Vehicle>) => {
-    setLoading(true)
+  // Load inventory items from Supabase
+  const getInventoryItems = async () => {
     try {
-      const newVehicle: Vehicle = {
-        id: Math.random().toString(36).substr(2, 9),
-        vin: vehicleData.vin || '',
-        make: vehicleData.make || '',
-        model: vehicleData.model || '',
-        year: vehicleData.year || new Date().getFullYear(),
-        type: vehicleData.type || VehicleType.RV,
-        status: VehicleStatus.AVAILABLE,
-        price: vehicleData.price || 0,
-        cost: vehicleData.cost || 0,
-        location: vehicleData.location || '',
-        features: vehicleData.features || [],
-        images: vehicleData.images || [],
-        customFields: vehicleData.customFields || {},
-        createdAt: new Date(),
-        updatedAt: new Date()
+      setLoading(true)
+      setError(null)
+      
+      const { data, error: fetchError } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (fetchError) {
+        throw fetchError
       }
 
-      const updatedVehicles = [...vehicles, newVehicle]
-      setVehicles(updatedVehicles)
-      saveVehiclesToStorage(updatedVehicles)
+      // Transform data to match interface
+      const transformedItems: InventoryItem[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        status: item.status,
+        serial_number: item.serial_number,
+        location: item.location,
+        photos: item.photos || [],
+        assigned_to: item.assigned_to,
+        purchase_date: item.purchase_date,
+        warranty_expiration: item.warranty_expiration,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }))
 
-      return newVehicle
+      setItems(transformedItems)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory items'
+      setError(errorMessage)
+      console.error('Error loading inventory items:', err)
+      
+      toast({
+        title: 'Error Loading Inventory',
+        description: errorMessage,
+        variant: 'destructive'
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const importVehiclesFromCSV = async (file: File) => {
-    return new Promise<Partial<Vehicle>[]>((resolve, reject) => {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          const importedVehicles = results.data.map((row: any) => {
-            return {
-              vin: row.vin || '',
-              make: row.make || '',
-              model: row.model || '',
-              year: parseInt(row.year) || new Date().getFullYear(),
-              type: row.type as VehicleType || VehicleType.RV,
-              status: row.status as VehicleStatus || VehicleStatus.AVAILABLE,
-              price: parseFloat(row.price) || 0,
-              cost: parseFloat(row.cost) || 0,
-              location: row.location || '',
-              features: row.features ? row.features.split(',').map((f: string) => f.trim()) : [],
-              images: [],
-              customFields: {
-                exteriorColor: row.exteriorColor || '',
-                interiorColor: row.interiorColor || '',
-                length: row.length || '',
-                weight: row.weight || '',
-                sleeps: row.sleeps || '',
-                slideouts: row.slideouts || '',
-                fuelType: row.fuelType || '',
-                mileage: row.mileage || '',
-                condition: row.condition || 'New'
-              }
-            }
-          })
-          resolve(importedVehicles)
-        },
-        error: (error) => {
-          reject(error)
-        }
+  // Add new inventory item
+  const addInventoryItem = async (itemData: CreateInventoryItemData): Promise<InventoryItem | null> => {
+    try {
+      const { data, error: insertError } = await supabase
+        .from('inventory_items')
+        .insert([{
+          name: itemData.name,
+          type: itemData.type || null,
+          status: itemData.status || 'Available',
+          serial_number: itemData.serial_number || null,
+          location: itemData.location || null,
+          photos: itemData.photos || [],
+          assigned_to: itemData.assigned_to || null,
+          purchase_date: itemData.purchase_date || null,
+          warranty_expiration: itemData.warranty_expiration || null
+        }])
+        .select()
+        .single()
+
+      if (insertError) {
+        throw insertError
+      }
+
+      const newItem: InventoryItem = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        serial_number: data.serial_number,
+        location: data.location,
+        photos: data.photos || [],
+        assigned_to: data.assigned_to,
+        purchase_date: data.purchase_date,
+        warranty_expiration: data.warranty_expiration,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      // Update local state
+      setItems(prevItems => [newItem, ...prevItems])
+
+      toast({
+        title: 'Item Added',
+        description: `${itemData.name} has been added to inventory`
       })
-    })
+
+      return newItem
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add inventory item'
+      console.error('Error adding inventory item:', err)
+      
+      toast({
+        title: 'Error Adding Item',
+        description: errorMessage,
+        variant: 'destructive'
+      })
+      
+      return null
+    }
   }
 
-  const exportVehiclesToCSV = () => {
-    const data = vehicles.map(vehicle => ({
-      id: vehicle.id,
-      vin: vehicle.vin,
-      make: vehicle.make,
-      model: vehicle.model,
-      year: vehicle.year,
-      type: vehicle.type,
-      status: vehicle.status,
-      price: vehicle.price,
-      cost: vehicle.cost,
-      location: vehicle.location,
-      features: vehicle.features.join(', '),
-      exteriorColor: vehicle.customFields?.exteriorColor || '',
-      interiorColor: vehicle.customFields?.interiorColor || '',
-      length: vehicle.customFields?.length || '',
-      weight: vehicle.customFields?.weight || '',
-      sleeps: vehicle.customFields?.sleeps || '',
-      slideouts: vehicle.customFields?.slideouts || '',
-      fuelType: vehicle.customFields?.fuelType || '',
-      mileage: vehicle.customFields?.mileage || '',
-      condition: vehicle.customFields?.condition || ''
-    }))
+  // Update inventory item
+  const updateInventoryItem = async (id: string, updates: UpdateInventoryItemData): Promise<boolean> => {
+    try {
+      const { data, error: updateError } = await supabase
+        .from('inventory_items')
+        .update({
+          name: updates.name,
+          type: updates.type,
+          status: updates.status,
+          serial_number: updates.serial_number,
+          location: updates.location,
+          photos: updates.photos,
+          assigned_to: updates.assigned_to,
+          purchase_date: updates.purchase_date,
+          warranty_expiration: updates.warranty_expiration
+        })
+        .eq('id', id)
+        .select()
+        .single()
 
-    const csv = Papa.unparse(data)
-    return csv
+      if (updateError) {
+        throw updateError
+      }
+
+      const updatedItem: InventoryItem = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        serial_number: data.serial_number,
+        location: data.location,
+        photos: data.photos || [],
+        assigned_to: data.assigned_to,
+        purchase_date: data.purchase_date,
+        warranty_expiration: data.warranty_expiration,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      // Update local state
+      setItems(prevItems => 
+        prevItems.map(item => item.id === id ? updatedItem : item)
+      )
+
+      toast({
+        title: 'Item Updated',
+        description: `${data.name} has been updated successfully`
+      })
+
+      return true
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update inventory item'
+      console.error('Error updating inventory item:', err)
+      
+      toast({
+        title: 'Error Updating Item',
+        description: errorMessage,
+        variant: 'destructive'
+      })
+      
+      return false
+    }
   }
+
+  // Delete inventory item
+  const deleteInventoryItem = async (id: string): Promise<boolean> => {
+    try {
+      const { error: deleteError } = await supabase
+        .from('inventory_items')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) {
+        throw deleteError
+      }
+
+      // Update local state
+      setItems(prevItems => prevItems.filter(item => item.id !== id))
+
+      toast({
+        title: 'Item Deleted',
+        description: 'Inventory item has been deleted successfully'
+      })
+
+      return true
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete inventory item'
+      console.error('Error deleting inventory item:', err)
+      
+      toast({
+        title: 'Error Deleting Item',
+        description: errorMessage,
+        variant: 'destructive'
+      })
+      
+      return false
+    }
+  }
+
+  // Get single inventory item by ID
+  const getInventoryItemById = (id: string): InventoryItem | undefined => {
+    return items.find(item => item.id === id)
+  }
+
+  // Filter items by status
+  const getItemsByStatus = (status: string): InventoryItem[] => {
+    return items.filter(item => item.status === status)
+  }
+
+  // Filter items by type
+  const getItemsByType = (type: string): InventoryItem[] => {
+    return items.filter(item => item.type === type)
+  }
+
+  // Load data on mount
+  useEffect(() => {
+    getInventoryItems()
+  }, [])
 
   return {
-    vehicles,
+    items,
     loading,
-    getAvailableVehicles,
-    getVehicleById,
-    updateVehicleStatus,
-    createVehicle,
-    deleteVehicle,
-    importVehiclesFromCSV,
-    exportVehiclesToCSV
+    error,
+    getInventoryItems,
+    addInventoryItem,
+    updateInventoryItem,
+    deleteInventoryItem,
+    getInventoryItemById,
+    getItemsByStatus,
+    getItemsByType,
+    // Computed values
+    totalItems: items.length,
+    availableItems: items.filter(item => item.status === 'Available').length,
+    soldItems: items.filter(item => item.status === 'Sold').length,
+    serviceItems: items.filter(item => item.status === 'Service').length
   }
 }
