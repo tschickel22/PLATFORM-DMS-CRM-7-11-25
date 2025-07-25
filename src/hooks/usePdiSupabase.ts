@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { validate as validateUUID } from 'uuid'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
 import { PdiChecklist, PdiSetting } from '@/types'
 
 export function usePdiChecklists() {
-  const { user } = useAuth()
+  const { session } = useAuth()
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsLoading, setSettingsLoading] = useState(false)
@@ -21,23 +22,13 @@ export function usePdiChecklists() {
     settings: { connected: false, error: undefined, count: 0 }
   })
   const { toast } = useToast()
-  
-  // UUID validation regex
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  
-  // Dynamically resolve a valid company ID (fallback if invalid)
-  let companyId = user?.tenantId;
-  if (!uuidRegex.test(companyId || '')) {
-    console.warn('⚠️ Invalid tenantId:', companyId, '- using fallback UUID')
-    companyId = '00000000-0000-0000-0000-000000000000'
-  }
 
   // Warn if no valid company ID is found
   useEffect(() => {
-    if (!user?.tenantId) {
+    if (!session?.user?.app_metadata?.company_id) {
       console.warn('⚠️ No valid company ID found. PDI settings using fallback UUID.')
     }
-  }, [user?.tenantId])
+  }, [session?.user?.app_metadata?.company_id])
 
   // Load data from Supabase on mount
   useEffect(() => {
@@ -47,7 +38,27 @@ export function usePdiChecklists() {
     
     setConnectionAttempted(true)
     
-    const loadData = async (companyId: string) => {
+    const loadData = async () => {
+      // Get company ID from session with proper validation
+      const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
+      const isValidCompanyId = validateUUID(rawCompanyId);
+      const companyId = isValidCompanyId ? rawCompanyId : null;
+
+      if (!companyId) {
+        console.warn("[PDI Settings] Invalid companyId UUID. Skipping PDI settings load.");
+        setPdiSettings(mockPDI.sampleSettings);
+        setSupabaseStatus(prev => ({
+          ...prev,
+          settings: {
+            connected: false,
+            error: 'Invalid company ID format',
+            count: 0
+          }
+        }));
+        setLoading(false);
+        return;
+      }
+
       try {
         await Promise.all([
           loadChecklists(),
@@ -69,8 +80,8 @@ export function usePdiChecklists() {
       }
     }
     
-    loadData(companyId)
-  }, [])
+    loadData()
+  }, [session?.user?.app_metadata?.company_id])
 
   const loadChecklists = async () => {
     console.log('📋 [PDI Checklists] Fetching checklists from Supabase...')
@@ -196,12 +207,6 @@ export function usePdiChecklists() {
   const loadPdiSettings = async (companyId: string) => {
     console.log('📋 [PDI Settings] Loading settings for company:', companyId)
     
-    // Early exit if invalid UUID
-    if (!uuidRegex.test(companyId)) {
-      console.warn('Invalid companyId UUID. Skipping PDI settings load.')
-      return
-    }
-    
     setSettingsLoading(true)
     
     // Check if Supabase is configured
@@ -287,14 +292,23 @@ export function usePdiChecklists() {
     }
   }
 
-  const updatePdiSetting = async (companyId: string, key: string, value: string) => {
-    console.log('📝 [PDI Settings] Updating setting:', { companyId, key, value })
-    
-    // Early exit if invalid UUID
-    if (!uuidRegex.test(companyId)) {
-      console.warn('Invalid companyId UUID. Skipping PDI setting update.')
-      return
+  const updatePdiSetting = async (key: string, value: string) => {
+    // Get company ID from session with proper validation
+    const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
+    const isValidCompanyId = validateUUID(rawCompanyId);
+    const companyId = isValidCompanyId ? rawCompanyId : null;
+
+    if (!companyId) {
+      console.warn("[PDI Settings] Invalid companyId UUID. Skipping PDI setting update.");
+      toast({
+        title: 'Error',
+        description: 'Invalid company ID format',
+        variant: 'destructive'
+      });
+      return;
     }
+    
+    console.log('📝 [PDI Settings] Updating setting:', { companyId, key, value })
     
     // Check if Supabase is configured
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
@@ -362,7 +376,17 @@ export function usePdiChecklists() {
     }
   }
 
-  const getPdiSetting = (companyId: string, key: string, defaultValue: string = ''): string => {
+  const getPdiSetting = (key: string, defaultValue: string = ''): string => {
+    // Get company ID from session with proper validation
+    const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
+    const isValidCompanyId = validateUUID(rawCompanyId);
+    const companyId = isValidCompanyId ? rawCompanyId : null;
+
+    if (!companyId) {
+      console.warn("[PDI Settings] Invalid companyId UUID. Returning default value.");
+      return defaultValue;
+    }
+
     // Read from cached state (not directly from Supabase)
     const setting = pdiSettings.find(s => 
       s.company_id === companyId && s.key === key
