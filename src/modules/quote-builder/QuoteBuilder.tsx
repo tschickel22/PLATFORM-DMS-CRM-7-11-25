@@ -608,7 +608,7 @@ function QuotesList() {
   )
 }
 
-export default function QuoteBuilder() {
+function QuoteBuilder() {
   return (
     <Routes>
       <Route path="/" element={<QuotesList />} />
@@ -616,3 +616,5 @@ export default function QuoteBuilder() {
     </Routes>
   )
 }
+
+export default QuoteBuilder
