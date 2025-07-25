@@ -23,8 +23,22 @@ export function useFinanceApplications() {
     console.log('🔄 [Finance Applications] Starting data load from Supabase...')
     console.log('📊 [Finance Applications] Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not Set')
     console.log('🔑 [Finance Applications] Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not Set')
-    loadApplications()
-    loadTemplates()
+    
+    // Add delay to ensure Sentry errors don't block rendering
+    const loadData = async () => {
+      try {
+        await Promise.all([loadApplications(), loadTemplates()])
+      } catch (error) {
+        console.error('🚨 [Finance Applications] Critical error during data load:', error)
+        // Ensure fallback is activated even on critical errors
+        setApplications(mockFinanceApplications.sampleApplications)
+        setTemplates(mockFinanceApplications.defaultTemplates)
+        setUsingFallback(true)
+        setLoading(false)
+      }
+    }
+    
+    loadData()
   }, [])
 
   const loadApplications = async () => {

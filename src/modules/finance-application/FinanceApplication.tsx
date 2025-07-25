@@ -669,6 +669,19 @@ function FinanceApplicationDashboard() {
               <span className="ml-2 text-xs text-orange-600">[Read-Only Mode - Phase 1]</span>
             </span>
           )}
+          {/* Debug Panel for Troubleshooting */}
+          <details className="mt-2">
+            <summary className="text-xs cursor-pointer">🔍 Debug Info</summary>
+            <div className="mt-2 text-xs space-y-1">
+              <div>Environment: {import.meta.env.MODE}</div>
+              <div>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Not Set'}</div>
+              <div>Supabase Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not Set'}</div>
+              <div>Applications Status: {supabaseStatus.applications.connected ? '✅ Connected' : '❌ Failed'}</div>
+              <div>Templates Status: {supabaseStatus.templates.connected ? '✅ Connected' : '❌ Failed'}</div>
+              <div>Using Fallback: {usingFallback ? '✅ Yes' : '❌ No'}</div>
+              <div>Loading: {loading ? '✅ Yes' : '❌ No'}</div>
+            </div>
+          </details>
         </AlertDescription>
       </Alert>
       {/* Page Header */}
