@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Plus, Search, Eye, Edit, Filter } from 'lucide-react'
 import { useDealManagement, Deal } from './hooks/useDealManagement'
+import { formatCurrency } from '@/lib/utils'
 import { DealForm } from './components/DealForm'
 import { DealDetail } from './components/DealDetail'
 import { DealPipeline } from './components/DealPipeline'
@@ -24,6 +25,24 @@ function CRMSalesDealDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [stageFilter, setStageFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
+
+  // Deal stages - these should match your business process
+  const dealStages = [
+    'New',
+    'Qualified',
+    'Proposal',
+    'Negotiation',
+    'Closed Won',
+    'Closed Lost'
+  ]
+
+  // Placeholder sales reps - TODO: Replace with Supabase users table when migrated
+  const salesReps = [
+    { id: 'rep-1', name: 'John Smith' },
+    { id: 'rep-2', name: 'Sarah Johnson' },
+    { id: 'rep-3', name: 'Mike Davis' },
+    { id: 'rep-4', name: 'Lisa Chen' }
+  ]
 
   // Filter deals based on search and filters
   const filteredDeals = React.useMemo(() => {
