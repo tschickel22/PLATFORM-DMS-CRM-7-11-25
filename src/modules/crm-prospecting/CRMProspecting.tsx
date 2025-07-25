@@ -14,6 +14,7 @@ import { LeadIntakeFormBuilder } from './components/LeadIntakeForm'
 import { NewLeadForm } from './components/NewLeadForm'
 import { useToast } from '@/hooks/use-toast'
 import { Lead } from '@/types'
+import { Plus, Users, TrendingUp, Target, Search, Edit, Trash2 } from 'lucide-react'
 
 function CRMProspectingDashboard() {
   const { contacts, loading: contactsLoading, createContact, updateContact, deleteContact } = useContacts()
@@ -28,6 +29,7 @@ function CRMProspectingDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLead, setSelectedLead] = useState<CRMContact | null>(null)
   const [sourceFilter, setSourceFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   // Filter contacts based on search and filters
   const filteredContacts = React.useMemo(() => {
@@ -36,28 +38,28 @@ function CRMProspectingDashboard() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(contact =>
-        lead.first_name.toLowerCase().includes(lowerCaseQuery) ||
-  }, [contacts, searchQuery, statusFilter])
+        contact.first_name.toLowerCase().includes(query) ||
+        contact.last_name.toLowerCase().includes(query) ||
         contact.email.toLowerCase().includes(query) ||
         contact.phone.toLowerCase().includes(query)
       )
     }
 
-      value: loading ? '...' : contacts.length.toString(),
+    if (statusFilter !== 'all') {
       filtered = filtered.filter(contact => contact.status === statusFilter)
     }
 
     if (sourceFilter !== 'all') {
       filtered = filtered.filter(contact => contact.source === sourceFilter)
     }
-      value: loading ? '...' : contacts.filter(contact => contact.status === 'qualified').length.toString(),
+
     return filtered
   }, [contacts, searchQuery, statusFilter, sourceFilter])
 
   // Calculate metrics from live data
   const metrics = React.useMemo(() => {
     const totalLeads = contacts.length
-      value: loading ? '...' : contacts.length > 0 ? Math.round((contacts.filter(contact => contact.status === 'closed_won').length / contacts.length) * 100) + '%' : '0%',
+    const newLeads = contacts.filter(c => c.status === 'new').length
     const qualifiedLeads = contacts.filter(c => c.status === 'qualified').length
     const convertedLeads = deals.filter(d => d.stage === 'Closed Won').length
     const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0
@@ -71,11 +73,12 @@ function CRMProspectingDashboard() {
     }
   }, [contacts, deals])
 
-    toast({
-      title: 'Lead Created',
-      description: `New lead ${newLead.firstName} ${newLead.lastName} has been added.`
   const handleNewLeadSuccess = (newContact: CRMContact) => {
     setShowNewLeadForm(false)
+    toast({
+      title: 'Lead Created',
+      description: `New lead ${newContact.first_name} ${newContact.last_name} has been added.`
+    })
   }
 
   const handleEditLead = (contact: any) => {
@@ -426,12 +429,12 @@ function CRMProspectingDashboard() {
                             <p className="text-xs text-muted-foreground">
                               {contact.source.replace('_', ' ')}
                             </p>
-                        <h4 className="font-semibold">{lead.first_name} {lead.last_name}</h4>
+                          </div>
                         ))}
                         {statusContacts.length > 3 && (
                           <div className="text-center text-xs text-muted-foreground">
-                        {lead.score && (
-                          <Badge variant="outline">Score: {lead.score}</Badge>
+                            +{statusContacts.length - 3} more
+                          </div>
                         )}
                       </div>
                     </div>
@@ -469,27 +472,25 @@ function CRMProspectingDashboard() {
                               />
                             </div>
                             <span className="text-sm text-muted-foreground w-12">
-                      {lead.last_activity && (
-                {!loading && filteredLeads.length === 0 && (
-                          Last activity: {new Date(lead.last_activity).toLocaleDateString()}
-                    {contacts.length === 0 ? (
-                      <>
-                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No contacts found</p>
-                        <p className="text-sm">Create your first contact to get started</p>
-                      </>
-                    ) : (
-                      <>
-                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No contacts match your search criteria</p>
-                        <p className="text-sm">Try adjusting your search or filters</p>
-                      </>
-                    )}
+                              {sourceCount}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-                
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function CRMProspecting() {
   return (
-    let currentLeads = contacts
     <Routes>
       <Route path="/*" element={<CRMProspectingDashboard />} />
     </Routes>
