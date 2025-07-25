@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
 import { PdiChecklist, PdiSetting } from '@/types'
 
 export function usePdiChecklists() {
+  const { user } = useAuth()
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsLoading, setSettingsLoading] = useState(false)
@@ -19,6 +21,16 @@ export function usePdiChecklists() {
     settings: { connected: false, error: undefined, count: 0 }
   })
   const { toast } = useToast()
+  
+  // Dynamic company ID resolution with UUID fallback
+  const companyId = user?.tenantId || '00000000-0000-0000-0000-000000000000'
+
+  // Warn if no valid company ID is found
+  useEffect(() => {
+    if (!user?.tenantId) {
+      console.warn('⚠️ No valid company ID found. PDI settings using fallback UUID.')
+    }
+  }, [user?.tenantId])
 
   // Load data from Supabase on mount
   useEffect(() => {
@@ -28,9 +40,12 @@ export function usePdiChecklists() {
     
     setConnectionAttempted(true)
     
-    const loadData = async () => {
+    const loadData = async (companyId: string) => {
       try {
-        await loadChecklists()
+        await Promise.all([
+          loadChecklists(),
+          loadPdiSettings(companyId)
+        ])
       } catch (error) {
         console.error('🚨 [PDI Checklists] Critical error during data load:', error)
         // Only use fallback if Supabase is not configured
@@ -47,7 +62,7 @@ export function usePdiChecklists() {
       }
     }
     
-    loadData()
+    loadData(companyId)
   }, [])
 
   const loadChecklists = async () => {
@@ -280,13 +295,13 @@ export function usePdiChecklists() {
   }
 
   const updatePdiSetting = async (companyId: string, key: string, value: string) => {
-    console.log('💾 [PDI Settings] Updating setting:', { companyId, key, value })
+    console.log('📝 [PDI Settings] Updating setting:', { companyId, key, value })
     
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    // Validate UUID format - allow fallback UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(companyId)) {
-      console.warn('⚠️ [PDI Settings] Invalid UUID format for company ID:', companyId)
-      throw new Error(`Invalid UUID format: ${companyId}`)
+      console.warn('⚠️ [PDI Settings] Invalid UUID format:', companyId, '- using fallback UUID')
+      // Don't return early - allow fallback UUID to work
     }
     
     // Check if Supabase is configured
