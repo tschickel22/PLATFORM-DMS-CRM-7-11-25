@@ -320,7 +320,7 @@ function AgreementVaultDashboard() {
                   </div>
                 )}
               </div>
-            </CardContent>
+            </CardHeader>
           </Card>
         </TabsContent>
 
