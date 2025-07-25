@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Plus, FileText, Settings, CreditCard, Eye, Users, Search, Save, User, Clock } from 'lucide-react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
@@ -18,6 +19,7 @@ import { PortalApplicationView } from './components/PortalApplicationView'
 import { InviteCustomerModal } from './components/InviteCustomerModal'
 import { useFinanceApplications } from './hooks/useFinanceApplications'
 import { FinanceApplication as FinanceApplicationType } from './types'
+import { mockFinanceApplications } from './mocks/financeApplicationMock'
 
 function FinanceApplicationDashboard() {
   const { tenant } = useTenant()
@@ -42,6 +44,7 @@ function FinanceApplicationDashboard() {
     applications,
     templates,
     loading,
+    usingFallback,
     createApplication,
     updateApplication,
     deleteApplication,
@@ -121,6 +124,13 @@ function FinanceApplicationDashboard() {
   }
 
   const handleOpenApplicationCreationFlow = () => {
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Creating applications is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+    
     setShowApplicationTypeSelectionModal(true)
   }
 
@@ -152,6 +162,13 @@ function FinanceApplicationDashboard() {
   }
 
   const handleStatusChange = (newStatus: string) => {
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Status changes are disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+    
     if (!selectedApplication) return
     
     // Check if changing FROM denied TO another status - requires note validation
@@ -225,27 +242,18 @@ function FinanceApplicationDashboard() {
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800'
-      case 'submitted':
-        return 'bg-blue-100 text-blue-800'
-      case 'under_review':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'approved':
-        return 'bg-green-100 text-green-800'
-      case 'conditionally_approved':
-        return 'bg-orange-100 text-orange-800'
-      case 'denied':
-        return 'bg-red-100 text-red-800'
-      case 'completed':
-        return 'bg-emerald-100 text-emerald-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+    const statusOption = mockFinanceApplications.statusOptions.find(s => s.value === status)
+    return statusOption?.color || 'bg-gray-100 text-gray-800'
   }
 
   const handleSaveNotesAndStatus = () => {
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Saving notes and status changes is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+    
     if (selectedApplication) {
       const newStatusToApply = pendingStatus || selectedApplication.status
       const isStatusChanging = newStatusToApply !== selectedApplication.status
@@ -633,6 +641,29 @@ function FinanceApplicationDashboard() {
         />
       )}
 
+      {/* Supabase Status Banner */}
+      <Alert>
+        <AlertDescription>
+          {loading ? (
+            <span className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+              Loading finance applications from Supabase...
+            </span>
+          ) : usingFallback ? (
+            <span>
+              📊 <strong>Demo Mode:</strong> Displaying sample finance applications. 
+              Live Supabase data will be available when configured.
+              <code className="ml-2 text-xs">Tables: finance_applications, application_templates</code>
+            </span>
+          ) : (
+            <span>
+              ✅ <strong>Live Data:</strong> Connected to Supabase finance applications. 
+              <code className="ml-2 text-xs">Tables: finance_applications ({applications.length}), application_templates ({templates.length})</code>
+              <span className="ml-2 text-xs text-orange-600">[Read-Only Mode - Phase 1]</span>
+            </span>
+          )}
+        </AlertDescription>
+      </Alert>
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">

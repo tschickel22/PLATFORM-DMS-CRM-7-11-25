@@ -2,28 +2,41 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { FinanceApplication, ApplicationTemplate, ApplicationData, UploadedFile, ApplicationHistoryEntry } from '../types'
 import { useToast } from '@/hooks/use-toast'
+import { mockFinanceApplications } from '../mocks/financeApplicationMock'
 
 export function useFinanceApplications() {
   const [applications, setApplications] = useState<FinanceApplication[]>([])
   const [templates, setTemplates] = useState<ApplicationTemplate[]>([])
   const [loading, setLoading] = useState(true)
+  const [usingFallback, setUsingFallback] = useState(false)
   const { toast } = useToast()
 
   // Load data from Supabase on mount
   useEffect(() => {
+    console.log('[Finance Applications] Starting data load from Supabase...')
     loadApplications()
     loadTemplates()
   }, [])
 
   const loadApplications = async () => {
+    console.log('[Finance Applications] Fetching applications from Supabase...')
     try {
       const { data, error } = await supabase
         .from('finance_applications')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.warn('[Finance Applications] Supabase error:', error)
+        throw error
+      }
 
+      if (!data) {
+        console.warn('[Finance Applications] Supabase returned null data')
+        throw new Error('No data returned from Supabase')
+      }
+
+      console.log('[Finance Applications] Supabase fetch successful:', data.length, 'applications')
       // Transform Supabase data to application format
       const transformedApplications: FinanceApplication[] = (data || []).map(row => ({
         id: row.id,
@@ -47,12 +60,18 @@ export function useFinanceApplications() {
       }))
 
       setApplications(transformedApplications)
+      setUsingFallback(false)
     } catch (error) {
-      console.error('Error loading applications:', error)
+      console.error('[Finance Applications] Supabase fetch failed, activating fallback:', error)
+      console.log('[Finance Applications] Using mock data fallback')
+      
+      // Use mock data as fallback
+      setApplications(mockFinanceApplications.sampleApplications)
+      setUsingFallback(true)
+      
       toast({
-        title: 'Error',
-        description: 'Failed to load finance applications',
-        variant: 'destructive'
+        title: 'Using Demo Data',
+        description: 'Connected to demo data. Live data will be available when Supabase is configured.',
       })
     } finally {
       setLoading(false)
@@ -60,13 +79,24 @@ export function useFinanceApplications() {
   }
 
   const loadTemplates = async () => {
+    console.log('[Finance Applications] Fetching templates from Supabase...')
     try {
       const { data, error } = await supabase
         .from('application_templates')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.warn('[Finance Applications] Templates Supabase error:', error)
+        throw error
+      }
+
+      if (!data) {
+        console.warn('[Finance Applications] Templates Supabase returned null data')
+        throw new Error('No template data returned from Supabase')
+      }
+
+      console.log('[Finance Applications] Templates Supabase fetch successful:', data.length, 'templates')
 
       // Transform Supabase data to template format
       const transformedTemplates: ApplicationTemplate[] = (data || []).map(row => ({
@@ -81,16 +111,30 @@ export function useFinanceApplications() {
 
       setTemplates(transformedTemplates)
     } catch (error) {
-      console.error('Error loading templates:', error)
+      console.error('[Finance Applications] Templates Supabase fetch failed, activating fallback:', error)
+      console.log('[Finance Applications] Using mock templates fallback')
+      
+      // Use mock data as fallback
+      setTemplates(mockFinanceApplications.defaultTemplates)
+      
       toast({
-        title: 'Error',
-        description: 'Failed to load application templates',
-        variant: 'destructive'
+        title: 'Using Demo Templates',
+        description: 'Connected to demo templates. Live data will be available when Supabase is configured.',
       })
     }
   }
 
   const createApplication = async (data: Partial<FinanceApplication>): Promise<FinanceApplication> => {
+    console.log('[Finance Applications] Create operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Creating applications is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    throw new Error('Create operations disabled in read-only mode')
+  }
+
+  const createApplicationLocal = async (data: Partial<FinanceApplication>): Promise<FinanceApplication> => {
     try {
       const applicationData = {
         customer_id: data.customerId || '',
@@ -113,13 +157,14 @@ export function useFinanceApplications() {
         notes: data.notes || ''
       }
 
-      const { data: insertedData, error } = await supabase
-        .from('finance_applications')
-        .insert([applicationData])
-        .select()
-        .single()
-
-      if (error) throw error
+      // Create local mock application for demo purposes
+      const mockId = `app-${Date.now()}`
+      const insertedData = {
+        id: mockId,
+        ...applicationData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
 
       const newApplication: FinanceApplication = {
         id: insertedData.id,
@@ -156,6 +201,16 @@ export function useFinanceApplications() {
   }
 
   const updateApplication = async (id: string, updates: Partial<FinanceApplication>) => {
+    console.log('[Finance Applications] Update operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Updating applications is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+  }
+
+  const updateApplicationLocal = async (id: string, updates: Partial<FinanceApplication>) => {
     try {
       // Get current application for history tracking
       const currentApp = applications.find(app => app.id === id)
@@ -192,14 +247,12 @@ export function useFinanceApplications() {
         }
       })
 
-      const { data, error } = await supabase
-        .from('finance_applications')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
+      // Update local state for demo purposes
+      const data = {
+        id,
+        ...updateData,
+        updated_at: new Date().toISOString()
+      }
 
       // Transform and update local state
       const updatedApplication: FinanceApplication = {
@@ -238,13 +291,17 @@ export function useFinanceApplications() {
   }
 
   const deleteApplication = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('finance_applications')
-        .delete()
-        .eq('id', id)
+    console.log('[Finance Applications] Delete operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Deleting applications is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+  }
 
-      if (error) throw error
+  const deleteApplicationLocal = async (id: string) => {
+    try {
 
       setApplications(prev => prev.filter(app => app.id !== id))
     } catch (error) {
@@ -267,6 +324,16 @@ export function useFinanceApplications() {
   }
 
   const createTemplate = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
+    console.log('[Finance Applications] Create template operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Creating templates is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    throw new Error('Create operations disabled in read-only mode')
+  }
+
+  const createTemplateLocal = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
     try {
       const templateData = {
         name: data.name || 'New Template',
@@ -275,13 +342,14 @@ export function useFinanceApplications() {
         is_active: data.isActive !== undefined ? data.isActive : true
       }
 
-      const { data: insertedData, error } = await supabase
-        .from('application_templates')
-        .insert([templateData])
-        .select()
-        .single()
-
-      if (error) throw error
+      // Create local mock template for demo purposes
+      const mockId = `template-${Date.now()}`
+      const insertedData = {
+        id: mockId,
+        ...templateData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
 
       const newTemplate: ApplicationTemplate = {
         id: insertedData.id,
@@ -307,6 +375,16 @@ export function useFinanceApplications() {
   }
 
   const updateTemplate = async (id: string, updates: Partial<ApplicationTemplate>) => {
+    console.log('[Finance Applications] Update template operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Updating templates is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+  }
+
+  const updateTemplateLocal = async (id: string, updates: Partial<ApplicationTemplate>) => {
     try {
       const updateData = {
         name: updates.name,
@@ -322,14 +400,12 @@ export function useFinanceApplications() {
         }
       })
 
-      const { data, error } = await supabase
-        .from('application_templates')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
+      // Update local state for demo purposes
+      const data = {
+        id,
+        ...updateData,
+        updated_at: new Date().toISOString()
+      }
 
       const updatedTemplate: ApplicationTemplate = {
         id: data.id,
@@ -356,13 +432,17 @@ export function useFinanceApplications() {
   }
 
   const deleteTemplate = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('application_templates')
-        .delete()
-        .eq('id', id)
+    console.log('[Finance Applications] Delete template operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Deleting templates is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+  }
 
-      if (error) throw error
+  const deleteTemplateLocal = async (id: string) => {
+    try {
 
       setTemplates(prev => prev.filter(template => template.id !== id))
     } catch (error) {
@@ -381,21 +461,23 @@ export function useFinanceApplications() {
   }
 
   const uploadFile = async (applicationId: string, fieldId: string, file: File): Promise<UploadedFile> => {
+    console.log('[Finance Applications] File upload operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'File uploads are disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    throw new Error('Upload operations disabled in read-only mode')
+  }
+
+  const uploadFileLocal = async (applicationId: string, fieldId: string, file: File): Promise<UploadedFile> => {
     try {
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop()
       const fileName = `${applicationId}/${fieldId}/${Date.now()}.${fileExt}`
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('application-files')
-        .upload(fileName, file)
-
-      if (uploadError) throw uploadError
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('application-files')
-        .getPublicUrl(fileName)
+      // Mock file upload for demo purposes
+      const publicUrl = `/mock/uploads/${fileName}`
 
       const uploadedFile: UploadedFile = {
         id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -411,7 +493,7 @@ export function useFinanceApplications() {
       const application = getApplicationById(applicationId)
       if (application) {
         const updatedFiles = [...application.uploadedFiles, uploadedFile]
-        await updateApplication(applicationId, { uploadedFiles: updatedFiles })
+        await updateApplicationLocal(applicationId, { uploadedFiles: updatedFiles })
       }
 
       return uploadedFile
@@ -427,6 +509,16 @@ export function useFinanceApplications() {
   }
 
   const removeFile = async (applicationId: string, fileId: string) => {
+    console.log('[Finance Applications] File removal operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'File removal is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    return
+  }
+
+  const removeFileLocal = async (applicationId: string, fileId: string) => {
     try {
       const application = getApplicationById(applicationId)
       if (application) {
@@ -436,14 +528,13 @@ export function useFinanceApplications() {
         if (fileToRemove && fileToRemove.url.includes('supabase')) {
           const fileName = fileToRemove.url.split('/').pop()
           if (fileName) {
-            await supabase.storage
-              .from('application-files')
-              .remove([`${applicationId}/${fileToRemove.fieldId}/${fileName}`])
+            // Mock file removal for demo purposes
+            console.log('Mock file removal:', fileName)
           }
         }
 
         const updatedFiles = application.uploadedFiles.filter(file => file.id !== fileId)
-        await updateApplication(applicationId, { uploadedFiles: updatedFiles })
+        await updateApplicationLocal(applicationId, { uploadedFiles: updatedFiles })
       }
     } catch (error) {
       console.error('Error removing file:', error)
@@ -535,17 +626,18 @@ export function useFinanceApplications() {
     applications,
     templates,
     loading,
-    createApplication,
-    updateApplication,
-    deleteApplication,
+    usingFallback,
+    createApplication: createApplicationLocal,
+    updateApplication: updateApplicationLocal,
+    deleteApplication: deleteApplicationLocal,
     getApplicationById,
     getApplicationsByCustomer,
-    createTemplate,
-    updateTemplate,
-    deleteTemplate,
+    createTemplate: createTemplateLocal,
+    updateTemplate: updateTemplateLocal,
+    deleteTemplate: deleteTemplateLocal,
     getTemplateById,
-    uploadFile,
-    removeFile,
+    uploadFile: uploadFileLocal,
+    removeFile: removeFileLocal,
     loadApplications,
     loadTemplates
   }
