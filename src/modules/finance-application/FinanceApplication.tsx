@@ -248,13 +248,6 @@ function FinanceApplicationDashboard() {
   }
 
   const handleSaveNotesAndStatus = () => {
-    toast({
-      title: 'Read-Only Mode',
-      description: 'Saving notes and status changes is disabled in Phase 1. This will be enabled in Phase 2.',
-      variant: 'destructive'
-    })
-    return
-    
     if (selectedApplication) {
       const newStatusToApply = pendingStatus || selectedApplication.status
       const isStatusChanging = newStatusToApply !== selectedApplication.status

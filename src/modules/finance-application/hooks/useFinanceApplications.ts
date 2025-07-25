@@ -623,49 +623,13 @@ export function useFinanceApplications() {
   }
 
   const uploadFile = async (applicationId: string, fieldId: string, file: File): Promise<UploadedFile> => {
-    try {
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${applicationId}/${fieldId}/${Date.now()}.${fileExt}`
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('application-files')
-        .upload(fileName, file)
-
-      if (uploadError) throw uploadError
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('application-files')
-        .getPublicUrl(fileName)
-
-      const uploadedFile: UploadedFile = {
-        id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        fieldId,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        url: publicUrl,
-        uploadedAt: new Date().toISOString()
-      }
-
-      // Update application with new file
-      const application = getApplicationById(applicationId)
-      if (application) {
-        const updatedFiles = [...application.uploadedFiles, uploadedFile]
-        await updateApplication(applicationId, { uploadedFiles: updatedFiles })
-      }
-
-      return uploadedFile
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to upload file',
-        variant: 'destructive'
-      })
-      throw error
-    }
+    console.log('🚫 [Finance Applications] File upload operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'File uploads are disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    throw new Error('Upload operations disabled in read-only mode')
   }
 
   const uploadFileLocal = async (applicationId: string, fieldId: string, file: File): Promise<UploadedFile> => {
@@ -707,13 +671,33 @@ export function useFinanceApplications() {
   }
 
   const removeFile = async (applicationId: string, fileId: string) => {
-    console.log('🚫 [Finance Applications] File removal operation disabled in read-only mode')
-    toast({
-      title: 'Read-Only Mode',
-      description: 'File removal is disabled in Phase 1. This will be enabled in Phase 2.',
-      variant: 'destructive'
-    })
-    return
+    try {
+      const application = getApplicationById(applicationId)
+      if (application) {
+        const fileToRemove = application.uploadedFiles.find(file => file.id === fileId)
+        
+        // Remove from Supabase Storage if it exists
+        if (fileToRemove && fileToRemove.url.includes('supabase')) {
+          const fileName = fileToRemove.url.split('/').pop()
+          if (fileName) {
+            await supabase.storage
+              .from('application-files')
+              .remove([fileName])
+          }
+        }
+
+        const updatedFiles = application.uploadedFiles.filter(file => file.id !== fileId)
+        await updateApplication(applicationId, { uploadedFiles: updatedFiles })
+      }
+    } catch (error) {
+      console.error('Error removing file:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to remove file',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
   const removeFileLocal = async (applicationId: string, fileId: string) => {
