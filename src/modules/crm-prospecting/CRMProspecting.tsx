@@ -25,7 +25,6 @@ function CRMProspectingDashboard() {
   const [showLeadIntakeBuilder, setShowLeadIntakeBuilder] = useState(false)
   const [selectedLead, setSelectedLead] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedLead, setSelectedLead] = useState<CRMContact | null>(null)
   const [sourceFilter, setSourceFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   // Filter contacts based on search and filters
