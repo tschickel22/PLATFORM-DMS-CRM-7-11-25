@@ -548,6 +548,8 @@ export function usePdiChecklists() {
   }
 
   return hookReturn
-}
+};
 
-export { usePdiSupabase }
+export { usePdiSupabase };
+
+export { usePdiChecklists };
