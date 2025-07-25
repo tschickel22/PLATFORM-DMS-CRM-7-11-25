@@ -287,68 +287,13 @@ export function useFinanceApplications() {
   }
 
   const createApplication = async (data: Partial<FinanceApplication>): Promise<FinanceApplication> => {
-    try {
-      const applicationData = {
-        customer_id: data.customerId || '',
-        customer_name: data.customerName || '',
-        customer_email: data.customerEmail || '',
-        customer_phone: data.customerPhone || '',
-        template_id: data.templateId || null,
-        status: data.status || 'draft',
-        data: data.data || {},
-        uploaded_files: data.uploadedFiles || [],
-        history: [{
-          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          timestamp: new Date().toISOString(),
-          action: 'Application Created',
-          userId: 'current-user',
-          userName: 'Current User',
-          details: `Application created with status: ${data.status || 'draft'}`
-        }],
-        fraud_check_status: 'pending',
-        notes: data.notes || ''
-      }
-
-      const { data: insertedData, error } = await supabase
-        .from('finance_applications')
-        .insert([applicationData])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const newApplication: FinanceApplication = {
-        id: insertedData.id,
-        customerId: insertedData.customer_id,
-        customerName: insertedData.customer_name,
-        customerEmail: insertedData.customer_email,
-        customerPhone: insertedData.customer_phone,
-        templateId: insertedData.template_id,
-        status: insertedData.status,
-        data: insertedData.data || {},
-        uploadedFiles: insertedData.uploaded_files || [],
-        history: insertedData.history || [],
-        fraudCheckStatus: insertedData.fraud_check_status,
-        createdAt: insertedData.created_at,
-        updatedAt: insertedData.updated_at,
-        submittedAt: insertedData.submitted_at,
-        reviewedAt: insertedData.reviewed_at,
-        reviewedBy: insertedData.reviewed_by,
-        notes: insertedData.notes,
-        adminNotes: insertedData.admin_notes
-      }
-
-      setApplications(prev => [newApplication, ...prev])
-      return newApplication
-    } catch (error) {
-      console.error('Error creating application:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to create finance application',
-        variant: 'destructive'
-      })
-      throw error
-    }
+    console.log('🚫 [Finance Applications] Create operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Creating applications is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    throw new Error('Create operations disabled in read-only mode')
   }
 
   const createApplicationLocal = async (data: Partial<FinanceApplication>): Promise<FinanceApplication> => {
@@ -541,13 +486,43 @@ export function useFinanceApplications() {
   }
 
   const createTemplate = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
-    console.log('🚫 [Finance Applications] Create template operation disabled in read-only mode')
-    toast({
-      title: 'Read-Only Mode',
-      description: 'Creating templates is disabled in Phase 1. This will be enabled in Phase 2.',
-      variant: 'destructive'
-    })
-    throw new Error('Create operations disabled in read-only mode')
+    try {
+      const templateData = {
+        name: data.name || 'New Template',
+        description: data.description || '',
+        sections: data.sections || [],
+        is_active: data.isActive !== undefined ? data.isActive : true
+      }
+
+      const { data: insertedData, error } = await supabase
+        .from('application_templates')
+        .insert([templateData])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newTemplate: ApplicationTemplate = {
+        id: insertedData.id,
+        name: insertedData.name,
+        description: insertedData.description,
+        sections: insertedData.sections || [],
+        isActive: insertedData.is_active,
+        createdAt: insertedData.created_at,
+        updatedAt: insertedData.updated_at
+      }
+
+      setTemplates(prev => [newTemplate, ...prev])
+      return newTemplate
+    } catch (error) {
+      console.error('Error creating template:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create application template',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
   const createTemplateLocal = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
