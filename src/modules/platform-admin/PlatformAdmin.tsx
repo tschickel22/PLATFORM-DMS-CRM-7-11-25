@@ -35,3 +35,5 @@ export default function PlatformAdmin() {
     </Routes>
   )
 }
+
+export default PlatformAdmin

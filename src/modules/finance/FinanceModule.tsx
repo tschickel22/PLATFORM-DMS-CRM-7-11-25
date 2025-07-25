@@ -35,3 +35,5 @@ export default function FinanceModule() {
     </Routes>
   )
 }
+
+export default FinanceModule

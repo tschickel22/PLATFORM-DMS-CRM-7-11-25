@@ -35,3 +35,5 @@ export default function CommissionEngine() {
     </Routes>
   )
 }
+
+export default CommissionEngine

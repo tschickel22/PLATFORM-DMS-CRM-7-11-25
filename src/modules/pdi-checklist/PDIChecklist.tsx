@@ -35,3 +35,5 @@ export default function PDIChecklist() {
     </Routes>
   )
 }
+
+export default PDIChecklist

@@ -35,3 +35,5 @@ export default function InvoicePayments() {
     </Routes>
   )
 }
+
+export default InvoicePayments

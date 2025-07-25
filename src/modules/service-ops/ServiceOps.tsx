@@ -27,7 +27,7 @@ function ServiceOpsDashboard() {
   )
 }
 
-export default function ServiceOps() {
+function ServiceOps() {
   return (
     <Routes>
       <Route path="/" element={<ServiceOpsDashboard />} />
@@ -35,3 +35,5 @@ export default function ServiceOps() {
     </Routes>
   )
 }
+
+export default ServiceOps

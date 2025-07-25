@@ -35,3 +35,5 @@ export default function ClientPortalAdmin() {
     </Routes>
   )
 }
+
+export default ClientPortalAdmin

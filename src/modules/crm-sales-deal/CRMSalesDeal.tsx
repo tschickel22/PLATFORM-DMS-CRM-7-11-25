@@ -27,7 +27,7 @@ function CRMSalesDealDashboard() {
   )
 }
 
-export default function CRMSalesDeal() {
+function CRMSalesDeal() {
   return (
     <Routes>
       <Route path="/" element={<CRMSalesDealDashboard />} />
@@ -35,3 +35,5 @@ export default function CRMSalesDeal() {
     </Routes>
   )
 }
+
+export default CRMSalesDeal
