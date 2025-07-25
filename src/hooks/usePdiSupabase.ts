@@ -530,7 +530,7 @@ export function usePdiChecklists() {
     return checklists.find(checklist => checklist.id === id)
   }
 
-  return {
+  const hookReturn = {
     checklists,
     loading,
     settingsLoading,
@@ -546,4 +546,8 @@ export function usePdiChecklists() {
     updatePdiSetting,
     getPdiSetting
   }
+
+  return hookReturn
 }
+
+export { usePdiSupabase }
