@@ -317,6 +317,11 @@ function PDIChecklistDashboard() {
 
         <TabsContent value="settings" className="space-y-4">
           <PDISettings />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
 
 export default function PDIChecklist() {
   return (
