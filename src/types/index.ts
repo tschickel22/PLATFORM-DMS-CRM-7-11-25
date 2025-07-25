@@ -348,6 +348,17 @@ export interface Payment {
   updatedAt: Date
 }
 
+export interface Task {
+  id: string
+  contact_id: string
+  title: string
+  status: string
+  due_date?: string
+  created_at: string
+  updated_at?: string
+  notes?: string
+}
+
 export interface Loan {
   id: string
   customerId: string

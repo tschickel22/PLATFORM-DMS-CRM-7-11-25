@@ -1,3 +1,6 @@
+// ✅ Connected to Supabase: crm_prospects & crm_tasks
+// ⚠️ RLS disabled in dev – re-enable with policies in production
+
 import React, { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,11 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CRMContact } from '@/types'
 import { useContacts, useDeals } from '@/hooks/useCrmSupabase'
+import { useCrmTasks } from '@/hooks/useCrmTasks'
 import { useLeadManagement } from './hooks/useLeadManagement'
 import { LeadIntakeFormBuilder } from './components/LeadIntakeForm'
 import { NewLeadForm } from './components/NewLeadForm'
+import { LeadDetailModal } from './components/LeadDetailModal'
 import { useToast } from '@/hooks/use-toast'
 import { Lead } from '@/types'
 import { Plus, Users, TrendingUp, Target, Search, Edit, Trash2 } from 'lucide-react'
@@ -18,15 +24,18 @@ import { Plus, Users, TrendingUp, Target, Search, Edit, Trash2 } from 'lucide-re
 function CRMProspectingDashboard() {
   const { contacts, loading: contactsLoading, createContact, updateContact, deleteContact } = useContacts()
   const { deals, loading: dealsLoading } = useDeals()
+  const { tasks, loading: tasksLoading, usingFallback: tasksUsingFallback } = useCrmTasks()
   const { toast } = useToast()
   
   const [activeTab, setActiveTab] = useState('leads')
   const [showNewLeadForm, setShowNewLeadForm] = useState(false)
   const [showLeadIntakeBuilder, setShowLeadIntakeBuilder] = useState(false)
+  const [showLeadDetailModal, setShowLeadDetailModal] = useState(false)
   const [selectedLead, setSelectedLead] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sourceFilter, setSourceFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+
   // Filter contacts based on search and filters
   const filteredContacts = React.useMemo(() => {
     let filtered = contacts
@@ -71,15 +80,24 @@ function CRMProspectingDashboard() {
 
   const handleNewLeadSuccess = (newContact: CRMContact) => {
     setShowNewLeadForm(false)
+    setShowLeadDetailModal(false)
     toast({
       title: 'Lead Created',
       description: `New lead ${newContact.first_name} ${newContact.last_name} has been added.`
     })
   }
 
+  const handleLeadUpdate = (updatedLead: CRMContact) => {
+    // The contact will be automatically updated in the list via the useContacts hook
+    toast({
+      title: 'Lead Updated',
+      description: `${updatedLead.first_name} ${updatedLead.last_name} has been updated.`
+    })
+  }
+
   const handleEditLead = (contact: any) => {
     setSelectedLead(contact)
-    setShowNewLeadForm(true)
+    setShowLeadDetailModal(true)
   }
 
   const handleDeleteLead = async (contactId: string) => {
@@ -132,7 +150,7 @@ function CRMProspectingDashboard() {
     }
   }
 
-  if (contactsLoading || dealsLoading) {
+  if (contactsLoading || dealsLoading || tasksLoading) {
     return (
       <div className="space-y-6">
         <div className="ri-page-header">
@@ -161,12 +179,55 @@ function CRMProspectingDashboard() {
         />
       )}
 
+      {/* Lead Detail Modal */}
+      {showLeadDetailModal && selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          onClose={() => {
+            setShowLeadDetailModal(false)
+            setSelectedLead(null)
+          }}
+          onLeadUpdate={handleLeadUpdate}
+        />
+      )}
+
       {showLeadIntakeBuilder && (
         <LeadIntakeFormBuilder
           onClose={() => setShowLeadIntakeBuilder(false)}
           onSuccess={handleNewLeadSuccess}
         />
       )}
+
+      {/* Supabase Status Banner */}
+      <Alert>
+        <AlertDescription>
+          {contactsLoading || tasksLoading ? (
+            <span className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+              Connecting to Supabase CRM data...
+            </span>
+          ) : !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
+            <span>
+              ⚙️ <strong>Configuration Required:</strong> Supabase environment variables not set. 
+              Displaying demo data.
+            </span>
+          ) : tasksUsingFallback ? (
+            <span>
+              📊 <strong>Partial Connection:</strong> Contacts connected to Supabase, tasks using fallback data.
+              <code className="ml-2 text-xs">
+                Contacts: {contacts.length}, Tasks: {tasks.length} (mock)
+              </code>
+            </span>
+          ) : (
+            <span>
+              ✅ <strong>Live Data:</strong> Connected to Supabase successfully. 
+              <code className="ml-2 text-xs">
+                Contacts: {contacts.length}, Tasks: {tasks.length}
+              </code>
+            </span>
+          )}
+        </AlertDescription>
+      </Alert>
 
       {/* Page Header */}
       <div className="ri-page-header">
@@ -249,6 +310,12 @@ function CRMProspectingDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="leads">Leads</TabsTrigger>
+          <TabsTrigger value="tasks">
+            Tasks ({tasks.length})
+            {tasksUsingFallback && (
+              <Badge variant="outline" className="ml-2 text-xs">Mock</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -390,6 +457,82 @@ function CRMProspectingDashboard() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="tasks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Tasks</CardTitle>
+              <CardDescription>
+                View and manage all tasks across leads
+                {tasksUsingFallback && (
+                  <Badge variant="outline" className="ml-2">Using Mock Data</Badge>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {tasksLoading && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2">Loading tasks...</p>
+                  </div>
+                )}
+                
+                {!tasksLoading && tasks.length > 0 && tasks.map((task) => {
+                  const contact = contacts.find(c => c.id === task.contact_id)
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h4 className="font-semibold">{task.title}</h4>
+                          <Badge className={getTaskStatusColor(task.status)}>
+                            {task.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {contact ? `${contact.first_name} ${contact.last_name}` : 'Unknown Contact'}
+                          {task.due_date && (
+                            <span> • Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                        {task.notes && (
+                          <p className="text-sm text-muted-foreground mt-1 truncate">
+                            {task.notes}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Created: {new Date(task.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {contact && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditLead(contact)}
+                          >
+                            View Lead
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                
+                {!tasksLoading && tasks.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No tasks yet</p>
+                    <p className="text-sm">Tasks will appear here when you create them for leads</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="pipeline" className="space-y-4">
           <Card>
             <CardHeader>
@@ -483,6 +626,19 @@ function CRMProspectingDashboard() {
       </Tabs>
     </div>
   )
+
+  function getTaskStatusColor(status: string) {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800'
+      case 'cancelled':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-yellow-100 text-yellow-800'
+    }
+  }
 }
 
 function CRMProspecting() {

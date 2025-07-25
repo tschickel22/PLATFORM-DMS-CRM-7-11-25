@@ -13,9 +13,10 @@ import { useToast } from '@/hooks/use-toast'
 interface NewLeadFormProps {
   onClose: () => void
   onSuccess: (contact: CRMContact) => void
+  embedded?: boolean
 }
 
-export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
+export function NewLeadForm({ lead, onClose, onSuccess, embedded = false }: NewLeadFormProps) {
   const { createContact } = useContacts()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -53,6 +54,153 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
       setLoading(false)
     }
   }
+
+  // If embedded, render without modal wrapper
+  if (embedded) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{lead ? 'Edit Lead' : 'New Lead'}</CardTitle>
+          <CardDescription>
+            {lead ? 'Update lead information' : 'Add a new lead to your CRM'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {renderFormFields()}
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {lead ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {lead ? 'Update Lead' : 'Create Lead'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const renderFormFields = () => (
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label htmlFor="firstName">First Name *</Label>
+          <Input
+            id="firstName"
+            value={formData.firstName}
+            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="lastName">Last Name *</Label>
+          <Input
+            id="lastName"
+            value={formData.lastName}
+            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+            required
+          />
+        </div>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label htmlFor="email">Email *</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="phone">Phone *</Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            required
+          />
+        </div>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label htmlFor="source">Lead Source</Label>
+          <Select 
+            value={formData.source} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, source: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="website">Website</SelectItem>
+              <SelectItem value="referral">Referral</SelectItem>
+              <SelectItem value="phone">Phone Call</SelectItem>
+              <SelectItem value="walk_in">Walk-in</SelectItem>
+              <SelectItem value="trade_show">Trade Show</SelectItem>
+              <SelectItem value="social_media">Social Media</SelectItem>
+              <SelectItem value="advertising">Advertising</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select 
+            value={formData.status} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="contacted">Contacted</SelectItem>
+              <SelectItem value="qualified">Qualified</SelectItem>
+              <SelectItem value="proposal">Proposal</SelectItem>
+              <SelectItem value="negotiation">Negotiation</SelectItem>
+              <SelectItem value="closed_won">Closed Won</SelectItem>
+              <SelectItem value="closed_lost">Closed Lost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="assignedTo">Assigned To</Label>
+        <Input
+          id="assignedTo"
+          value={formData.assignedTo}
+          onChange={(e) => setFormData(prev => ({ ...prev, assignedTo: e.target.value }))}
+          placeholder="Sales rep name"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder="Add any notes about this lead..."
+          rows={3}
+        />
+      </div>
+    </>
+  )
 
   const leadSources = ['Walk-In', 'Referral', 'Website', 'Phone Call', 'Social Media', 'Trade Show']
   const leadStatuses = ['new', 'contacted', 'qualified', 'lost', 'converted']
@@ -94,114 +242,7 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                    placeholder="Enter last name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Lead Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Lead Information</h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="source">Source</Label>
-                  <Select
-                    value={formData.source}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, source: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select lead source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {leadSources.map(source => (
-                        <SelectItem key={source} value={source}>
-                          {source}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {leadStatuses.map(status => (
-                        <SelectItem key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="assignedTo">Assigned To</Label>
-                  <Input
-                    id="assignedTo"
-                    value={formData.assignedTo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, assignedTo: e.target.value }))}
-                    placeholder="Enter sales rep name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="score">Lead Score</Label>
-                  <Input
-                    id="score"
-                    type="number"
-                    value={formData.score || ''}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      score: e.target.value ? Number(e.target.value) : null 
-                    }))}
-                    placeholder="0-100"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Add any additional notes about this lead..."
-                rows={4}
-              />
-            </div>
+            {renderFormFields()}
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-4">
