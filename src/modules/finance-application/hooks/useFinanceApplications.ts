@@ -106,9 +106,10 @@ export function useFinanceApplications() {
       }))
       
       if (data.length === 0) {
-        console.log('📭 [Finance Applications] Database is empty - showing empty state')
-        setApplications([])
-        setUsingFallback(false)
+        console.log('📭 [Finance Applications] Database is empty - using mock data fallback')
+        // If Supabase is connected but returns no data, use mock data to provide a visual experience
+        setApplications(mockFinanceApplications.sampleApplications)
+        setUsingFallback(true)
         return
       }
 
@@ -262,9 +263,10 @@ export function useFinanceApplications() {
           }
         }))
       } else {
-        console.log('🔄 [Finance Applications] Supabase configured but failed - keeping empty templates')
-        setTemplates([])
-        setUsingFallback(false)
+        console.log('📭 [Finance Applications] Templates database is empty - using mock data fallback')
+        // If Supabase is connected but returns no templates, use mock templates to provide a visual experience
+        setTemplates(mockFinanceApplications.defaultTemplates)
+        setUsingFallback(true)
         setSupabaseStatus(prev => ({
           ...prev,
           templates: { 
