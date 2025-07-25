@@ -139,7 +139,7 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
-        ))}
+        ))
         ) : (
           <div className="col-span-4 text-center py-8 text-muted-foreground">
             <p>No stats available</p>
@@ -185,8 +185,6 @@ export default function Dashboard() {
                 <p className="text-sm">Activity will appear here as you use the system</p>
               </div>
             )}
-            
-            </div>
           </CardContent>
         </Card>
 
