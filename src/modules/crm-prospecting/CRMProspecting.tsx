@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -20,11 +20,11 @@ import { LeadScoring } from './components/LeadScoring'
 import { ActivityTimeline } from './components/ActivityTimeline'
 import { LeadReminders } from './components/LeadReminders'
 import { LeadIntakeFormBuilder, DynamicLeadForm } from './components/LeadIntakeForm'
-import { NurtureSequences } from './components/NurtureSequences'
 import { AIInsights } from './components/AIInsights'
 import { CommunicationCenter } from './components/CommunicationCenter'
 import { NewLeadForm } from './components/NewLeadForm'
 import { QuotesList } from './components/QuotesList'
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
 
 function LeadsList() {
   const {
@@ -39,7 +39,7 @@ function LeadsList() {
   } = useLeadManagement()
   
   const [searchTerm, setSearchTerm] = useState('')
-  const { contacts, loading: contactsLoading } = useContacts()
+  const { createContact, updateContact, deleteContact } = useLeadManagement()
   const { toast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
@@ -189,7 +189,9 @@ function LeadsList() {
               </div>
 
               <div className="space-y-6">
-                {leadScore && <LeadScoring score={leadScore} />}
+                {filteredLeads.length > 0 ? (
+                  filteredLeads.map((lead) => (
+                    
               </div>
             </div>
           </TabsContent>
@@ -272,7 +274,7 @@ function LeadsList() {
       {/* New Lead Form Modal */}
       {showNewLeadForm && (
         <NewLeadForm
-          onClose={() => setShowNewLeadForm(false)}
+          onClose={() => setShowNewLeadForm(false)} // This will be removed later
           onSuccess={handleNewLeadSuccess}
         />
       )}
@@ -548,7 +550,9 @@ function LeadsList() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              {mockCrmProspecting.nurtureSequences.length > 0 ? (
+                <div className="space-y-4">
+                  
                 {sources.map(source => (
                   <div key={source.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                     <div>
@@ -567,8 +571,12 @@ function LeadsList() {
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))} 
+                </div>
+              ) : (
+                
+                ) : (
+                
             </CardContent>
           </Card>
         </TabsContent>

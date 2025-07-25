@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Package, FileText, DollarSign, TrendingUp, Calendar, Plus } from 'lucide-react'
-import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
+import { LeadIntakeFormBuilder } from '@/modules/crm-prospecting/components/LeadIntakeForm'
 import { Lead } from '@/types'
 import { useDeals, useContacts } from '@/hooks/useCrmSupabase'
 
@@ -105,7 +105,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* New Lead Form Modal */}
       {showNewLeadForm && (
-        <NewLeadForm
+        <LeadIntakeFormBuilder
           onClose={() => setShowNewLeadForm(false)}
           onSuccess={handleNewLeadSuccess}
         />
@@ -120,7 +120,9 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {stats.length > 0 ? (
+          stats.map((stat) => (
+            
           <Card key={stat.name}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -138,6 +140,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ))}
+        ) : (
+          <div className="col-span-4 text-center py-8 text-muted-foreground">
+            <p>No stats available</p>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -150,7 +157,9 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            {recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                
               {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
@@ -169,12 +178,14 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              {recentActivity.length === 0 && (
-                <div className="text-center py-6 text-muted-foreground">
-                  <p>No recent activity</p>
-                  <p className="text-sm">Activity will appear here as you use the system</p>
-                </div>
-              )}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <p>No recent activity</p>
+                <p className="text-sm">Activity will appear here as you use the system</p>
+              </div>
+            )}
+            
             </div>
           </CardContent>
         </Card>
