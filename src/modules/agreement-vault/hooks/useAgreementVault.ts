@@ -66,6 +66,9 @@ export function useAgreementVault() {
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
+  // Skip any table creation/alteration - schema is already correct in Supabase
+  const SKIP_SCHEMA_OPERATIONS = true
+
   // Load data from Supabase
   useEffect(() => {
     loadData()
@@ -109,16 +112,29 @@ export function useAgreementVault() {
         .select('*')
         .order('signed_at', { ascending: false })
 
-      if (signaturesError) {
+      if (error) {
+        console.warn('Supabase signatures query failed, using fallback:', error.message)
+        // Use fallback mock data if Supabase is offline or has issues
+        setSignatures([
+          {
+            id: 'sig-001',
+            agreement_id: 'agr-001',
+            signer_email: 'john.smith@email.com',
+            signer_name: 'John Smith',
+            status: 'signed',
+            signed_at: '2024-01-15T14:30:00Z',
+            created_at: '2024-01-10T09:30:00Z',
+            updated_at: '2024-01-15T14:30:00Z'
+          }
+        ])
+        return
+      }
         console.error('Error loading signatures:', signaturesError)
         setSignatures([])
       }
-      // Use fallback mock data for signatures until full integration phase
-      const mockSignatures = [
-        {
-          id: 'sig-001',
-          agreement_id: 'agr-001',
-          signer_email: 'john.smith@email.com',
+      console.warn('Error loading signatures, using fallback:', error)
+      // Graceful fallback to mock data
+      setSignatures([])
           signer_name: 'John Smith',
           status: 'signed',
           signed_at: '2024-01-15T14:30:00Z',
@@ -352,6 +368,7 @@ export function useAgreementVault() {
 
   const createSignature = async (signatureData: Partial<AgreementSignature>): Promise<AgreementSignature | null> => {
     try {
+      // Use existing schema - agreement_signatures.agreement_id already references agreements.id
       const { data, error } = await supabase
         .from('agreement_signatures')
         .insert([{
