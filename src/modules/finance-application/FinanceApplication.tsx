@@ -825,33 +825,51 @@ function FinanceApplicationDashboard() {
                   </div>
                 )}
                 
-                {filteredApplications.map((application) => (
+                {!loading && Array.isArray(filteredApplications) && filteredApplications.map((application) => {
+                  // Safety checks for application data
+                  if (!application || !application.id) {
+                    console.warn('⚠️ [Finance Applications] Skipping invalid application:', application)
+                    return null
+                  }
+
+                  const safeApplication = {
+                    id: application.id,
+                    customerName: application.customerName || 'Unnamed Customer',
+                    customerEmail: application.customerEmail || '',
+                    customerPhone: application.customerPhone || '',
+                    status: application.status || 'draft',
+                    fraudCheckStatus: application.fraudCheckStatus || null,
+                    createdAt: application.createdAt || new Date().toISOString(),
+                    submittedAt: application.submittedAt || null
+                  }
+
+                  return (
                   <div
-                    key={application.id}
+                    key={safeApplication.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
                         <h4 className="font-semibold">
-                          {application.customerName || `Application #${application.id.slice(-6).toUpperCase()}`}
+                          {safeApplication.customerName || `Application #${safeApplication.id.slice(-6).toUpperCase()}`}
                         </h4>
-                        <Badge className={getStatusColor(application.status)}>
-                          {application.status.replace('_', ' ').toUpperCase()}
+                        <Badge className={getStatusColor(safeApplication.status)}>
+                          {safeApplication.status.replace('_', ' ').toUpperCase()}
                         </Badge>
-                        {application.fraudCheckStatus && (
+                        {safeApplication.fraudCheckStatus && (
                           <Badge variant="outline">
-                            IDV: {application.fraudCheckStatus.charAt(0).toUpperCase() + application.fraudCheckStatus.slice(1)}
+                            IDV: {safeApplication.fraudCheckStatus.charAt(0).toUpperCase() + safeApplication.fraudCheckStatus.slice(1)}
                           </Badge>
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        ID: {application.id} • 
-                        {application.customerEmail && (
-                          <span>{application.customerEmail} • </span>
+                        ID: {safeApplication.id} • 
+                        {safeApplication.customerEmail && (
+                          <span>{safeApplication.customerEmail} • </span>
                         )}
-                        Created: {new Date(application.createdAt).toLocaleDateString()}
-                        {application.submittedAt && (
-                          <span> • Submitted: {new Date(application.submittedAt).toLocaleDateString()}</span>
+                        Created: {new Date(safeApplication.createdAt).toLocaleDateString()}
+                        {safeApplication.submittedAt && (
+                          <span> • Submitted: {new Date(safeApplication.submittedAt).toLocaleDateString()}</span>
                         )}
                       </div>
                     </div>
@@ -866,7 +884,8 @@ function FinanceApplicationDashboard() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
                 
                 {!loading && filteredApplications.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
@@ -890,6 +909,7 @@ function FinanceApplicationDashboard() {
                     <div className="mt-4 text-xs text-muted-foreground">
                       <p>Data Source: {usingFallback ? 'Mock Data (Fallback)' : 'Supabase Database'}</p>
                       <p>Total Applications: {applications.length}</p>
+                      <p>Raw Applications Array: {JSON.stringify(applications.slice(0, 1), null, 2)}</p>
                     </div>
                   </div>
                 )}

@@ -106,7 +106,9 @@ export function useFinanceApplications() {
       const transformedApplications: FinanceApplication[] = data.map((row, index) => {
         console.log(`🔄 [Finance Applications] Transforming application ${index + 1}:`, {
           id: row.id,
-          customer_name: row.customer_name,
+          customer_id: row.customer_id,
+          customer_name: row.customer_name || 'Unnamed Customer',
+          customer_email: row.customer_email,
           status: row.status,
           template_id: row.template_id
         })
@@ -114,22 +116,22 @@ export function useFinanceApplications() {
         return {
         id: row.id,
         customerId: row.customer_id || '',
-        customerName: row.customer_name || 'Unnamed Application',
+        customerName: row.customer_name || 'Unnamed Customer',
         customerEmail: row.customer_email || '',
         customerPhone: row.customer_phone || '',
         templateId: row.template_id || '',
-        status: row.status,
+        status: row.status || 'draft',
         data: row.data || {},
         uploadedFiles: row.uploaded_files || [],
         history: row.history || [],
-        fraudCheckStatus: row.fraud_check_status,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
+        fraudCheckStatus: row.fraud_check_status || 'pending',
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
         submittedAt: row.submitted_at,
         reviewedAt: row.reviewed_at,
         reviewedBy: row.reviewed_by,
-        notes: row.notes,
-        adminNotes: row.admin_notes
+        notes: row.notes || '',
+        adminNotes: row.admin_notes || ''
         }
       })
 
@@ -216,12 +218,12 @@ export function useFinanceApplications() {
       // Transform Supabase data to template format
       const transformedTemplates: ApplicationTemplate[] = (data || []).map(row => ({
         id: row.id,
-        name: row.name,
-        description: row.description,
+        name: row.name || 'Unnamed Template',
+        description: row.description || '',
         sections: row.sections || [],
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        isActive: row.is_active !== undefined ? row.is_active : true,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString()
       }))
 
       console.log('🔄 [Finance Applications] Transformed templates:', transformedTemplates.length)
