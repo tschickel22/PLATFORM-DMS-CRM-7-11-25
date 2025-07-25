@@ -157,35 +157,32 @@ export interface QuoteWithItems extends Quote {
 
 export interface Agreement {
   id: string
-  type: AgreementType
-  customerId: string
-  customerName?: string
-  customerEmail?: string
-  customerPhone?: string
-  vehicleId?: string
-  vehicleInfo?: string
-  quoteId?: string
-  terms: string
-  customerId: string
-  signedDate?: Date
-  effectiveDate: Date | string
-  expirationDate?: Date
-  signedBy?: string
-  signedAt?: Date | string
-  ipAddress?: string
-  signatureData?: string
-  documents: Document[]
-  customFields: Record<string, any>
-  createdAt: Date
-  updatedAt: Date
-  createdBy?: string
-  totalAmount?: number
-  downPayment?: number
-  financingAmount?: number
-  monthlyPayment?: number
-  securityDeposit?: number
-  annualFee?: number
-  coverageLevel?: string
+  customer_id: string
+  title: string
+  type: string
+  status: string
+  pdf_url?: string
+  signed_at?: string
+  notes?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface AgreementTemplate {
+  id: string
+  name: string
+  description?: string
+  fields?: any
+  created_at?: string
+}
+
+export interface AgreementSignature {
+  id: string
+  agreement_id: string
+  signer_name: string
+  signer_email: string
+  signed_at?: string
+  signature_url?: string
 }
 
 export interface Document {
