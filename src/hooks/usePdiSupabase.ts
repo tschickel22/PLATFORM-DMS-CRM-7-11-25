@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
 import { PdiChecklist, PdiSetting } from '@/types'
 
-export function usePdiChecklists() {
+export function usePdiSupabase() {
   const { session } = useAuth()
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
   const [loading, setLoading] = useState(true)
