@@ -82,12 +82,7 @@ export function useAgreementVault() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.warn('Supabase agreements query failed:', error)
-        // Use mock data as fallback
-        setAgreements(mockAgreements.sampleAgreements)
-        return
-      }
+      if (agreementsError) {
         console.error('Error loading agreements:', agreementsError)
         // Don't throw error, just log it and continue with empty array
         setAgreements([])
@@ -101,12 +96,7 @@ export function useAgreementVault() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.warn('Supabase templates query failed:', error)
-        // Use mock data as fallback
-        setTemplates(mockTemplates)
-        return
-      }
+      if (templatesError) {
         console.error('Error loading templates:', templatesError)
         setTemplates([])
       } else {
@@ -119,12 +109,7 @@ export function useAgreementVault() {
         .select('*')
         .order('signed_at', { ascending: false })
 
-      if (error) {
-        console.warn('Supabase signatures query failed:', error)
-        // Use empty array as fallback
-        setSignatures([])
-        return
-      }
+      if (signaturesError) {
         console.error('Error loading signatures:', signaturesError)
         setSignatures([])
       } else {
