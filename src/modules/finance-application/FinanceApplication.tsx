@@ -45,6 +45,7 @@ function FinanceApplicationDashboard() {
     templates,
     loading,
     usingFallback,
+    supabaseStatus,
     createApplication,
     updateApplication,
     deleteApplication,
@@ -653,12 +654,18 @@ function FinanceApplicationDashboard() {
             <span>
               📊 <strong>Demo Mode:</strong> Displaying sample finance applications. 
               Live Supabase data will be available when configured.
-              <code className="ml-2 text-xs">Tables: finance_applications, application_templates</code>
+              <code className="ml-2 text-xs">
+                Tables: finance_applications ({supabaseStatus.applications.error ? `Error: ${supabaseStatus.applications.error}` : 'No connection'}), 
+                application_templates ({supabaseStatus.templates.error ? `Error: ${supabaseStatus.templates.error}` : 'No connection'})
+              </code>
             </span>
           ) : (
             <span>
               ✅ <strong>Live Data:</strong> Connected to Supabase finance applications. 
-              <code className="ml-2 text-xs">Tables: finance_applications ({applications.length}), application_templates ({templates.length})</code>
+              <code className="ml-2 text-xs">
+                Tables: finance_applications ({supabaseStatus.applications.count}), 
+                application_templates ({supabaseStatus.templates.count})
+              </code>
               <span className="ml-2 text-xs text-orange-600">[Read-Only Mode - Phase 1]</span>
             </span>
           )}
