@@ -30,7 +30,7 @@ function LeadsList() {
     leads,
     sources,
     activities,
-import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
+    salesReps,
     updateLeadStatus,
     assignLead,
     getActivitiesByLead,
@@ -52,17 +52,15 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
       case LeadStatus.NEW:
       case LeadStatus.QUALIFIED:
         return 'bg-green-50 text-green-700 border-green-200'
-    if (contactsLoading) return []
-    
-    let currentLeads = contacts
+      case LeadStatus.CONTACTED:
         return 'bg-purple-50 text-purple-700 border-purple-200'
       case LeadStatus.NEGOTIATION:
         return 'bg-orange-50 text-orange-700 border-orange-200'
       case LeadStatus.CLOSED_WON:
         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(lowerCaseQuery) ||
+      case LeadStatus.CLOSED_LOST:
         return 'bg-red-50 text-red-700 border-red-200'
-        (lead.phone && lead.phone.toLowerCase().includes(lowerCaseQuery))
+      default:
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
   }
@@ -219,8 +217,9 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
           </TabsContent>
         </Tabs>
       </div>
-  }, [contacts, contactsLoading, searchQuery, statusFilter, sourceFilter])
+    )
   }
+
   const handleCreateLead = async (leadData: any) => {
     try {
       await createLead(leadData)
@@ -249,22 +248,6 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
       toast({
         title: 'Error',
         description: 'Failed to update lead status. Please try again.',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const handleAssignLead = async (leadId: string, assignedTo: string) => {
-    try {
-      await assignLead(leadId, assignedTo)
-      toast({
-        title: 'Lead Assigned',
-        description: 'Lead has been assigned successfully.'
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to assign lead. Please try again.',
         variant: 'destructive'
       })
     }
@@ -332,11 +315,11 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-900">
-              {leads.filter(l => l.status === LeadStatus.NEW).length}
+              {contacts.filter(l => l.status === 'new').length}
             </div>
             <p className="text-xs text-yellow-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
-            <div className="text-2xl font-bold">{contacts.filter(l => l.status === 'new').length}</div>
+              +8% from last month
             </p>
           </CardContent>
         </Card>
@@ -347,9 +330,9 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-900">
-              {leads.filter(l => l.status === LeadStatus.QUALIFIED).length}
+              {contacts.filter(l => l.status === 'qualified').length}
             </div>
-            <div className="text-2xl font-bold">{contacts.filter(l => l.status === 'qualified').length}</div>
+            <p className="text-xs text-green-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
               +15% from last month
             </p>
@@ -362,7 +345,10 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">47</div>
-          onSuccess={handleCreateLead}
+            <p className="text-xs text-purple-600 flex items-center mt-1">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              +23% from last month
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -442,7 +428,7 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl">Leads ({filteredLeads.length})</CardTitle>
+                  <CardTitle className="text-xl">Leads ({contacts.length})</CardTitle>
                   <CardDescription>
                     Manage your sales prospects with AI-powered insights and automated nurturing
                   </CardDescription>
@@ -455,77 +441,78 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredLeads.map((lead) => (
-                  <div key={lead.id} className="ri-table-row cursor-pointer" onClick={() => setSelectedLead(lead)}>
-                    <div className="flex items-center space-x-4 flex-1">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-foreground">
-                            {lead.firstName} {lead.lastName}
-                          </h3>
-                          <Badge className={cn("ri-badge-status", getStatusColor(lead.status))}>
-                            {lead.status.replace('_', ' ').toUpperCase()}
-                          </Badge>
-                          {lead.score && (
-                            <Badge className={cn("ri-badge-status", getScoreColor(lead.score))}>
-                              {lead.score}
+                {contacts.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p>No leads yet</p>
+                    <p className="text-sm">Create your first lead to get started</p>
+                  </div>
+                ) : (
+                  contacts.map((lead) => (
+                    <div key={lead.id} className="ri-table-row cursor-pointer" onClick={() => setSelectedLead(lead)}>
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className="font-semibold">{lead.first_name} {lead.last_name}</h4>
+                            <Badge className={cn("ri-badge-status", 
+                              lead.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                              lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+                              lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            )}>
+                              {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                             </Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            <Brain className="h-3 w-3 mr-1" />
-                            AI Ready
-                          </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              <Brain className="h-3 w-3 mr-1" />
+                              AI Ready
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
+                            <span className="flex items-center">
+                              <Mail className="h-3 w-3 mr-2 text-blue-500" />
+                              {lead.email}
+                            </span>
+                            <span className="flex items-center">
+                              <Phone className="h-3 w-3 mr-2 text-green-500" />
+                              {lead.phone}
+                            </span>
+                            <span className="flex items-center">
+                              <Users className="h-3 w-3 mr-2 text-purple-500" />
+                              Unassigned
+                            </span>
+                            <span className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-2 text-orange-500" />
+                              {new Date(lead.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                          <span className="flex items-center">
-                            <Mail className="h-3 w-3 mr-2 text-blue-500" />
-                            {lead.email}
-                          </span>
-                          <span className="flex items-center">
-                            <Phone className="h-3 w-3 mr-2 text-green-500" />
-                            {lead.phone}
-                          </span>
-                          <span className="flex items-center">
-                            <Users className="h-3 w-3 mr-2 text-purple-500" />
-                            {salesReps.find(rep => rep.id === lead.assignedTo)?.name || 'Unassigned'}
-                          </span>
-                          <span className="flex items-center">
-                        <h4 className="font-semibold">{lead.first_name} {lead.last_name}</h4>
-                            {formatDate(lead.createdAt)}
-                          </span>
-                          lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
-                          lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
-                          <p className="text-sm text-muted-foreground mt-2 bg-muted/30 p-2 rounded-md">
-                            {lead.notes}
-                          {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                        )}
+                      </div>
+                      <div className="ri-action-buttons">
+                        <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
+                          e.stopPropagation()
+                          // Handle quick actions
+                        }}>
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Contact
+                        </Button>
+                        <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLead(lead)
+                        }}>
+                          <Brain className="h-3 w-3 mr-1" />
+                          AI Insights
+                        </Button>
                       </div>
                     </div>
-                    <div className="ri-action-buttons">
-                      <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-                        {new Date(lead.created_at).toLocaleDateString()}
-                        // Handle quick actions
-                      }}>
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        Contact
-                      </Button>
-                      <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedLead(lead)
-                      }}>
-                        <Brain className="h-3 w-3 mr-1" />
-                        AI Insights
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="pipeline">
-          <PipelineDashboard />
+          <PipelineDashboard leads={filteredLeads} onUpdateStatus={handleUpdateLeadStatus} />
         </TabsContent>
 
         <TabsContent value="quotes">
@@ -533,7 +520,7 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
         </TabsContent>
 
         <TabsContent value="nurturing">
-          <NurtureSequences />
+          <NurtureSequences leads={filteredLeads} onAssignLead={handleAssignLead} />
         </TabsContent>
 
         <TabsContent value="forms">
@@ -556,19 +543,9 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Lead Sources</CardTitle>
-                    {contacts.length === 0 ? (
-                      <>
-                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No leads yet</p>
-                        <p className="text-sm">Create your first lead to get started</p>
-                      </>
-                    ) : (
-                      <>
-                        <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p>No leads found matching your criteria</p>
-                        <p className="text-sm">Try adjusting your search or filters</p>
-                      </>
-                    )}
+              <CardDescription>
+                Manage and track lead sources and their performance
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -577,23 +554,23 @@ import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
                     <div>
                       <h3 className="font-semibold">{source.name}</h3>
                       <p className="text-sm text-muted-foreground">
-          <PipelineDashboard leads={filteredLeads} onUpdateStatus={handleUpdateLeadStatus} />
+                        {source.description}
                         {source.trackingCode && ` • Code: ${source.trackingCode}`}
                       </p>
                     </div>
-          <NurtureSequences leads={filteredLeads} onAssignLead={handleAssignLead} />
+                    <div className="flex items-center space-x-2">
                       <Badge className={source.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}>
                         {source.isActive ? 'Active' : 'Inactive'}
                       </Badge>
-          <LeadScoring leads={filteredLeads} onUpdateScore={updateLeadScore} />
+                      <Button variant="outline" size="sm">
                         <Settings className="h-3 w-3" />
                       </Button>
                     </div>
-          <CommunicationCenter leads={filteredLeads} />
+                  </div>
                 ))}
               </div>
             </CardContent>
-          <AIInsights leads={filteredLeads} />
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
