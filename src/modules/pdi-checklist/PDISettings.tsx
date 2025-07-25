@@ -3,22 +3,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { Settings, Save, Shield, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
+
 export default function PDISettings() {
-  const { checklists, loading, pdiSettings, updatePdiSetting, getPdiSetting } = usePdiSupabase()
   const { user } = useAuth()
-  const { checklists, loading, pdiSettings, updatePdiSetting, getPdiSetting } = usePdiSupabase()
+  const { tenant } = useTenant()
   const { toast } = useToast()
   const {
     pdiSettings,
-    settingsLoading,
+    loading: settingsLoading,
     supabaseStatus,
     loadPdiSettings,
     updatePdiSetting,
