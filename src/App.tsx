@@ -12,7 +12,7 @@ import PlatformSettings from '@/modules/platform-admin/settings'
 import ClientPortalLayout from '@/components/layout/ClientPortalLayout'
 
 // Module imports
-import { CRMProspecting } from '@/modules/crm-prospecting/CRMProspecting'
+import CRMProspecting from '@/modules/crm-prospecting/CRMProspecting'
 import InventoryManagement from '@/modules/inventory-management/InventoryManagement'
 import QuoteBuilder from '@/modules/quote-builder/QuoteBuilder'
 import FinanceModule from '@/modules/finance/FinanceModule'
