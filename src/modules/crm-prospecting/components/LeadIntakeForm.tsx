@@ -20,7 +20,7 @@ interface LeadIntakeFormProps {
   onCancel: () => void
 }
 
-export function LeadIntakeFormBuilder({ form, sources, onSave, onCancel }: LeadIntakeFormProps) {
+export function LeadIntakeFormBuilder({ form, sources, onSave, onCancel }: LeadIntakeFormProps) { // Removed Button import
   const [formData, setFormData] = useState<Partial<LeadIntakeForm>>(form || {
     name: '',
     description: '',
