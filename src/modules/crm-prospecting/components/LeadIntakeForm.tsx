@@ -51,7 +51,7 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
         status: 'new',
         assigned_to: formData.assignedTo || undefined
       })
-      const newContact = await createContact(formData)
+      newContact = await createContact(formData)
       onSuccess(newContact)
     } catch (error) {
       console.error('Error creating contact:', error)
