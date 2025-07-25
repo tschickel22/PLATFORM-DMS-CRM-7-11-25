@@ -16,15 +16,6 @@ export function usePdiSupabase() {
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsLoading, setSettingsLoading] = useState(false)
-  const [usingFallback, setUsingFallback] = useState(false)
-  const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
-  const [connectionAttempted, setConnectionAttempted] = useState(false)
-  const [supabaseStatus, setSupabaseStatus] = useState<{
-    checklists: { connected: boolean; error?: string; count: number }
-    settings: { connected: boolean; error?: string; count: number }
-  }>({
-  }
-  )
   const [supabaseStatus, setSupabaseStatus] = useState<{
     checklists: { connected: boolean; error?: string; count: number }
     settings: { connected: boolean; error?: string; count: number }
