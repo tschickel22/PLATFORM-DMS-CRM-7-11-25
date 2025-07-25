@@ -1,384 +1,237 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { QuoteWithItems, Quote, QuoteItem } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 
-export interface Quote {
-  id: string
-  customer_id: string
-  inventory_id: string
-  price: number
-  discount: number
-  status: string
-  notes?: string
-  valid_until?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface QuoteItem {
-  id: string
-  quote_id: string
-  description: string
-  quantity: number
-  unit_price: number
-  total_price: number
-  created_at?: string
-}
-
-export interface QuoteWithItems extends Quote {
-  items: QuoteItem[]
-}
-
 export function useQuoteManagement() {
-  const [quotes, setQuotes] = useState<Quote[]>([])
+  const [quotes, setQuotes] = useState<QuoteWithItems[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  // Load quotes on mount
+  // Fallback mock data
+  const mockQuotes: QuoteWithItems[] = [
+    {
+      id: 'quote-001',
+      customer_id: 'cust-001',
+      inventory_id: 'inv-001',
+      price: 45000,
+      discount: 2000,
+      status: 'sent',
+      notes: 'Standard RV quote with delivery included',
+      valid_until: '2024-03-15',
+      created_at: '2024-01-15T10:00:00Z',
+      updated_at: '2024-01-15T10:00:00Z',
+      items: [
+        {
+          id: 'item-001',
+          quote_id: 'quote-001',
+          description: '2023 Forest River Cherokee 274RK',
+          quantity: 1,
+          unit_price: 43000,
+          total_price: 43000,
+          created_at: '2024-01-15T10:00:00Z'
+        },
+        {
+          id: 'item-002',
+          quote_id: 'quote-001',
+          description: 'Delivery and Setup',
+          quantity: 1,
+          unit_price: 2000,
+          total_price: 2000,
+          created_at: '2024-01-15T10:00:00Z'
+        }
+      ]
+    },
+    {
+      id: 'quote-002',
+      customer_id: 'cust-002',
+      inventory_id: 'inv-002',
+      price: 62000,
+      discount: 3000,
+      status: 'draft',
+      notes: 'Fifth wheel quote - customer requested extended warranty',
+      valid_until: '2024-03-20',
+      created_at: '2024-01-18T14:30:00Z',
+      updated_at: '2024-01-20T09:15:00Z',
+      items: [
+        {
+          id: 'item-003',
+          quote_id: 'quote-002',
+          description: '2024 Keystone Montana 3761FL',
+          quantity: 1,
+          unit_price: 59000,
+          total_price: 59000,
+          created_at: '2024-01-18T14:30:00Z'
+        },
+        {
+          id: 'item-004',
+          quote_id: 'quote-002',
+          description: 'Extended Warranty (3 years)',
+          quantity: 1,
+          unit_price: 3000,
+          total_price: 3000,
+          created_at: '2024-01-18T14:30:00Z'
+        }
+      ]
+    }
+  ]
+
   useEffect(() => {
-    getQuotes()
+    loadQuotes()
   }, [])
 
-  const getQuotes = async (): Promise<Quote[]> => {
-    try {
-      setLoading(true)
-      setError(null)
+  const loadQuotes = async () => {
+    console.log('[Supabase Quote Builder] Starting to fetch quotes...')
+    setLoading(true)
+    setError(null)
 
-      const { data, error: fetchError } = await supabase
+    try {
+      // Fetch quotes from Supabase
+      const { data: quotesData, error: quotesError } = await supabase
         .from('quotes')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (fetchError) {
-        throw fetchError
+      if (quotesError) {
+        console.warn('[Supabase Quote Builder] Quotes fetch error:', quotesError)
+        throw quotesError
       }
 
-      const quotesData = data || []
-      setQuotes(quotesData)
-      return quotesData
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch quotes'
-      setError(errorMessage)
-      console.error('Error fetching quotes:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to load quotes. Please try again.',
-        variant: 'destructive'
-      })
-      
-      // Return empty array as safe default
-      setQuotes([])
-      return []
-    } finally {
-      setLoading(false)
-    }
-  }
+      console.log('[Supabase Quote Builder] Quotes fetched successfully:', quotesData?.length || 0, 'records')
 
-  const getQuoteById = async (id: string): Promise<QuoteWithItems | null> => {
-    try {
-      setError(null)
-
-      // Fetch quote with items
-      const { data: quoteData, error: quoteError } = await supabase
-        .from('quotes')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (quoteError) {
-        throw quoteError
-      }
-
+      // Fetch quote items
       const { data: itemsData, error: itemsError } = await supabase
         .from('quote_items')
         .select('*')
-        .eq('quote_id', id)
         .order('created_at', { ascending: true })
 
       if (itemsError) {
+        console.warn('[Supabase Quote Builder] Quote items fetch error:', itemsError)
         throw itemsError
       }
 
-      return {
-        ...quoteData,
-        items: itemsData || []
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch quote'
-      setError(errorMessage)
-      console.error('Error fetching quote:', err)
+      console.log('[Supabase Quote Builder] Quote items fetched successfully:', itemsData?.length || 0, 'records')
+
+      // Combine quotes with their items
+      const quotesWithItems: QuoteWithItems[] = (quotesData || []).map(quote => ({
+        ...quote,
+        items: (itemsData || []).filter(item => item.quote_id === quote.id)
+      }))
+
+      setQuotes(quotesWithItems)
+      console.log('[Supabase Quote Builder] Data loaded successfully:', quotesWithItems.length, 'quotes with items')
+
+    } catch (error) {
+      console.error('[Supabase Quote Builder] Failed to load from Supabase, using fallback data:', error)
+      console.log('[Supabase Quote Builder] Fallback activated - using mock data')
+      
+      setQuotes(mockQuotes)
+      setError('Failed to load live data. Using sample data.')
       
       toast({
-        title: 'Error',
-        description: 'Failed to load quote details. Please try again.',
-        variant: 'destructive'
+        title: 'Connection Issue',
+        description: 'Using sample data. Live data will load when connection is restored.',
+        variant: 'default'
       })
-      
-      return null
+    } finally {
+      setLoading(false)
+      console.log('[Supabase Quote Builder] Loading complete')
     }
   }
 
-  const createQuote = async (quoteData: Omit<Quote, 'id' | 'created_at' | 'updated_at'>): Promise<Quote | null> => {
-    try {
-      setError(null)
-
-      const { data, error: insertError } = await supabase
-        .from('quotes')
-        .insert([{
-          customer_id: quoteData.customer_id,
-          inventory_id: quoteData.inventory_id,
-          price: quoteData.price || 0,
-          discount: quoteData.discount || 0,
-          status: quoteData.status || 'draft',
-          notes: quoteData.notes || '',
-          valid_until: quoteData.valid_until
-        }])
-        .select()
-        .single()
-
-      if (insertError) {
-        throw insertError
-      }
-
-      const newQuote = data as Quote
-      setQuotes(prev => [newQuote, ...prev])
-      
-      toast({
-        title: 'Success',
-        description: 'Quote created successfully.'
-      })
-      
-      return newQuote
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create quote'
-      setError(errorMessage)
-      console.error('Error creating quote:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to create quote. Please try again.',
-        variant: 'destructive'
-      })
-      
-      return null
-    }
+  const refreshQuotes = () => {
+    console.log('[Supabase Quote Builder] Manual refresh triggered')
+    loadQuotes()
   }
 
-  const updateQuote = async (id: string, updates: Partial<Quote>): Promise<Quote | null> => {
-    try {
-      setError(null)
+  // Read-only operations - all disabled for Phase 1
+  const createQuote = async (quoteData: Partial<Quote>): Promise<QuoteWithItems | null> => {
+    console.log('[Supabase Quote Builder] Create operation disabled in read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Quote creation is disabled in read-only mode.',
+      variant: 'destructive'
+    })
+    return null
+  }
 
-      const { data, error: updateError } = await supabase
-        .from('quotes')
-        .update({
-          customer_id: updates.customer_id,
-          inventory_id: updates.inventory_id,
-          price: updates.price,
-          discount: updates.discount,
-          status: updates.status,
-          notes: updates.notes,
-          valid_until: updates.valid_until
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) {
-        throw updateError
-      }
-
-      const updatedQuote = data as Quote
-      setQuotes(prev => prev.map(quote => 
-        quote.id === id ? updatedQuote : quote
-      ))
-      
-      toast({
-        title: 'Success',
-        description: 'Quote updated successfully.'
-      })
-      
-      return updatedQuote
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update quote'
-      setError(errorMessage)
-      console.error('Error updating quote:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to update quote. Please try again.',
-        variant: 'destructive'
-      })
-      
-      return null
-    }
+  const updateQuote = async (id: string, updates: Partial<Quote>): Promise<boolean> => {
+    console.log('[Supabase Quote Builder] Update operation disabled in read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Quote updates are disabled in read-only mode.',
+      variant: 'destructive'
+    })
+    return false
   }
 
   const deleteQuote = async (id: string): Promise<boolean> => {
-    try {
-      setError(null)
-
-      const { error: deleteError } = await supabase
-        .from('quotes')
-        .delete()
-        .eq('id', id)
-
-      if (deleteError) {
-        throw deleteError
-      }
-
-      setQuotes(prev => prev.filter(quote => quote.id !== id))
-      
-      toast({
-        title: 'Success',
-        description: 'Quote deleted successfully.'
-      })
-      
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete quote'
-      setError(errorMessage)
-      console.error('Error deleting quote:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to delete quote. Please try again.',
-        variant: 'destructive'
-      })
-      
-      return false
-    }
+    console.log('[Supabase Quote Builder] Delete operation disabled in read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Quote deletion is disabled in read-only mode.',
+      variant: 'destructive'
+    })
+    return false
   }
 
-  const createQuoteItem = async (itemData: Omit<QuoteItem, 'id' | 'created_at'>): Promise<QuoteItem | null> => {
-    try {
-      setError(null)
-
-      const { data, error: insertError } = await supabase
-        .from('quote_items')
-        .insert([{
-          quote_id: itemData.quote_id,
-          description: itemData.description,
-          quantity: itemData.quantity || 1,
-          unit_price: itemData.unit_price || 0,
-          total_price: itemData.total_price || 0
-        }])
-        .select()
-        .single()
-
-      if (insertError) {
-        throw insertError
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Quote item added successfully.'
-      })
-      
-      return data as QuoteItem
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create quote item'
-      setError(errorMessage)
-      console.error('Error creating quote item:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to add quote item. Please try again.',
-        variant: 'destructive'
-      })
-      
-      return null
-    }
+  const addQuoteItem = async (quoteId: string, item: Partial<QuoteItem>): Promise<boolean> => {
+    console.log('[Supabase Quote Builder] Add item operation disabled in read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Adding quote items is disabled in read-only mode.',
+      variant: 'destructive'
+    })
+    return false
   }
 
-  const updateQuoteItem = async (id: string, updates: Partial<QuoteItem>): Promise<QuoteItem | null> => {
-    try {
-      setError(null)
-
-      const { data, error: updateError } = await supabase
-        .from('quote_items')
-        .update({
-          description: updates.description,
-          quantity: updates.quantity,
-          unit_price: updates.unit_price,
-          total_price: updates.total_price
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) {
-        throw updateError
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Quote item updated successfully.'
-      })
-      
-      return data as QuoteItem
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update quote item'
-      setError(errorMessage)
-      console.error('Error updating quote item:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to update quote item. Please try again.',
-        variant: 'destructive'
-      })
-      
-      return null
-    }
+  const updateQuoteItem = async (itemId: string, updates: Partial<QuoteItem>): Promise<boolean> => {
+    console.log('[Supabase Quote Builder] Update item operation disabled in read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Updating quote items is disabled in read-only mode.',
+      variant: 'destructive'
+    })
+    return false
   }
 
-  const deleteQuoteItem = async (id: string): Promise<boolean> => {
-    try {
-      setError(null)
+  const removeQuoteItem = async (itemId: string): Promise<boolean> => {
+    console.log('[Supabase Quote Builder] Remove item operation disabled in read-only mode')
+    toast({
+      title: 'Feature Disabled',
+      description: 'Removing quote items is disabled in read-only mode.',
+      variant: 'destructive'
+    })
+    return false
+  }
 
-      const { error: deleteError } = await supabase
-        .from('quote_items')
-        .delete()
-        .eq('id', id)
+  const getQuoteById = (id: string): QuoteWithItems | undefined => {
+    return quotes.find(quote => quote.id === id)
+  }
 
-      if (deleteError) {
-        throw deleteError
-      }
+  const getQuotesByCustomer = (customerId: string): QuoteWithItems[] => {
+    return quotes.filter(quote => quote.customer_id === customerId)
+  }
 
-      toast({
-        title: 'Success',
-        description: 'Quote item removed successfully.'
-      })
-      
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete quote item'
-      setError(errorMessage)
-      console.error('Error deleting quote item:', err)
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to remove quote item. Please try again.',
-        variant: 'destructive'
-      })
-      
-      return false
-    }
+  const getQuotesByStatus = (status: string): QuoteWithItems[] => {
+    return quotes.filter(quote => quote.status === status)
   }
 
   return {
     quotes,
     loading,
     error,
-    getQuotes,
-    getQuoteById,
     createQuote,
     updateQuote,
     deleteQuote,
-    createQuoteItem,
+    addQuoteItem,
     updateQuoteItem,
-    deleteQuoteItem,
-    refreshQuotes: getQuotes
+    removeQuoteItem,
+    getQuoteById,
+    getQuotesByCustomer,
+    getQuotesByStatus,
+    refreshQuotes,
+    loadQuotes
   }
 }
