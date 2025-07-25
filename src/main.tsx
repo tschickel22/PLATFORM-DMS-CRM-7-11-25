@@ -11,7 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = PdfWorker
 // Initialize Sentry with safe configuration and proper error handling
 try {
   if (import.meta.env.VITE_SENTRY_DSN) {
-    const Sentry = await import('@sentry/react')
+    const { default: Sentry } = await import('@sentry/react')
     Sentry.init({
       dsn: import.meta.env.VITE_SENTRY_DSN,
       integrations: [
