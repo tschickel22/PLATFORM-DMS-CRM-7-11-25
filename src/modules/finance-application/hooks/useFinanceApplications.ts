@@ -486,43 +486,13 @@ export function useFinanceApplications() {
   }
 
   const createTemplate = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
-    try {
-      const templateData = {
-        name: data.name || 'New Template',
-        description: data.description || '',
-        sections: data.sections || [],
-        is_active: data.isActive !== undefined ? data.isActive : true
-      }
-
-      const { data: insertedData, error } = await supabase
-        .from('application_templates')
-        .insert([templateData])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const newTemplate: ApplicationTemplate = {
-        id: insertedData.id,
-        name: insertedData.name,
-        description: insertedData.description,
-        sections: insertedData.sections || [],
-        isActive: insertedData.is_active,
-        createdAt: insertedData.created_at,
-        updatedAt: insertedData.updated_at
-      }
-
-      setTemplates(prev => [newTemplate, ...prev])
-      return newTemplate
-    } catch (error) {
-      console.error('Error creating template:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to create application template',
-        variant: 'destructive'
-      })
-      throw error
-    }
+    console.log('🚫 [Finance Applications] Create template operation disabled in read-only mode')
+    toast({
+      title: 'Read-Only Mode',
+      description: 'Creating templates is disabled in Phase 1. This will be enabled in Phase 2.',
+      variant: 'destructive'
+    })
+    throw new Error('Create operations disabled in read-only mode')
   }
 
   const createTemplateLocal = async (data: Partial<ApplicationTemplate>): Promise<ApplicationTemplate> => {
@@ -624,13 +594,24 @@ export function useFinanceApplications() {
   }
 
   const deleteTemplate = async (id: string) => {
-    console.log('🚫 [Finance Applications] Delete template operation disabled in read-only mode')
-    toast({
-      title: 'Read-Only Mode',
-      description: 'Deleting templates is disabled in Phase 1. This will be enabled in Phase 2.',
-      variant: 'destructive'
-    })
-    return
+    try {
+      const { error } = await supabase
+        .from('application_templates')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setTemplates(prev => prev.filter(template => template.id !== id))
+    } catch (error) {
+      console.error('Error deleting template:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete application template',
+        variant: 'destructive'
+      })
+      throw error
+    }
   }
 
   const deleteTemplateLocal = async (id: string) => {
