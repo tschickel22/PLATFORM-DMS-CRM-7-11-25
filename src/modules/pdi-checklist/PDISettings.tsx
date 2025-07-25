@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { Settings, Save, Shield, AlertTriangle } from 'lucide-react'
 import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,7 +16,7 @@ import { mockPDI } from '@/mocks/pdiMock'
 export default function PDISettings() {
   const { checklists, loading, pdiSettings, updatePdiSetting, getPdiSetting } = usePdiSupabase()
   const { user } = useAuth()
-  const { tenant } = useTenant()
+  const { checklists, loading, pdiSettings, updatePdiSetting, getPdiSetting } = usePdiSupabase()
   const { toast } = useToast()
   const {
     pdiSettings,
