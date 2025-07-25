@@ -94,20 +94,60 @@ export interface Permission {
 
 export interface Lead {
   id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   email: string
   phone: string
   source: string
-  sourceId?: string
+  source_id?: string
   status: LeadStatus
-  assignedTo?: string
+  assigned_to?: string
   notes: string
   score?: number
-  lastActivity?: Date
-  customFields: Record<string, any>
-  createdAt: Date
-  updatedAt: Date
+  last_activity?: string
+  custom_fields?: Record<string, any>
+  created_at: string
+  updated_at: string
+}
+
+export interface CRMContact {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  source: string
+  source_id?: string
+  status: string
+  assigned_to?: string
+  notes: string
+  score?: number
+  last_activity?: string
+  custom_fields?: Record<string, any>
+  created_at: string
+  updated_at: string
+}
+
+export interface Deal {
+  id: string
+  customer_id?: string
+  customer_name: string
+  customer_email?: string
+  customer_phone?: string
+  vehicle_id?: string
+  vehicle_info?: string
+  stage: string
+  amount?: number
+  source?: string
+  type?: string
+  priority?: string
+  rep_id?: string
+  rep_name?: string
+  probability?: number
+  expected_close_date?: string
+  notes: string
+  created_at: string
+  updated_at: string
 }
 
 export interface Vehicle {

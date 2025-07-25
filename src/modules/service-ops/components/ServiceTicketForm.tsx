@@ -12,7 +12,7 @@ import { ServiceTicket, ServiceStatus, Priority, ServicePart, ServiceLabor } fro
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils'
 import { useInventoryManagement } from '@/modules/inventory-management/hooks/useInventoryManagement'
-import { useLeadManagement } from '@/modules/crm-prospecting/hooks/useLeadManagement'
+import { useContacts } from '@/hooks/useCrmSupabase'
 import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
 
 interface ServiceTicketFormProps {
@@ -24,7 +24,7 @@ interface ServiceTicketFormProps {
 export function ServiceTicketForm({ ticket, onSave, onCancel }: ServiceTicketFormProps) {
   const { toast } = useToast()
   const { vehicles } = useInventoryManagement()
-  const { leads } = useLeadManagement()
+  const { contacts } = useContacts()
   const [loading, setLoading] = useState(false)
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false)
   const [formData, setFormData] = useState<Partial<ServiceTicket>>({
@@ -148,7 +148,7 @@ export function ServiceTicketForm({ ticket, onSave, onCancel }: ServiceTicketFor
     
     toast({
       title: 'Customer Added',
-      description: `${newCustomer.firstName} ${newCustomer.lastName} has been added as a customer.`,
+      description: `${newCustomer.first_name} ${newCustomer.last_name} has been added as a customer.`,
     })
   }
 
@@ -304,9 +304,9 @@ export function ServiceTicketForm({ ticket, onSave, onCancel }: ServiceTicketFor
                         </Button>
                       </div>
                       <div className="px-2 py-1 border-t"></div>
-                      {leads.map(lead => (
-                        <SelectItem key={lead.id} value={lead.id}>
-                          {lead.firstName} {lead.lastName}
+                      {contacts.map(contact => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          {contact.first_name} {contact.last_name}
                         </SelectItem>
                       ))}
                     </SelectContent>

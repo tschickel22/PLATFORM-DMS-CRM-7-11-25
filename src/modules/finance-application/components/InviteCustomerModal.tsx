@@ -9,7 +9,7 @@ import { X, Send, Plus, Search } from 'lucide-react'
 import { CustomerInvite } from '../types'
 import { useToast } from '@/hooks/use-toast'
 import { useFinanceApplications } from '../hooks/useFinanceApplications'
-import { mockUsers } from '@/mocks/usersMock'
+import { useContacts } from '@/hooks/useCrmSupabase'
 
 interface InviteCustomerModalProps {
   onClose: () => void
@@ -19,6 +19,7 @@ interface InviteCustomerModalProps {
 export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalProps) {
   const { toast } = useToast()
   const { templates } = useFinanceApplications()
+  const { contacts, loading: contactsLoading } = useContacts()
   const [activeTab, setActiveTab] = useState<'existing' | 'new'>('existing')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerInvite | null>(null)
@@ -34,13 +35,13 @@ export function InviteCustomerModal({ onClose, onInvite }: InviteCustomerModalPr
   const [customMessage, setCustomMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Use shared mock users - in real app, this would come from CRM
-  const existingCustomers: CustomerInvite[] = mockUsers.sampleUsers.map(user => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    source: 'website' // Default source for mock data
+  // Use live CRM contacts data
+  const existingCustomers: CustomerInvite[] = contacts.map(contact => ({
+    id: contact.id,
+    name: `${contact.first_name} ${contact.last_name}`,
+    email: contact.email,
+    phone: contact.phone,
+    source: contact.source
   }))
 
   const filteredCustomers = existingCustomers.filter(customer =>

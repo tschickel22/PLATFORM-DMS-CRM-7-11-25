@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Package, FileText, DollarSign, TrendingUp, Calendar, Plus } from 'lucide-react'
 import { LeadIntakeFormBuilder } from '@/modules/crm-prospecting/components/LeadIntakeForm'
-import { Lead } from '@/types'
+import { CRMContact } from '@/types'
 import { useDeals, useContacts } from '@/hooks/useCrmSupabase'
 
 export default function Dashboard() {
@@ -77,7 +77,7 @@ export default function Dashboard() {
     return activities.slice(0, 4)
   }, [contacts, contactsLoading, deals, dealsLoading])
 
-  const handleNewLeadSuccess = (newLead: Lead) => {
+  const handleNewLeadSuccess = (newLead: CRMContact) => {
     console.log('New lead created from dashboard:', newLead)
     // Optionally show a success message or redirect
   }

@@ -6,55 +6,49 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, Save, User } from 'lucide-react'
+import { CRMContact } from '@/types'
 import { useContacts } from '@/hooks/useCrmSupabase'
 import { useToast } from '@/hooks/use-toast'
 
 interface NewLeadFormProps {
   onClose: () => void
-  onSuccess?: (lead: any) => void
+  onSuccess: (contact: CRMContact) => void
 }
 
 export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
   const { createContact } = useContacts()
   const { toast } = useToast()
+  const { createContact } = useContacts()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+  const [formData, setFormData] = useState<Partial<CRMContact>>({
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     source: '',
     status: 'new',
     assignedTo: '',
     notes: '',
-    score: null as number | null
+    custom_fields: {}
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.firstName || !formData.lastName) {
+    if (!formData.first_name || !formData.last_name || !formData.email) {
       toast({
         title: 'Validation Error',
         description: 'First name and last name are required',
-        variant: 'destructive'
-      })
+      if (newContact) {
+        onSuccess(newContact)
+        onClose()
+      }
       return
     }
 
     setLoading(true)
     try {
-      const result = await createContact(formData)
-      
-      toast({
-        title: 'Success',
-        description: 'Lead created successfully'
-      })
-      
-      onSuccess?.(result)
-      onClose()
-    } catch (error) {
-      // Error handling is done in the hook
+      const newContact = await createContact(formData)
     } finally {
       setLoading(false)
     }
@@ -86,8 +80,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Personal Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Personal Information</h3>
-              <div className="grid gap-4 md:grid-cols-2">
+                  value={formData.first_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
                 <div>
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
@@ -191,8 +185,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                     }))}
                     placeholder="0-100"
                     min="0"
-                    max="100"
-                  />
+                  value={formData.last_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
                 </div>
               </div>
             </div>

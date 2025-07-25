@@ -1,370 +1,348 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { CRMContact, Deal } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 
-export function useDeals() {
-  const [deals, setDeals] = useState<any[]>([])
+export function useContacts() {
+  const [contacts, setContacts] = useState<CRMContact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    const fetchDeals = async () => {
-      try {
-        setLoading(true)
-        const { data, error } = await supabase
-          .from('deals')
-          .select('*')
-          .order('created_at', { ascending: false })
-        
-        if (error) {
-          console.error('Error loading deals:', error)
-          setError(error.message)
-        } else {
-          setDeals(data || [])
-          setError(null)
-        }
-      } catch (err) {
-        console.error('Unexpected error loading deals:', err)
-        setError('Failed to load deals')
-      } finally {
-        setLoading(false)
+  const loadContacts = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const { data, error: fetchError } = await supabase
+        .from('crm_contacts')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (fetchError) {
+        throw fetchError
       }
+
+      setContacts(data || [])
+    } catch (err) {
+      console.error('Error loading contacts:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load contacts')
+      setContacts([])
+    } finally {
+      setLoading(false)
     }
-    
-    fetchDeals()
+  }
+
+  useEffect(() => {
+    loadContacts()
   }, [])
 
-  const createDeal = async (dealData: any) => {
+  const createContact = async (contactData: Partial<CRMContact>): Promise<CRMContact | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .insert([{
+          first_name: contactData.first_name || '',
+          last_name: contactData.last_name || '',
+          email: contactData.email || '',
+          phone: contactData.phone || '',
+          source: contactData.source || '',
+          source_id: contactData.source_id,
+          status: contactData.status || 'new',
+          assigned_to: contactData.assigned_to,
+          notes: contactData.notes || '',
+          score: contactData.score,
+          last_activity: contactData.last_activity,
+          custom_fields: contactData.custom_fields || {}
+        }])
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      const newContact = data as CRMContact
+      setContacts(prev => [newContact, ...prev])
+      
+      toast({
+        title: 'Contact Created',
+        description: `${newContact.first_name} ${newContact.last_name} has been added.`
+      })
+
+      return newContact
+    } catch (err) {
+      console.error('Error creating contact:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to create contact. Please try again.',
+        variant: 'destructive'
+      })
+      return null
+    }
+  }
+
+  const updateContact = async (id: string, updates: Partial<CRMContact>): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .update({
+          first_name: updates.first_name,
+          last_name: updates.last_name,
+          email: updates.email,
+          phone: updates.phone,
+          source: updates.source,
+          source_id: updates.source_id,
+          status: updates.status,
+          assigned_to: updates.assigned_to,
+          notes: updates.notes,
+          score: updates.score,
+          last_activity: updates.last_activity,
+          custom_fields: updates.custom_fields
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      const updatedContact = data as CRMContact
+      setContacts(prev => prev.map(contact => 
+        contact.id === id ? updatedContact : contact
+      ))
+
+      toast({
+        title: 'Contact Updated',
+        description: `${updatedContact.first_name} ${updatedContact.last_name} has been updated.`
+      })
+
+      return true
+    } catch (err) {
+      console.error('Error updating contact:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to update contact. Please try again.',
+        variant: 'destructive'
+      })
+      return false
+    }
+  }
+
+  const deleteContact = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('crm_contacts')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        throw error
+      }
+
+      setContacts(prev => prev.filter(contact => contact.id !== id))
+      
+      toast({
+        title: 'Contact Deleted',
+        description: 'Contact has been removed successfully.'
+      })
+
+      return true
+    } catch (err) {
+      console.error('Error deleting contact:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete contact. Please try again.',
+        variant: 'destructive'
+      })
+      return false
+    }
+  }
+
+  return {
+    contacts,
+    loading,
+    error,
+    createContact,
+    updateContact,
+    deleteContact,
+    refreshContacts: loadContacts
+  }
+}
+
+export function useDeals() {
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  const loadDeals = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const { data, error: fetchError } = await supabase
+        .from('deals')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (fetchError) {
+        throw fetchError
+      }
+
+      setDeals(data || [])
+    } catch (err) {
+      console.error('Error loading deals:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load deals')
+      setDeals([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadDeals()
+  }, [])
+
+  const createDeal = async (dealData: Partial<Deal>): Promise<Deal | null> => {
     try {
       const { data, error } = await supabase
         .from('deals')
         .insert([{
-          customer_name: dealData.customerName || '',
-          customer_email: dealData.customerEmail || '',
-          customer_phone: dealData.customerPhone || '',
-          vehicle_info: dealData.vehicleInfo || '',
+          customer_id: dealData.customer_id,
+          customer_name: dealData.customer_name || '',
+          customer_email: dealData.customer_email || '',
+          customer_phone: dealData.customer_phone || '',
+          vehicle_id: dealData.vehicle_id,
+          vehicle_info: dealData.vehicle_info || '',
           stage: dealData.stage || 'New',
           amount: dealData.amount || 0,
           source: dealData.source || '',
           type: dealData.type || 'New Sale',
           priority: dealData.priority || 'Medium',
-          rep_name: dealData.repName || '',
+          rep_id: dealData.rep_id,
+          rep_name: dealData.rep_name || '',
           probability: dealData.probability || 0,
-          expected_close_date: dealData.expectedCloseDate || null,
+          expected_close_date: dealData.expected_close_date,
           notes: dealData.notes || ''
         }])
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
-      setDeals(prev => [data, ...prev])
-      return data
-    } catch (error) {
-      console.error('Error creating deal:', error)
+      const newDeal = data as Deal
+      setDeals(prev => [newDeal, ...prev])
+      
+      toast({
+        title: 'Deal Created',
+        description: `Deal for ${newDeal.customer_name} has been created.`
+      })
+
+      return newDeal
+    } catch (err) {
+      console.error('Error creating deal:', err)
       toast({
         title: 'Error',
-        description: 'Failed to create deal',
+        description: 'Failed to create deal. Please try again.',
         variant: 'destructive'
       })
-      throw error
+      return null
     }
   }
 
-  const updateDeal = async (id: string, updates: any) => {
+  const updateDeal = async (id: string, updates: Partial<Deal>): Promise<boolean> => {
     try {
       const { data, error } = await supabase
         .from('deals')
         .update({
-          customer_name: updates.customerName,
-          customer_email: updates.customerEmail,
-          customer_phone: updates.customerPhone,
-          vehicle_info: updates.vehicleInfo,
+          customer_id: updates.customer_id,
+          customer_name: updates.customer_name,
+          customer_email: updates.customer_email,
+          customer_phone: updates.customer_phone,
+          vehicle_id: updates.vehicle_id,
+          vehicle_info: updates.vehicle_info,
           stage: updates.stage,
           amount: updates.amount,
           source: updates.source,
           type: updates.type,
           priority: updates.priority,
-          rep_name: updates.repName,
+          rep_id: updates.rep_id,
+          rep_name: updates.rep_name,
           probability: updates.probability,
-          expected_close_date: updates.expectedCloseDate,
+          expected_close_date: updates.expected_close_date,
           notes: updates.notes
         })
         .eq('id', id)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
-      setDeals(prev => prev.map(deal => deal.id === id ? data : deal))
-      return data
-    } catch (error) {
-      console.error('Error updating deal:', error)
+      const updatedDeal = data as Deal
+      setDeals(prev => prev.map(deal => 
+        deal.id === id ? updatedDeal : deal
+      ))
+
+      toast({
+        title: 'Deal Updated',
+        description: `Deal for ${updatedDeal.customer_name} has been updated.`
+      })
+
+      return true
+    } catch (err) {
+      console.error('Error updating deal:', err)
       toast({
         title: 'Error',
-        description: 'Failed to update deal',
+        description: 'Failed to update deal. Please try again.',
         variant: 'destructive'
       })
-      throw error
+      return false
     }
   }
 
-  const deleteDeal = async (id: string) => {
+  const deleteDeal = async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('deals')
         .delete()
         .eq('id', id)
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       setDeals(prev => prev.filter(deal => deal.id !== id))
-    } catch (error) {
-      console.error('Error deleting deal:', error)
+      
+      toast({
+        title: 'Deal Deleted',
+        description: 'Deal has been removed successfully.'
+      })
+
+      return true
+    } catch (err) {
+      console.error('Error deleting deal:', err)
       toast({
         title: 'Error',
-        description: 'Failed to delete deal',
+        description: 'Failed to delete deal. Please try again.',
         variant: 'destructive'
       })
-      throw error
+      return false
     }
   }
 
-  return { deals, loading, error, createDeal, updateDeal, deleteDeal }
-}
-
-export function useContacts() {
-  const [contacts, setContacts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const { toast } = useToast()
-
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        setLoading(true)
-        const { data, error } = await supabase
-          .from('crm_contacts')
-          .select('*')
-          .order('created_at', { ascending: false })
-        
-        if (error) {
-          console.error('Error loading contacts:', error)
-          setError(error.message)
-        } else {
-          setContacts(data || [])
-          setError(null)
-        }
-      } catch (err) {
-        console.error('Unexpected error loading contacts:', err)
-        setError('Failed to load contacts')
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchContacts()
-  }, [])
-
-  const createContact = async (contactData: any) => {
-    try {
-      const { data, error } = await supabase
-        .from('crm_contacts')
-        .insert([{
-          first_name: contactData.firstName || '',
-          last_name: contactData.lastName || '',
-          email: contactData.email || '',
-          phone: contactData.phone || '',
-          source: contactData.source || '',
-          source_id: contactData.sourceId || null,
-          status: contactData.status || 'new',
-          assigned_to: contactData.assignedTo || null,
-          notes: contactData.notes || '',
-          score: contactData.score || null,
-          last_activity: contactData.lastActivity || null,
-          custom_fields: contactData.customFields || {}
-        }])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setContacts(prev => [data, ...prev])
-      return data
-    } catch (error) {
-      console.error('Error creating contact:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to create contact',
-        variant: 'destructive'
-      })
-      throw error
-    }
+  return {
+    deals,
+    loading,
+    error,
+    createDeal,
+    updateDeal,
+    deleteDeal,
+    refreshDeals: loadDeals
   }
-
-  const updateContact = async (id: string, updates: any) => {
-    try {
-      const { data, error } = await supabase
-        .from('crm_contacts')
-        .update({
-          first_name: updates.firstName,
-          last_name: updates.lastName,
-          email: updates.email,
-          phone: updates.phone,
-          source: updates.source,
-          source_id: updates.sourceId,
-          status: updates.status,
-          assigned_to: updates.assignedTo,
-          notes: updates.notes,
-          score: updates.score,
-          last_activity: updates.lastActivity,
-          custom_fields: updates.customFields
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setContacts(prev => prev.map(contact => contact.id === id ? data : contact))
-      return data
-    } catch (error) {
-      console.error('Error updating contact:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to update contact',
-        variant: 'destructive'
-      })
-      throw error
-    }
-  }
-
-  const deleteContact = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('crm_contacts')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
-      setContacts(prev => prev.filter(contact => contact.id !== id))
-    } catch (error) {
-      console.error('Error deleting contact:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to delete contact',
-        variant: 'destructive'
-      })
-      throw error
-    }
-  }
-
-  return { contacts, loading, error, createContact, updateContact, deleteContact }
-}
-
-export function useTerritories() {
-  const [territories, setTerritories] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchTerritories = async () => {
-      try {
-        setLoading(true)
-        const { data, error } = await supabase
-          .from('territories')
-          .select('*')
-          .order('name', { ascending: true })
-        
-        if (error) {
-          console.error('Error loading territories:', error)
-          setError(error.message)
-        } else {
-          setTerritories(data || [])
-          setError(null)
-        }
-      } catch (err) {
-        console.error('Unexpected error loading territories:', err)
-        setError('Failed to load territories')
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchTerritories()
-  }, [])
-
-  return { territories, loading, error }
-}
-
-export function useApprovalWorkflows() {
-  const [approvalWorkflows, setApprovalWorkflows] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchApprovalWorkflows = async () => {
-      try {
-        setLoading(true)
-        const { data, error } = await supabase
-          .from('approval_workflows')
-          .select('*')
-          .order('created_at', { ascending: false })
-        
-        if (error) {
-          console.error('Error loading approval workflows:', error)
-          setError(error.message)
-        } else {
-          setApprovalWorkflows(data || [])
-          setError(null)
-        }
-      } catch (err) {
-        console.error('Unexpected error loading approval workflows:', err)
-        setError('Failed to load approval workflows')
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchApprovalWorkflows()
-  }, [])
-
-  return { approvalWorkflows, loading, error }
-}
-
-export function useWinLossReports() {
-  const [winLossReports, setWinLossReports] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchWinLossReports = async () => {
-      try {
-        setLoading(true)
-        const { data, error } = await supabase
-          .from('win_loss_reports')
-          .select('*')
-          .order('created_at', { ascending: false })
-        
-        if (error) {
-          console.error('Error loading win/loss reports:', error)
-          setError(error.message)
-        } else {
-          setWinLossReports(data || [])
-          setError(null)
-        }
-      } catch (err) {
-        console.error('Unexpected error loading win/loss reports:', err)
-        setError('Failed to load win/loss reports')
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchWinLossReports()
-  }, [])
-
-  return { winLossReports, loading, error }
 }

@@ -6,57 +6,51 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Plus, Save, X } from 'lucide-react'
+import { CRMContact } from '@/types'
+import { useContacts } from '@/hooks/useCrmSupabase'
 import { useContacts } from '@/hooks/useCrmSupabase'
 import { useToast } from '@/hooks/use-toast'
 import { Lead } from '@/types'
 
 interface LeadIntakeFormProps {
-  onClose: () => void
+  onSuccess: (lead: CRMContact) => void
   onSuccess?: (lead: Lead) => void
 }
 
 export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProps) {
   const { createContact } = useContacts()
   const { toast } = useToast()
+  const { createContact } = useContacts()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+  const [formData, setFormData] = useState<Partial<CRMContact>>({
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     source: '',
     status: 'new',
     assignedTo: '',
     notes: '',
-    score: null as number | null
+    custom_fields: {}
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.firstName || !formData.lastName) {
+    if (!formData.first_name || !formData.last_name || !formData.email) {
       toast({
         title: 'Validation Error',
         description: 'First name and last name are required',
-        variant: 'destructive'
-      })
+      if (newContact) {
+        onSuccess(newContact)
+        onClose()
+      }
       return
     }
 
     setLoading(true)
     try {
-      const result = await createContact(formData)
-      
-      toast({
-        title: 'Success',
-        description: 'Lead created successfully'
-      })
-      
-      onSuccess?.(result)
-      onClose()
-    } catch (error) {
-      // Error handling is done in the hook
+      const newContact = await createContact(formData)
     } finally {
       setLoading(false)
     }
@@ -88,8 +82,8 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
               <Input
                 id="firstName"
                 value={formData.firstName}
-                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                placeholder="Enter first name"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
                 required
               />
             </div>
@@ -98,8 +92,8 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
               <Label htmlFor="lastName">Last Name *</Label>
               <Input
                 id="lastName"
-                value={formData.lastName}
-                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                  value={formData.last_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
                 placeholder="Enter last name"
                 required
               />
