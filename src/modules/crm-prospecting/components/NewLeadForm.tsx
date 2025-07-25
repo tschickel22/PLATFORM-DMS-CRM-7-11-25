@@ -18,7 +18,6 @@ interface NewLeadFormProps {
 export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
   const { createContact } = useContacts()
   const { toast } = useToast()
-  const { createContact } = useContacts()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<CRMContact>>({
     first_name: '',
@@ -39,16 +38,17 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
       toast({
         title: 'Validation Error',
         description: 'First name and last name are required',
-      if (newContact) {
-        onSuccess(newContact)
-        onClose()
-      }
+      })
       return
     }
 
     setLoading(true)
     try {
       const newContact = await createContact(formData)
+      if (newContact) {
+        onSuccess(newContact)
+        onClose()
+      }
     } finally {
       setLoading(false)
     }
@@ -80,14 +80,14 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Personal Information */}
             <div className="space-y-4">
-                  value={formData.first_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+              <h3 className="text-lg font-semibold">Personal Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
                     id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
                     placeholder="Enter first name"
                     required
                   />
@@ -96,8 +96,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                   <Label htmlFor="lastName">Last Name *</Label>
                   <Input
                     id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
                     placeholder="Enter last name"
                     required
                   />
@@ -185,8 +185,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                     }))}
                     placeholder="0-100"
                     min="0"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    max="100"
+                  />
                 </div>
               </div>
             </div>
