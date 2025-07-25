@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Eye, Edit, Filter } from 'lucide-react'
+import { Plus, Search, Eye, Edit, Filter, Target, DollarSign, Award, TrendingUp } from 'lucide-react'
 import { useDealManagement, Deal } from './hooks/useDealManagement'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import { DealForm } from './components/DealForm'
 import { DealDetail } from './components/DealDetail'
 import { DealPipeline } from './components/DealPipeline'
@@ -42,6 +42,14 @@ function CRMSalesDealDashboard() {
     { id: 'rep-3', name: 'Mike Davis' },
     { id: 'rep-4', name: 'Lisa Chen' }
   ]
+
+  // Filter deals based on search and filters
+  const filteredDeals = useMemo(() => {
+    let filtered = [...deals]
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
       filtered = filtered.filter(deal =>
         deal.customer_name.toLowerCase().includes(query) ||
         (deal.customer_email && deal.customer_email.toLowerCase().includes(query)) ||
