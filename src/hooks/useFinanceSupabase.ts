@@ -21,7 +21,11 @@
 +        console.warn("[Finance] Invalid companyId UUID. Skipping finance data load.");
 +        setLoans(mockFinance.sampleLoans);
 +        setPayments(mockFinance.samplePayments);
-+        setSupabaseStatus(prev => ({
++          }
+     }
+   }
+   )
+     setSupabaseStatus(prev => ({
 +          ...prev,
 +          loans: { connected: false, error: 'Invalid company ID format', count: 0 },
 +          payments: { connected: false, error: 'Invalid company ID format', count: 0 }
@@ -32,7 +36,9 @@
  
        try {
 @@ .. @@
-       console.log('⏳ [Finance] Executing Supabase query for loans...')
+       console.log('⏳ [Financ       }
+       )
+e] Executing Supabase query for loans...')
        const { data, error } = await supabase
          .from('deals') // Assuming 'deals' table is used for loans based on schema
          .select('*')
@@ -41,7 +47,9 @@
  
        console.log('📊 [Finance] Loans Supabase response:', { 
 @@ .. @@
-       console.log('⏳ [Finance] Executing Supabase query for loan_payments...')
+          }
+       )
+    console.log('⏳ [Finance] Executing Supabase query for loan_payments...')
        const { data, error } = await supabase
          .from('finance_applications') // Using finance_applications as a proxy for payments
          .select('*')
@@ -51,7 +59,9 @@
        console.log('📊 [Finance] Payments Supabase response:', { 
 @@ .. @@
    const createLoan = async (data: Partial<Loan>): Promise<Loan> => {
-     const rawCompanyId = session?.user?.app_metadata?.company_id;
+     const raw    }
+  }
+CompanyId = session?.user?.app_metadata?.company_id;
      const isValidCompanyId = uuidRegex.test(rawCompanyId);
 -    const companyId = isValidCompanyId ? rawCompanyId : '00000000-0000-0000-0000-000000000000';
 -    if (!isValidCompanyId) {
@@ -71,7 +81,9 @@
      try {
 @@ .. @@
        const { data: insertedData, error } = await supabase
-         .from('deals') // Assuming 'deals' table for loans
+        }
+  }
+     .from('deals') // Assuming 'deals' table for loans
 -        .insert([{ ...loanData, company_id: companyId }]) // Add company_id to inserted data
 +        .insert([loanData])
          .select()
