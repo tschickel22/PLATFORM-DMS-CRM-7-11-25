@@ -3,145 +3,125 @@ import { Routes, Route } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Package, Search, Filter, Eye, Edit, Trash2 } from 'lucide-react'
-import { useInventoryManagement, InventoryItem } from './hooks/useInventoryManagement'
-import { VehicleForm } from './components/VehicleForm'
-import { VehicleDetail } from './components/VehicleDetail'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+  Package, 
+  Plus, 
+  Search, 
+  Filter, 
+  Download, 
+  Upload,
+  AlertTriangle,
+  Database,
+  RefreshCw
+} from 'lucide-react'
+import { useInventoryManagement } from './hooks/useInventoryManagement'
 import { useToast } from '@/hooks/use-toast'
 
 function InventoryDashboard() {
-  const {
-    items,
-    loading,
-    error,
-    addInventoryItem,
-    updateInventoryItem,
-    deleteInventoryItem,
-    totalItems,
-    availableItems,
-    soldItems,
-    serviceItems
+  const { 
+    inventory, 
+    loading, 
+    error, 
+    usingFallback, 
+    refreshInventory 
   } = useInventoryManagement()
-  
   const { toast } = useToast()
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
+  
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
 
-  // Filter items based on search and filters
-  const filteredItems = React.useMemo(() => {
-    let filtered = items
+  // Filter inventory based on search and filters
+  const filteredInventory = React.useMemo(() => {
+    let filtered = inventory
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(item =>
         item.name.toLowerCase().includes(query) ||
-        (item.serial_number && item.serial_number.toLowerCase().includes(query)) ||
-        (item.location && item.location.toLowerCase().includes(query))
+        item.serial_number?.toLowerCase().includes(query) ||
+        item.location?.toLowerCase().includes(query)
       )
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(item => item.status === statusFilter)
     }
 
-    // Type filter
     if (typeFilter !== 'all') {
       filtered = filtered.filter(item => item.type === typeFilter)
     }
 
     return filtered
-  }, [items, searchQuery, statusFilter, typeFilter])
+  }, [inventory, searchQuery, statusFilter, typeFilter])
 
-  const handleAddItem = async (itemData: any) => {
-    const newItem = await addInventoryItem(itemData)
-    if (newItem) {
-      setShowAddForm(false)
-    }
+  // Get unique values for filters
+  const statuses = [...new Set(inventory.map(item => item.status).filter(Boolean))]
+  const types = [...new Set(inventory.map(item => item.type).filter(Boolean))]
+
+  const handleRefresh = async () => {
+    await refreshInventory()
+    toast({
+      title: 'Inventory Refreshed',
+      description: 'Inventory data has been refreshed from the database.'
+    })
   }
 
-  const handleUpdateItem = async (id: string, updates: any) => {
-    const success = await updateInventoryItem(id, updates)
-    if (success) {
-      setSelectedItem(null)
-    }
-  }
-
-  const handleDeleteItem = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this inventory item?')) {
-      const success = await deleteInventoryItem(id)
-      if (success) {
-        setSelectedItem(null)
-      }
-    }
-  }
-
-  const getStatusColor = (status: string | null) => {
-    switch (status) {
-      case 'Available':
+  const getStatusColor = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case 'available':
         return 'bg-green-100 text-green-800'
-      case 'Reserved':
+      case 'reserved':
         return 'bg-yellow-100 text-yellow-800'
-      case 'Sold':
+      case 'sold':
         return 'bg-blue-100 text-blue-800'
-      case 'Service':
+      case 'service':
         return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getUniqueTypes = () => {
-    const types = items.map(item => item.type).filter(Boolean)
-    return [...new Set(types)]
-  }
-
-  const getUniqueStatuses = () => {
-    const statuses = items.map(item => item.status).filter(Boolean)
-    return [...new Set(statuses)]
-  }
-
-  if (showAddForm) {
-    return (
-      <VehicleForm
-        onSave={handleAddItem}
-        onCancel={() => setShowAddForm(false)}
-      />
-    )
-  }
-
-  if (selectedItem) {
-    return (
-      <VehicleDetail
-        item={selectedItem}
-        onUpdate={handleUpdateItem}
-        onDelete={handleDeleteItem}
-        onClose={() => setSelectedItem(null)}
-      />
-    )
-  }
-
   return (
     <div className="space-y-6">
+      {/* Supabase Status Banner */}
+      <Alert variant={usingFallback ? "destructive" : "default"}>
+        <Database className="h-4 w-4" />
+        <AlertDescription>
+          {usingFallback ? (
+            <>
+              <strong>Fallback Mode:</strong> Using mock data. Supabase connection failed.
+              {error && <span className="block text-xs mt-1">Error: {error}</span>}
+            </>
+          ) : (
+            <>
+              Inventory data is loaded from Supabase. Live table: <code className="bg-muted px-1 rounded">inventory_items</code>
+            </>
+          )}
+        </AlertDescription>
+      </Alert>
+
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="ri-page-title">Inventory Management</h1>
             <p className="ri-page-description">
-              Manage your inventory of homes, RVs, and equipment
+              Manage your vehicle and equipment inventory
             </p>
           </div>
-          <Button onClick={() => setShowAddForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button disabled>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item (Phase 2)
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -153,9 +133,9 @@ function InventoryDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? '...' : totalItems}</div>
+            <div className="text-2xl font-bold">{inventory.length}</div>
             <p className="text-xs text-muted-foreground">
-              All inventory items
+              {loading ? 'Loading...' : 'All inventory items'}
             </p>
           </CardContent>
         </Card>
@@ -163,10 +143,12 @@ function InventoryDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available</CardTitle>
-            <Package className="h-4 w-4 text-green-600" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? '...' : availableItems}</div>
+            <div className="text-2xl font-bold">
+              {inventory.filter(item => item.status === 'Available').length}
+            </div>
             <p className="text-xs text-muted-foreground">
               Ready for sale
             </p>
@@ -175,26 +157,30 @@ function InventoryDashboard() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sold</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">In Service</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? '...' : soldItems}</div>
+            <div className="text-2xl font-bold">
+              {inventory.filter(item => item.status === 'Service').length}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Completed sales
+              Under maintenance
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Service</CardTitle>
-            <Package className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium">Locations</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? '...' : serviceItems}</div>
+            <div className="text-2xl font-bold">
+              {new Set(inventory.map(item => item.location).filter(Boolean)).size}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Under maintenance
+              Storage locations
             </p>
           </CardContent>
         </Card>
@@ -202,8 +188,14 @@ function InventoryDashboard() {
 
       {/* Search and Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
+        <CardHeader>
+          <CardTitle>Inventory Items</CardTitle>
+          <CardDescription>
+            Search and filter your inventory
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4 mb-6">
             <div className="ri-search-bar">
               <Search className="ri-search-icon" />
               <Input
@@ -214,148 +206,120 @@ function InventoryDashboard() {
               />
             </div>
             
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {getUniqueStatuses().map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="all">All Statuses</option>
+              {statuses.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
             
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {getUniqueTypes().map(type => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="all">All Types</option>
+              {types.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Inventory List */}
+          <div className="space-y-4">
+            {loading && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Loading inventory...</p>
+              </div>
+            )}
+            
+            {!loading && filteredInventory.length === 0 && inventory.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-lg font-semibold mb-2">No Inventory Found</h3>
+                <p className="mb-4">
+                  {usingFallback 
+                    ? 'No inventory data available in fallback mode'
+                    : 'No items found in the inventory_items table'
+                  }
+                </p>
+                <Button disabled>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Item (Phase 2)
+                </Button>
+              </div>
+            )}
+            
+            {!loading && filteredInventory.length === 0 && inventory.length > 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No items match your search criteria</p>
+                <p className="text-sm">Try adjusting your filters</p>
+              </div>
+            )}
+            
+            {filteredInventory.map((item) => (
+              <div
+                key={item.id}
+                className="ri-table-row"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <Package className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <h4 className="font-semibold">{item.name}</h4>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        {item.serial_number && (
+                          <span>SN: {item.serial_number}</span>
+                        )}
+                        {item.location && (
+                          <span>Location: {item.location}</span>
+                        )}
+                        {item.type && (
+                          <span>Type: {item.type}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  {item.status && (
+                    <Badge className={getStatusColor(item.status)}>
+                      {item.status}
+                    </Badge>
+                  )}
+                  <div className="ri-action-buttons">
+                    <Button variant="outline" size="sm" disabled>
+                      View (Phase 2)
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      Edit (Phase 2)
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Inventory List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Items</CardTitle>
-          <CardDescription>
-            {loading ? 'Loading inventory...' : `${filteredItems.length} items found`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading inventory...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-center py-8">
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <p className="text-red-800 font-medium">Error Loading Inventory</p>
-                <p className="text-red-600 text-sm mt-1">{error}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-3"
-                  onClick={() => window.location.reload()}
-                >
-                  Retry
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="space-y-4">
-              {filteredItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="ri-table-row"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <h4 className="font-semibold">{item.name}</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {item.type && (
-                            <Badge variant="outline" className="text-xs">
-                              {item.type}
-                            </Badge>
-                          )}
-                          {item.status && (
-                            <Badge className={`text-xs ${getStatusColor(item.status)}`}>
-                              {item.status}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-2">
-                      {item.serial_number && (
-                        <span>Serial: {item.serial_number} • </span>
-                      )}
-                      {item.location && (
-                        <span>Location: {item.location} • </span>
-                      )}
-                      <span>Added: {new Date(item.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="ri-action-buttons">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedItem(item)}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              {filteredItems.length === 0 && !loading && !error && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  {items.length === 0 ? (
-                    <>
-                      <p>No inventory items yet</p>
-                      <p className="text-sm">Add your first item to get started</p>
-                      <Button onClick={() => setShowAddForm(true)} className="mt-4">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add First Item
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <p>No items match your search criteria</p>
-                      <p className="text-sm">Try adjusting your search or filters</p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Phase 2 Features Notice */}
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Phase 1 - Read Only:</strong> Create, update, and delete operations will be enabled in Phase 2.
+          Currently displaying live data from Supabase inventory_items table.
+        </AlertDescription>
+      </Alert>
     </div>
   )
 }
 
-function InventoryManagement() {
+export default function InventoryManagement() {
   return (
     <Routes>
       <Route path="/" element={<InventoryDashboard />} />
@@ -363,5 +327,3 @@ function InventoryManagement() {
     </Routes>
   )
 }
-
-export default InventoryManagement
