@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Settings, Save, Shield, AlertTriangle } from 'lucide-react'
-import { usePdiChecklists } from '@/hooks/usePdiSupabase'
+import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { useToast } from '@/hooks/use-toast'
@@ -25,7 +25,7 @@ export default function PDISettings() {
     loadPdiSettings,
     updatePdiSetting,
     getPdiSetting
-  } = usePdiChecklists()
+  } = usePdiSupabase()
 
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
