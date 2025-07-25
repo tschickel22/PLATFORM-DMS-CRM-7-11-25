@@ -40,6 +40,7 @@ export function PDIInspectionList({
       'approved': 'bg-emerald-100 text-emerald-800'
     }
     return statusColors[status] || 'bg-gray-100 text-gray-800'
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -130,33 +131,17 @@ export function PDIInspectionList({
                     {status}
                   </SelectItem>
                 ))}
-                Vehicle: {inspection.vehicle_id}
+              </SelectContent>
             </Select>
-              <Badge className={getStatusColor(inspection.status)}>
-                {inspection.status.replace('_', ' ').toUpperCase()}
+
+            <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All technicians" />
               </SelectTrigger>
-              ID: {inspection.id} • 
-              Technician: {inspection.technician} • 
-              Created: {new Date(inspection.created_at).toLocaleDateString()}
-              {inspection.updated_at !== inspection.created_at && (
-                <span> • Updated: {new Date(inspection.updated_at).toLocaleDateString()}</span>
+              <SelectContent>
+                <SelectItem value="all">All Technicians</SelectItem>
               </SelectContent>
             </Select>
-            <div className="text-sm text-muted-foreground mt-1">
-              Steps: {inspection.checklist_data.length} • 
-              Completed: {inspection.checklist_data.filter(item => item.status === 'complete').length} • 
-              Pending: {inspection.checklist_data.filter(item => item.status === 'pending').length}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDeleteInspection(inspection.id)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
           </div>
 
           <Table>
