@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useContacts } from '@/hooks/useCrmSupabase'
+import { createLead, updateLeadStatus, updateLeadScore, assignLead } from './hooks/useLeadManagement'
+import { useToast } from '@/hooks/use-toast'
 import { Users, Plus, Search, Filter, Phone, Mail, Calendar, TrendingUp, Target, BarChart3, Settings, Brain, MessageSquare } from 'lucide-react'
 import { Lead, LeadStatus } from '@/types'
 import { formatDate } from '@/lib/utils'
@@ -27,7 +30,7 @@ function LeadsList() {
     leads,
     sources,
     activities,
-    salesReps,
+import { mockCrmProspecting } from '@/mocks/crmProspectingMock'
     updateLeadStatus,
     assignLead,
     getActivitiesByLead,
@@ -36,6 +39,8 @@ function LeadsList() {
   } = useLeadManagement()
   
   const [searchTerm, setSearchTerm] = useState('')
+  const { contacts, loading: contactsLoading } = useContacts()
+  const { toast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all')
@@ -45,20 +50,19 @@ function LeadsList() {
   const getStatusColor = (status: LeadStatus) => {
     switch (status) {
       case LeadStatus.NEW:
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case LeadStatus.CONTACTED:
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
       case LeadStatus.QUALIFIED:
         return 'bg-green-50 text-green-700 border-green-200'
-      case LeadStatus.PROPOSAL:
+    if (contactsLoading) return []
+    
+    let currentLeads = contacts
         return 'bg-purple-50 text-purple-700 border-purple-200'
       case LeadStatus.NEGOTIATION:
         return 'bg-orange-50 text-orange-700 border-orange-200'
       case LeadStatus.CLOSED_WON:
         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      case LeadStatus.CLOSED_LOST:
+        `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(lowerCaseQuery) ||
         return 'bg-red-50 text-red-700 border-red-200'
-      default:
+        (lead.phone && lead.phone.toLowerCase().includes(lowerCaseQuery))
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
   }
@@ -215,6 +219,68 @@ function LeadsList() {
           </TabsContent>
         </Tabs>
       </div>
+  }, [contacts, contactsLoading, searchQuery, statusFilter, sourceFilter])
+  }
+  const handleCreateLead = async (leadData: any) => {
+    try {
+      await createLead(leadData)
+      toast({
+        title: 'Lead Created',
+        description: 'New lead has been created successfully.'
+      })
+      setShowNewLeadForm(false)
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create lead. Please try again.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
+    try {
+      await updateLeadStatus(leadId, newStatus)
+      toast({
+        title: 'Lead Updated',
+        description: 'Lead status has been updated successfully.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update lead status. Please try again.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleAssignLead = async (leadId: string, assignedTo: string) => {
+    try {
+      await assignLead(leadId, assignedTo)
+      toast({
+        title: 'Lead Assigned',
+        description: 'Lead has been assigned successfully.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to assign lead. Please try again.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  if (contactsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="ri-page-header">
+          <h1 className="ri-page-title">CRM Prospecting</h1>
+          <p className="ri-page-description">Loading...</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
     )
   }
 
@@ -252,7 +318,7 @@ function LeadsList() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{leads.length}</div>
+            <div className="text-2xl font-bold">{contacts.length}</div>
             <p className="text-xs text-blue-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
               +12% from last month
@@ -270,7 +336,7 @@ function LeadsList() {
             </div>
             <p className="text-xs text-yellow-600 flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" />
-              +8% from last week
+            <div className="text-2xl font-bold">{contacts.filter(l => l.status === 'new').length}</div>
             </p>
           </CardContent>
         </Card>
@@ -283,7 +349,7 @@ function LeadsList() {
             <div className="text-2xl font-bold text-green-900">
               {leads.filter(l => l.status === LeadStatus.QUALIFIED).length}
             </div>
-            <p className="text-xs text-green-600 flex items-center mt-1">
+            <div className="text-2xl font-bold">{contacts.filter(l => l.status === 'qualified').length}</div>
               <TrendingUp className="h-3 w-3 mr-1" />
               +15% from last month
             </p>
@@ -296,10 +362,7 @@ function LeadsList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">47</div>
-            <p className="text-xs text-purple-600 flex items-center mt-1">
-              <Brain className="h-3 w-3 mr-1" />
-              Active recommendations
-            </p>
+          onSuccess={handleCreateLead}
           </CardContent>
         </Card>
       </div>
@@ -427,20 +490,20 @@ function LeadsList() {
                             {salesReps.find(rep => rep.id === lead.assignedTo)?.name || 'Unassigned'}
                           </span>
                           <span className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-2 text-orange-500" />
+                        <h4 className="font-semibold">{lead.first_name} {lead.last_name}</h4>
                             {formatDate(lead.createdAt)}
                           </span>
-                        </div>
-                        {lead.notes && (
+                          lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+                          lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
                           <p className="text-sm text-muted-foreground mt-2 bg-muted/30 p-2 rounded-md">
                             {lead.notes}
-                          </p>
+                          {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                         )}
                       </div>
                     </div>
                     <div className="ri-action-buttons">
                       <Button variant="outline" size="sm" className="shadow-sm" onClick={(e) => {
-                        e.stopPropagation()
+                        {new Date(lead.created_at).toLocaleDateString()}
                         // Handle quick actions
                       }}>
                         <MessageSquare className="h-3 w-3 mr-1" />
@@ -493,9 +556,19 @@ function LeadsList() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Lead Sources</CardTitle>
-              <CardDescription>
-                Manage and track lead source performance
-              </CardDescription>
+                    {contacts.length === 0 ? (
+                      <>
+                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <p>No leads yet</p>
+                        <p className="text-sm">Create your first lead to get started</p>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <p>No leads found matching your criteria</p>
+                        <p className="text-sm">Try adjusting your search or filters</p>
+                      </>
+                    )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -504,23 +577,23 @@ function LeadsList() {
                     <div>
                       <h3 className="font-semibold">{source.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Type: {source.type} • Conversion: {source.conversionRate}%
+          <PipelineDashboard leads={filteredLeads} onUpdateStatus={handleUpdateLeadStatus} />
                         {source.trackingCode && ` • Code: ${source.trackingCode}`}
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+          <NurtureSequences leads={filteredLeads} onAssignLead={handleAssignLead} />
                       <Badge className={source.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}>
                         {source.isActive ? 'Active' : 'Inactive'}
                       </Badge>
-                      <Button variant="outline" size="sm">
+          <LeadScoring leads={filteredLeads} onUpdateScore={updateLeadScore} />
                         <Settings className="h-3 w-3" />
                       </Button>
                     </div>
-                  </div>
+          <CommunicationCenter leads={filteredLeads} />
                 ))}
               </div>
             </CardContent>
-          </Card>
+          <AIInsights leads={filteredLeads} />
         </TabsContent>
       </Tabs>
     </div>
