@@ -43,7 +43,7 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
 
     setLoading(true)
     try {
-      const newContact = await createContact({
+      let newContact = await createContact({
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,

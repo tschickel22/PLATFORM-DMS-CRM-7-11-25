@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { validate as validateUUID } from 'uuid'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { mockPDI } from '@/mocks/pdiMock'
@@ -23,6 +22,9 @@ export function usePdiChecklists() {
   })
   const { toast } = useToast()
 
+  // UUID validation regex (avoiding external dependency)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
   // Warn if no valid company ID is found
   useEffect(() => {
     if (!session?.user?.app_metadata?.company_id) {
@@ -41,7 +43,7 @@ export function usePdiChecklists() {
     const loadData = async () => {
       // Get company ID from session with proper validation
       const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
-      const isValidCompanyId = validateUUID(rawCompanyId);
+      const isValidCompanyId = uuidRegex.test(rawCompanyId);
       const companyId = isValidCompanyId ? rawCompanyId : null;
 
       if (!companyId) {
@@ -295,7 +297,7 @@ export function usePdiChecklists() {
   const updatePdiSetting = async (key: string, value: string) => {
     // Get company ID from session with proper validation
     const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
-    const isValidCompanyId = validateUUID(rawCompanyId);
+    const isValidCompanyId = uuidRegex.test(rawCompanyId);
     const companyId = isValidCompanyId ? rawCompanyId : null;
 
     if (!companyId) {
@@ -379,7 +381,7 @@ export function usePdiChecklists() {
   const getPdiSetting = (key: string, defaultValue: string = ''): string => {
     // Get company ID from session with proper validation
     const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
-    const isValidCompanyId = validateUUID(rawCompanyId);
+    const isValidCompanyId = uuidRegex.test(rawCompanyId);
     const companyId = isValidCompanyId ? rawCompanyId : null;
 
     if (!companyId) {
