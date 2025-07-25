@@ -17,7 +17,6 @@ interface LeadIntakeFormProps {
 export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProps) {
   const { createContact } = useContacts()
   const { toast } = useToast()
-  const { createContact } = useContacts()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<CRMContact>>({
     first_name: '',
@@ -79,9 +78,8 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
               <Label htmlFor="firstName">First Name *</Label>
               <Input
                 id="firstName"
-                value={formData.firstName}
-                  value={formData.first_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                value={formData.first_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
                 required
               />
             </div>
@@ -90,8 +88,8 @@ export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProp
               <Label htmlFor="lastName">Last Name *</Label>
               <Input
                 id="lastName"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                value={formData.last_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
                 placeholder="Enter last name"
                 required
               />
