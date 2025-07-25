@@ -319,14 +319,19 @@ export function useFinanceApplications() {
         notes: data.notes || ''
       }
 
-      // Create local mock application for demo purposes
-      const mockId = `app-${Date.now()}`
-      const insertedData = {
-        id: mockId,
-        ...applicationData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // Insert into Supabase
+      const { data: insertedData, error } = await supabase
+        .from('finance_applications')
+        .insert([applicationData])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Finance Applications] Create error:', error.message)
+        throw error
       }
+
+      console.log('✅ [Finance Applications] Application created:', insertedData.id)
 
       const newApplication: FinanceApplication = {
         id: insertedData.id,
@@ -409,12 +414,20 @@ export function useFinanceApplications() {
         }
       })
 
-      // Update local state for demo purposes
-      const data = {
-        id,
-        ...updateData,
-        updated_at: new Date().toISOString()
+      // Update in Supabase
+      const { data, error } = await supabase
+        .from('finance_applications')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Finance Applications] Update error:', error.message)
+        throw error
       }
+
+      console.log('✅ [Finance Applications] Application updated:', data.id)
 
       // Transform and update local state
       const updatedApplication: FinanceApplication = {
@@ -464,6 +477,18 @@ export function useFinanceApplications() {
 
   const deleteApplicationLocal = async (id: string) => {
     try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('finance_applications')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('❌ [Finance Applications] Delete error:', error.message)
+        throw error
+      }
+
+      console.log('✅ [Finance Applications] Application deleted:', id)
 
       setApplications(prev => prev.filter(app => app.id !== id))
     } catch (error) {
@@ -504,14 +529,19 @@ export function useFinanceApplications() {
         is_active: data.isActive !== undefined ? data.isActive : true
       }
 
-      // Create local mock template for demo purposes
-      const mockId = `template-${Date.now()}`
-      const insertedData = {
-        id: mockId,
-        ...templateData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // Insert into Supabase
+      const { data: insertedData, error } = await supabase
+        .from('application_templates')
+        .insert([templateData])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Finance Applications] Template create error:', error.message)
+        throw error
       }
+
+      console.log('✅ [Finance Applications] Template created:', insertedData.id)
 
       const newTemplate: ApplicationTemplate = {
         id: insertedData.id,
@@ -562,12 +592,20 @@ export function useFinanceApplications() {
         }
       })
 
-      // Update local state for demo purposes
-      const data = {
-        id,
-        ...updateData,
-        updated_at: new Date().toISOString()
+      // Update in Supabase
+      const { data, error } = await supabase
+        .from('application_templates')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Finance Applications] Template update error:', error.message)
+        throw error
       }
+
+      console.log('✅ [Finance Applications] Template updated:', data.id)
 
       const updatedTemplate: ApplicationTemplate = {
         id: data.id,
@@ -605,6 +643,18 @@ export function useFinanceApplications() {
 
   const deleteTemplateLocal = async (id: string) => {
     try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('application_templates')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('❌ [Finance Applications] Template delete error:', error.message)
+        throw error
+      }
+
+      console.log('✅ [Finance Applications] Template deleted:', id)
 
       setTemplates(prev => prev.filter(template => template.id !== id))
     } catch (error) {
@@ -810,17 +860,17 @@ export function useFinanceApplications() {
     loading,
     usingFallback,
     supabaseStatus,
-    createApplication: createApplicationLocal,
-    updateApplication: updateApplicationLocal,
-    deleteApplication: deleteApplicationLocal,
+    createApplication,
+    updateApplication,
+    deleteApplication,
     getApplicationById,
     getApplicationsByCustomer,
-    createTemplate: createTemplateLocal,
-    updateTemplate: updateTemplateLocal,
-    deleteTemplate: deleteTemplateLocal,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
     getTemplateById,
-    uploadFile: uploadFileLocal,
-    removeFile: removeFileLocal,
+    uploadFile,
+    removeFile,
     loadApplications,
     loadTemplates
   }
