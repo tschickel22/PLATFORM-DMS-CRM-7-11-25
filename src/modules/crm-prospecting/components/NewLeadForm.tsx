@@ -6,29 +6,31 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { X, Save, User, Mail, Phone, MapPin, Tag, DollarSign, CheckCircle } from 'lucide-react'
-import { Lead, LeadStatus } from '../types'
+import { useLeadManagement } from '../hooks/useLeadManagement'
 import { useLeadManagement } from '../hooks/useLeadManagement'
 import { useToast } from '@/hooks/use-toast'
 
 interface NewLeadFormProps {
   onClose: () => void
-  onSuccess: (lead: Lead) => void
+  onSuccess: (lead: any) => void
 }
 
 export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
   const { sources, salesReps, createLead } = useLeadManagement()
   const { toast } = useToast()
+  const { createContact } = useLeadManagement()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     source: '',
     sourceId: '',
-    assignedTo: '',
+    assigned_to: '',
     notes: '',
-    customFields: {
+    score: 0,
+    status: 'new'
       budget: '',
       timeframe: '',
       experience: '',
@@ -42,16 +44,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required'
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required'
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
+      const newLead = await createContact(formData)
+      onSuccess(newLead)
     }
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required'
@@ -148,8 +142,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
-          </div>
-        </CardHeader>
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
@@ -363,8 +357,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                 <Label htmlFor="interests">Interests/Requirements</Label>
                 <Input
                   id="interests"
-                  value={formData.customFields.interests}
-                  onChange={(e) => updateCustomField('interests', e.target.value)}
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                   placeholder="e.g., Class A Motorhome, Solar panels, Pet-friendly"
                 />
               </div>
@@ -393,8 +387,8 @@ export function NewLeadForm({ onClose, onSuccess }: NewLeadFormProps) {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating Lead...
-                  </>
+                  value={formData.assigned_to}
+                  onValueChange={(value) => setFormData({ ...formData, assigned_to: value })}
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />

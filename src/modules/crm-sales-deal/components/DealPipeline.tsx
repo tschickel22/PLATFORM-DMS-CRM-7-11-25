@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { Deal, DealStage, DealStatus } from '../types'
 import { formatCurrency } from '@/lib/utils'
+import { useDealManagement } from '../hooks/useDealManagement'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { Calendar, DollarSign, User, TrendingUp, AlertCircle } from 'lucide-react'
 import { DropResult, DraggableLocation } from 'react-beautiful-dnd'
@@ -22,12 +23,15 @@ const stageConfig = [
 ]
 
 interface DealPipelineProps {
-  deals: Deal[]
-  onDealStageChange: (dealId: string, newStage: DealStage) => void
-  onDealClick: (deal: Deal) => void
+  deals: any[]
+  loading: boolean
+  onDealClick: (deal: any) => void
+  onStageChange: (dealId: string, newStage: string) => void
 }
 
-export function DealPipeline({ deals, onDealStageChange, onDealClick }: DealPipelineProps) {
+export function DealPipeline({ deals, loading, onDealClick, onStageChange }: DealPipelineProps) {
+  const { updateDealStage } = useDealManagement()
+  const { toast } = useToast()
   const { tenant } = useTenant()
   const [draggedDeal, setDraggedDeal] = useState<string | null>(null)
 
@@ -86,6 +90,15 @@ export function DealPipeline({ deals, onDealStageChange, onDealClick }: DealPipe
 
   const onDragStart = (start: { draggableId: string }) => {
     setDraggedDeal(start.draggableId)
+  if (loading) {
+    return (
+      <div className="p-6 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading pipeline...</p>
+      </div>
+    )
+  }
+
   }
 
   const getStageDeals = (stage: DealStage) => {
@@ -93,15 +106,31 @@ export function DealPipeline({ deals, onDealStageChange, onDealClick }: DealPipe
   }
 
   const getStageValue = (stage: DealStage) => {
-    return getStageDeals(stage).reduce((sum, deal) => sum + deal.value, 0)
+  const handleDragEnd = async (result: any) => {
   }
 
   const getWeightedStageValue = (stage: DealStage) => {
     return getStageDeals(stage).reduce((sum, deal) => sum + (deal.value * deal.probability / 100), 0)
   }
 
-  const getStageColor = (stage: string) => {
-    return mockCrmSalesDeal.stageColors[stage] || 'bg-gray-100 text-gray-800'
+    
+    try {
+      await updateDealStage(draggableId, newStage)
+      onStageChange(draggableId, newStage)
+      
+      toast({
+        title: 'Deal Updated',
+        description: `Deal moved to ${newStage}`,
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update deal stage',
+        variant: 'destructive'
+      })
+    } finally {
+      setDragLoading(false)
+    }
   }
 
   return (
@@ -188,22 +217,22 @@ export function DealPipeline({ deals, onDealStageChange, onDealClick }: DealPipe
                                 <div className="flex items-center space-x-1">
                                   <TrendingUp className="h-3 w-3" />
                                   <span>{deal.probability}%</span>
-                                </div>
+                                  <h4 className="font-semibold text-sm">{deal.customer_name}</h4>
                                 <div className="flex items-center space-x-1">
-                                  <Calendar className="h-3 w-3 flex-shrink-0" />
+                                {deal.rep_name && (
                                   <span className="truncate">{new Date(deal.expectedCloseDate).toLocaleDateString()}</span>
                                 </div>
-                              </div>
+                                    <span className="text-xs text-muted-foreground">{deal.rep_name}</span>
 
                               <div className="flex items-center justify-between">
                                 <Badge className={cn("ri-badge-status text-xs", getStatusColor(deal.status))}>
-                                  {deal.status.toUpperCase()}
+                                {deal.expected_close_date && (
                                 </Badge>
                                 {isOverdue(deal) && (
                                   <div className="flex items-center space-x-1 text-red-500">
-                                    <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                                    <span className="text-xs">Overdue</span>
-                                  </div>
+                                      {formatDate(deal.expected_close_date)}
+                                {deal.vehicle_info && (
+                                  <p className="text-xs text-muted-foreground">{deal.vehicle_info}</p>
                                 )}
                               </div>
                             </div>

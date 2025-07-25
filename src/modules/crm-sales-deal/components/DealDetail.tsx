@@ -6,13 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { X, Edit, DollarSign, Calendar, User, Target, Package, MapPin, Clock, AlertTriangle } from 'lucide-react'
 import { Deal, DealStage, DealStatus, DealPriority } from '../types'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { useDealManagement } from '../hooks/useDealManagement'
 import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 
 interface DealDetailProps {
-  deal: Deal
+  deal: any
   onClose: () => void
-  onEdit: (deal: Deal) => void
+  onUpdate: (deal: any) => void
 }
 
 export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
@@ -28,6 +28,7 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
         return 'bg-yellow-50 text-yellow-700 border-yellow-200'
       case DealStatus.CANCELLED:
         return 'bg-gray-50 text-gray-700 border-gray-200'
+  const { updateDealStage } = useDealManagement()
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
@@ -39,11 +40,12 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
         return 'bg-red-50 text-red-700 border-red-200'
       case DealPriority.HIGH:
         return 'bg-orange-50 text-orange-700 border-orange-200'
-      case DealPriority.MEDIUM:
+  const handleStageChange = async (newStage: string) => {
         return 'bg-yellow-50 text-yellow-700 border-yellow-200'
       case DealPriority.LOW:
-        return 'bg-green-50 text-green-700 border-green-200'
-      default:
+      await updateDealStage(deal.id, newStage)
+      const updatedDeal = { ...deal, stage: newStage }
+      onUpdate(updatedDeal)
         return 'bg-gray-50 text-gray-700 border-gray-200'
     }
   }
@@ -150,9 +152,9 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
                   <label className="text-sm font-medium text-muted-foreground">Expected Close</label>
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-purple-500" />
-                    <p className="font-medium">{formatDate(deal.expectedCloseDate)}</p>
+            <h1 className="text-2xl font-bold">{deal.customer_name}</h1>
                   </div>
-                </div>
+              Deal #{deal.id} • Created {formatDate(deal.created_at)}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Assigned To</label>
                   <div className="flex items-center space-x-2">
@@ -203,10 +205,10 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
                         <span className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}: </span>
                         <span className="text-sm">{value?.toString()}</span>
                       </div>
-                    ))}
+              {deal.expected_close_date && (
                   </div>
                 </div>
-              )}
+                  <span>{formatDate(deal.expected_close_date)}</span>
             </TabsContent>
 
             <TabsContent value="products" className="space-y-4">
@@ -225,30 +227,30 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
                           <span>Quantity: {product.quantity}</span>
                           <span>Unit Price: {formatCurrency(product.unitPrice)}</span>
                           {product.discount > 0 && (
-                            <span className="text-green-600">Discount: {formatCurrency(product.discount)}</span>
+                <div className="font-medium">{deal.customer_name}</div>
                           )}
-                        </div>
+              {deal.customer_email && (
                       </div>
                       <div className="text-right">
                         <div className="font-bold">{formatCurrency(product.total)}</div>
                       </div>
-                    </div>
+                    <span>{deal.customer_email}</span>
                   ))}
 
                   <div className="flex justify-end p-3 bg-muted/30 rounded-lg">
-                    <div className="text-right">
+              {deal.customer_phone && (
                       <span className="text-sm font-medium">Total Deal Value: </span>
                       <span className="text-lg font-bold text-primary">{formatCurrency(deal.value)}</span>
                     </div>
                   </div>
-                </div>
+                    <span>{deal.customer_phone}</span>
               ) : (
                 <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                   <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No products added to this deal</p>
+              {deal.vehicle_info && (
                   <p className="text-sm">Edit the deal to add products</p>
                 </div>
-              )}
+                  <div className="font-medium">{deal.vehicle_info}</div>
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
@@ -256,7 +258,7 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
               
               {deal.stageHistory && deal.stageHistory.length > 0 ? (
                 <div className="space-y-3">
-                  {deal.stageHistory.map((history, index) => (
+        {deal.rep_name && (
                     <div key={index} className="relative">
                       {index < deal.stageHistory.length - 1 && (
                         <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />
@@ -268,7 +270,7 @@ export function DealDetail({ deal, onClose, onEdit }: DealDetailProps) {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
+                  <div className="font-medium">{deal.rep_name}</div>
                             <span className="font-medium capitalize">
                               {history.fromStage ? `${history.fromStage.replace('_', ' ')} → ${history.toStage.replace('_', ' ')}` : `Started at ${history.toStage.replace('_', ' ')}`}
                             </span>

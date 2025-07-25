@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { useContacts } from '@/hooks/useCrmSupabase'
+import { useDealManagement } from '../hooks/useDealManagement'
 import { X, Save, Plus, Trash2, DollarSign, Calendar, User, Target, Package } from 'lucide-react'
 import { Deal, DealStage, DealStatus, DealPriority, DealProduct } from '../types'
 import { NewLeadForm } from '@/modules/crm-prospecting/components/NewLeadForm'
@@ -17,8 +18,8 @@ import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 
 interface DealFormProps {
   deal?: Deal
-  customers: any[] // Using existing customer data
-  salesReps: any[] // Using existing sales rep data
+  deal?: any
+  onSave: (deal: any) => void
   territories: any[] // Using existing territory data
   products: any[] // Using existing product data
   onSave: (dealData: Partial<Deal>) => Promise<void>
@@ -27,14 +28,16 @@ interface DealFormProps {
 
 export function DealForm({ deal, customers, salesReps, territories, products, onSave, onCancel }: DealFormProps) {
   const { toast } = useToast()
+  const { contacts, loading: contactsLoading } = useContacts()
+  const { createDeal, updateDeal } = useDealManagement()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<Deal>>({
     name: '',
     customerId: '',
-    customerName: '',
-    stage: DealStage.PROSPECTING,
-    status: DealStatus.ACTIVE,
-    priority: DealPriority.MEDIUM,
+    customer_name: deal?.customer_name || '',
+    customer_email: deal?.customer_email || '',
+    customer_phone: deal?.customer_phone || '',
+    vehicle_info: deal?.vehicle_info || '',
     value: 0,
     probability: 10,
     expectedCloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
@@ -99,10 +102,10 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
     const unitPrice = newProduct.unitPrice || 0
     const discount = newProduct.discount || 0
     const total = (quantity * unitPrice) - discount
-    
-    setNewProduct(prev => ({
+    rep_id: deal?.rep_id || '',
+    rep_name: deal?.rep_name || '',
       ...prev,
-      total
+    expected_close_date: deal?.expected_close_date || mockCrmSalesDeal.defaultDeal.expectedCloseDate,
     }))
   }, [newProduct.quantity, newProduct.unitPrice, newProduct.discount])
 
@@ -111,24 +114,23 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
     
     if (!formData.name || !formData.customerId || !formData.expectedCloseDate) {
       toast({
-        title: 'Validation Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    setLoading(true)
+      if (deal?.id) {
+        await updateDeal(deal.id, formData)
+      } else {
+        await createDeal(formData)
+      }
+      
+      onSave(formData)
     try {
       await onSave(formData)
       toast({
         title: 'Success',
-        description: `Deal ${deal ? 'updated' : 'created'} successfully`,
+        description: `Deal ${deal?.id ? 'updated' : 'created'} successfully`,
       })
     } catch (error) {
       toast({
         title: 'Error',
-        description: `Failed to ${deal ? 'update' : 'create'} deal`,
+        description: `Failed to ${deal?.id ? 'update' : 'create'} deal`,
         variant: 'destructive'
       })
     } finally {
@@ -142,7 +144,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
         title: 'Validation Error',
         description: 'Please select a product',
         variant: 'destructive'
-      })
+              <CardTitle>{deal?.id ? 'Edit Deal' : 'New Deal'}</CardTitle>
       return
     }
 
@@ -225,7 +227,7 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
             <div>
               <CardTitle>{deal ? 'Edit Deal' : 'Create Deal'}</CardTitle>
               <CardDescription>
-                {deal ? 'Update deal details' : 'Create a new sales deal'}
+                {deal?.id ? 'Update deal information' : 'Create a new sales deal'}
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -243,8 +245,8 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
               </h3>
               
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="name">Deal Name *</Label>
+                    value={formData.customer_name}
+                    onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
                   <Input
                     id="name"
                     value={formData.name}
@@ -324,8 +326,8 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                     onValueChange={(value: DealPriority) => setFormData(prev => ({ ...prev, priority: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    value={formData.customer_email}
+                    onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
                     <SelectContent>
                       <SelectItem value={DealPriority.LOW}>Low</SelectItem>
                       <SelectItem value={DealPriority.MEDIUM}>Medium</SelectItem>
@@ -333,16 +335,16 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                       <SelectItem value={DealPriority.CRITICAL}>Critical</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                
+                    value={formData.customer_phone}
+                    onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
                 <div>
                   <Label htmlFor="probability">Probability (%)</Label>
                   <Input
                     id="probability"
                     type="number"
                     min="0"
-                    max="100"
-                    value={formData.probability}
+                    value={formData.vehicle_info}
+                    onChange={(e) => setFormData({ ...formData, vehicle_info: e.target.value })}
                     onChange={(e) => setFormData(prev => ({ ...prev, probability: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
@@ -355,15 +357,15 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                     id="expectedCloseDate"
                     type="date"
                     value={formData.expectedCloseDate ? new Date(formData.expectedCloseDate).toISOString().split('T')[0] : ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, expectedCloseDate: new Date(e.target.value) }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="assignedTo">Assigned To</Label>
-                  <Select 
-                    value={formData.assignedTo} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, assignedTo: value }))}
+                    value={formData.rep_name}
+                    onValueChange={(value) => {
+                      const rep = mockCrmSalesDeal.reps.find(r => r.name === value)
+                      setFormData({ 
+                        ...formData, 
+                        rep_name: value,
+                        rep_id: rep?.id || ''
+                      })
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select sales rep" />
@@ -392,8 +394,8 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                         <SelectItem key={territory.id} value={territory.id}>
                           {territory.name}
                         </SelectItem>
-                      ))}
-                    </SelectContent>
+                    value={formData.expected_close_date}
+                    onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
                   </Select>
                 </div>
               </div>
@@ -566,12 +568,12 @@ export function DealForm({ deal, customers, salesReps, territories, products, on
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {deal ? 'Updating...' : 'Creating...'}
+                    {deal?.id ? 'Updating...' : 'Creating...'}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    {deal ? 'Update' : 'Create'} Deal
+                    {deal?.id ? 'Update Deal' : 'Create Deal'}
                   </>
                 )}
               </Button>

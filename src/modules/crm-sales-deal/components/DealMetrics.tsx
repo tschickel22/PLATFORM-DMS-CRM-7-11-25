@@ -2,15 +2,33 @@ import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { DealMetrics as DealMetricsType, StageConversionRate } from '../types'
-import { formatCurrency } from '@/lib/utils'
 import { mockCrmSalesDeal } from '@/mocks/crmSalesDealMock'
 import { TrendingUp, TrendingDown, DollarSign, Target, Clock, BarChart3 } from 'lucide-react'
 
 interface DealMetricsProps {
-  // Props can be defined here if needed
+  deals: any[]
+  loading: boolean
 }
 
-export function DealMetrics(props: DealMetricsProps) {
+export function DealMetrics({ deals, loading }: DealMetricsProps) {
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map(i => (
+          <Card key={i}>
+            <CardContent className="pt-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   const { tenant } = useTenant()
   
   // Use tenant metrics if available, otherwise fallback to mock data
