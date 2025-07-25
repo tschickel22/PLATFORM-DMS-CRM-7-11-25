@@ -11,7 +11,81 @@ export const mockDelivery = {
   ],
   driverNames: ['John Smith', 'Maria Lopez', 'Dan Cooper'],
   defaultETAs: ['9:00 AM', '12:00 PM', '3:00 PM'],
-  photoInstructions: ['Front view', 'Side view', 'Setup complete', 'Interior']
+  photoInstructions: ['Front view', 'Side view', 'Setup complete', 'Interior'],
+
+  // Sample deliveries for fallback
+  sampleDeliveries: [
+    {
+      id: 'del-001',
+      customer_id: 'cust-001',
+      customer_name: 'John Smith',
+      customer_email: 'john.smith@email.com',
+      customer_phone: '(555) 123-4567',
+      vehicle_id: 'vh-001',
+      vehicle_info: '2023 Forest River Cherokee 274RK',
+      status: 'Scheduled',
+      delivery_type: 'Home Delivery',
+      scheduled_date: '2024-02-15T10:00:00Z',
+      address: '123 Main St',
+      city: 'Anytown',
+      state: 'CA',
+      zip_code: '12345',
+      driver_name: 'John Smith',
+      eta: '10:00 AM',
+      notes: 'Customer prefers morning delivery',
+      checklist_items: ['VIN matched', 'Electric Connected'],
+      photos: [],
+      created_at: '2024-01-10T09:30:00Z',
+      updated_at: '2024-01-15T14:30:00Z'
+    },
+    {
+      id: 'del-002',
+      customer_id: 'cust-002',
+      customer_name: 'Maria Rodriguez',
+      customer_email: 'maria.rodriguez@email.com',
+      customer_phone: '(555) 987-6543',
+      vehicle_id: 'vh-002',
+      vehicle_info: '2024 Keystone Montana 3761FL',
+      status: 'In Transit',
+      delivery_type: 'RV Park Delivery',
+      scheduled_date: '2024-02-16T14:00:00Z',
+      address: '456 Oak Ave',
+      city: 'Springfield',
+      state: 'TX',
+      zip_code: '54321',
+      driver_name: 'Maria Lopez',
+      eta: '2:00 PM',
+      notes: 'RV park delivery - contact office first',
+      checklist_items: ['VIN matched', 'Water Connected', 'Skirting Installed'],
+      photos: [],
+      created_at: '2024-01-12T11:15:00Z',
+      updated_at: '2024-01-18T16:45:00Z'
+    },
+    {
+      id: 'del-003',
+      customer_id: 'cust-003',
+      customer_name: 'David Johnson',
+      customer_email: 'david.johnson@email.com',
+      customer_phone: '(555) 234-5678',
+      vehicle_id: 'vh-003',
+      vehicle_info: '2022 Grand Design Solitude 310GK',
+      status: 'Delivered',
+      delivery_type: 'Home Delivery',
+      scheduled_date: '2024-01-20T09:00:00Z',
+      delivered_date: '2024-01-20T11:30:00Z',
+      address: '789 Pine St',
+      city: 'Riverside',
+      state: 'FL',
+      zip_code: '67890',
+      driver_name: 'Dan Cooper',
+      eta: '9:00 AM',
+      notes: 'Delivery completed successfully',
+      checklist_items: ['VIN matched', 'Electric Connected', 'Water Connected', 'Walkthrough Completed', 'Customer Signed'],
+      photos: ['/mock/delivery-photo-1.jpg', '/mock/delivery-photo-2.jpg'],
+      created_at: '2024-01-15T08:20:00Z',
+      updated_at: '2024-01-20T11:30:00Z'
+    }
+  ]
 }
 
 export default mockDelivery
