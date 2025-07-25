@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { CRMContact } from '@/types'
-import { useContacts } from '@/hooks/useCrmSupabase'
 import { useContacts, useDeals } from '@/hooks/useCrmSupabase'
 import { useLeadManagement } from './hooks/useLeadManagement'
 import { LeadIntakeFormBuilder } from './components/LeadIntakeForm'

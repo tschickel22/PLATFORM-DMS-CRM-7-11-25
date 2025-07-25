@@ -16,7 +16,6 @@ interface LeadIntakeFormProps {
 
 export function LeadIntakeFormBuilder({ onClose, onSuccess }: LeadIntakeFormProps) {
   const { createContact } = useContacts()
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<CRMContact>>({
     first_name: '',
