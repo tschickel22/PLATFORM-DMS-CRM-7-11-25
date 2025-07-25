@@ -648,40 +648,34 @@ function FinanceApplicationDashboard() {
           {loading ? (
             <span className="flex items-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-              Loading finance applications from Supabase...
+              Connecting to Supabase finance applications...
+            </span>
+          ) : !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
+            <span>
+              ⚙️ <strong>Configuration Required:</strong> Supabase environment variables not set. 
+              {usingFallback ? 'Displaying demo data.' : 'No data available.'}
+              <code className="ml-2 text-xs">
+                VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING'}, 
+                VITE_SUPABASE_ANON_KEY: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'}
+              </code>
             </span>
           ) : usingFallback ? (
             <span>
-              📊 <strong>Demo Mode:</strong> Displaying sample finance applications. 
-              Live Supabase data will be available when configured.
+              📊 <strong>Demo Mode:</strong> Supabase configured but using fallback data. 
               <code className="ml-2 text-xs">
-                Tables: finance_applications ({supabaseStatus.applications.error ? `Error: ${supabaseStatus.applications.error}` : 'No connection'}), 
-                application_templates ({supabaseStatus.templates.error ? `Error: ${supabaseStatus.templates.error}` : 'No connection'})
+                Applications: {supabaseStatus.applications.error || 'Connection issue'}, 
+                Templates: {supabaseStatus.templates.error || 'Connection issue'}
               </code>
             </span>
           ) : (
             <span>
-              ✅ <strong>Live Data:</strong> Connected to Supabase finance applications. 
+              ✅ <strong>Live Data:</strong> Connected to Supabase successfully. 
               <code className="ml-2 text-xs">
-                Tables: finance_applications ({supabaseStatus.applications.count}), 
+                Applications: {supabaseStatus.applications.count}, 
                 application_templates ({supabaseStatus.templates.count})
               </code>
-              <span className="ml-2 text-xs text-orange-600">[Read-Only Mode - Phase 1]</span>
             </span>
           )}
-          {/* Debug Panel for Troubleshooting */}
-          <details className="mt-2">
-            <summary className="text-xs cursor-pointer">🔍 Debug Info</summary>
-            <div className="mt-2 text-xs space-y-1">
-              <div>Environment: {import.meta.env.MODE}</div>
-              <div>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Not Set'}</div>
-              <div>Supabase Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not Set'}</div>
-              <div>Applications Status: {supabaseStatus.applications.connected ? '✅ Connected' : '❌ Failed'}</div>
-              <div>Templates Status: {supabaseStatus.templates.connected ? '✅ Connected' : '❌ Failed'}</div>
-              <div>Using Fallback: {usingFallback ? '✅ Yes' : '❌ No'}</div>
-              <div>Loading: {loading ? '✅ Yes' : '❌ No'}</div>
-            </div>
-          </details>
         </AlertDescription>
       </Alert>
       {/* Page Header */}
@@ -831,14 +825,14 @@ function FinanceApplicationDashboard() {
                 {!loading && (
                   <div className="text-xs text-muted-foreground mb-4 p-2 bg-muted/20 rounded">
                     <strong>Debug Info:</strong> 
-                    Total: {applications.length}, 
+                    Supabase Connected: {supabaseStatus.applications.connected ? 'Yes' : 'No'}, 
+                    Total Applications: {applications.length}, 
                     Filtered: {filteredApplications.length}, 
-                    Using Fallback: {usingFallback ? 'Yes' : 'No'}, 
-                    Loading: {loading ? 'Yes' : 'No'}
+                    Data Source: {usingFallback ? 'Mock Data' : 'Supabase'}
                   </div>
                 )}
                 
-                {!loading && Array.isArray(filteredApplications) && filteredApplications.map((application) => {
+                {!loading && Array.isArray(filteredApplications) && filteredApplications.length > 0 && filteredApplications.map((application) => {
                   // Safety checks for application data
                   if (!application || !application.id) {
                     console.warn('⚠️ [Finance Applications] Skipping invalid application:', application)
@@ -903,15 +897,20 @@ function FinanceApplicationDashboard() {
                 {!loading && filteredApplications.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    {applications.length === 0 && !usingFallback ? (
+                    {!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
                       <>
-                        <p>No finance applications found in database</p>
-                        <p className="text-sm">Applications will appear here when they are added to the system</p>
+                        <p>Supabase Configuration Required</p>
+                        <p className="text-sm">Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables</p>
                       </>
-                    ) : applications.length === 0 && usingFallback ? (
+                    ) : supabaseStatus.applications.connected && applications.length === 0 ? (
                       <>
-                        <p>No demo applications available</p>
-                        <p className="text-sm">Check Supabase connection for live data</p>
+                        <p>No finance applications found</p>
+                        <p className="text-sm">Applications will appear here when they are added to the database</p>
+                      </>
+                    ) : !supabaseStatus.applications.connected ? (
+                      <>
+                        <p>Unable to connect to Supabase</p>
+                        <p className="text-sm">Error: {supabaseStatus.applications.error}</p>
                       </>
                     ) : (
                       <>
@@ -919,11 +918,6 @@ function FinanceApplicationDashboard() {
                         <p className="text-sm">Try adjusting your search or filters</p>
                       </>
                     )}
-                    <div className="mt-4 text-xs text-muted-foreground">
-                      <p>Data Source: {usingFallback ? 'Mock Data (Fallback)' : 'Supabase Database'}</p>
-                      <p>Total Applications: {applications.length}</p>
-                      <p>Raw Applications Array: {JSON.stringify(applications.slice(0, 1), null, 2)}</p>
-                    </div>
                   </div>
                 )}
               </div>

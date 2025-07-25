@@ -9,6 +9,7 @@ export function useFinanceApplications() {
   const [templates, setTemplates] = useState<ApplicationTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [usingFallback, setUsingFallback] = useState(false)
+  const [connectionAttempted, setConnectionAttempted] = useState(false)
   const [supabaseStatus, setSupabaseStatus] = useState<{
     applications: { connected: boolean; error?: string; count: number }
     templates: { connected: boolean; error?: string; count: number }
@@ -21,19 +22,28 @@ export function useFinanceApplications() {
   // Load data from Supabase on mount
   useEffect(() => {
     console.log('🔄 [Finance Applications] Starting data load from Supabase...')
-    console.log('📊 [Finance Applications] Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not Set')
-    console.log('🔑 [Finance Applications] Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not Set')
+    console.log('📊 [Finance Applications] Supabase URL:', import.meta.env.VITE_SUPABASE_URL || 'NOT_SET')
+    console.log('🔑 [Finance Applications] Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT_SET')
     
-    // Add delay to ensure Sentry errors don't block rendering
+    setConnectionAttempted(true)
+    
     const loadData = async () => {
       try {
         await Promise.all([loadApplications(), loadTemplates()])
       } catch (error) {
         console.error('🚨 [Finance Applications] Critical error during data load:', error)
-        // Ensure fallback is activated even on critical errors
-        setApplications(mockFinanceApplications.sampleApplications)
-        setTemplates(mockFinanceApplications.defaultTemplates)
-        setUsingFallback(true)
+        // Only use fallback if Supabase is not configured
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          console.log('🔄 [Finance Applications] Using fallback due to missing Supabase config')
+          setApplications(mockFinanceApplications.sampleApplications)
+          setTemplates(mockFinanceApplications.defaultTemplates)
+          setUsingFallback(true)
+        } else {
+          console.log('🔄 [Finance Applications] Supabase configured but failed - keeping empty state')
+          setApplications([])
+          setTemplates([])
+          setUsingFallback(false)
+        }
         setLoading(false)
       }
     }
@@ -43,43 +53,34 @@ export function useFinanceApplications() {
 
   const loadApplications = async () => {
     console.log('📋 [Finance Applications] Fetching applications from Supabase...')
-    console.log('🔍 [Finance Applications] Querying table: finance_applications')
-    console.log('📝 [Finance Applications] Expected columns: id, customer_id, customer_name, customer_email, customer_phone, template_id, status, data, uploaded_files, history, fraud_check_status, created_at, updated_at, submitted_at, reviewed_at, reviewed_by, notes, admin_notes')
+    
+    // Check if Supabase is configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.log('⚠️ [Finance Applications] Supabase not configured, using fallback')
+      setSupabaseStatus(prev => ({
+        ...prev,
+        applications: { connected: false, error: 'Supabase not configured', count: 0 }
+      }))
+      throw new Error('Supabase not configured')
+    }
     
     try {
-      console.log('⏳ [Finance Applications] Executing Supabase query...')
+      console.log('⏳ [Finance Applications] Executing Supabase query for finance_applications...')
       const { data, error } = await supabase
         .from('finance_applications')
         .select('*')
         .order('created_at', { ascending: false })
 
-      console.log('📊 [Finance Applications] Supabase response received')
-      console.log('❌ [Finance Applications] Error:', error)
-      console.log('📄 [Finance Applications] Data:', data)
-      console.log('📊 [Finance Applications] Data type:', typeof data)
-      console.log('📊 [Finance Applications] Data length:', data?.length)
-      console.log('🔍 [Finance Applications] Raw Supabase response structure:', JSON.stringify(data, null, 2))
-      
-      // Log each application's structure
-      if (data && Array.isArray(data) && data.length > 0) {
-        console.log('📋 [Finance Applications] First application structure:')
-        console.log('  - ID:', data[0].id)
-        console.log('  - Customer ID:', data[0].customer_id)
-        console.log('  - Customer Name:', data[0].customer_name)
-        console.log('  - Customer Email:', data[0].customer_email)
-        console.log('  - Template ID:', data[0].template_id)
-        console.log('  - Status:', data[0].status)
-        console.log('  - Created At:', data[0].created_at)
-        console.log('  - All fields:', Object.keys(data[0]))
-      }
+      console.log('📊 [Finance Applications] Supabase response:', { 
+        error: error?.message || null, 
+        dataType: typeof data, 
+        dataLength: Array.isArray(data) ? data.length : 'not array',
+        isNull: data === null,
+        isUndefined: data === undefined
+      })
 
       if (error) {
-        console.error('❌ [Finance Applications] Supabase error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
+        console.error('❌ [Finance Applications] Supabase error:', error.message)
         setSupabaseStatus(prev => ({
           ...prev,
           applications: { connected: false, error: error.message, count: 0 }
@@ -87,48 +88,42 @@ export function useFinanceApplications() {
         throw error
       }
 
-      if (data === null || data === undefined) {
-        console.warn('⚠️ [Finance Applications] Supabase returned null data')
+      if (!Array.isArray(data)) {
+        console.warn('⚠️ [Finance Applications] Supabase returned non-array data:', typeof data)
         setSupabaseStatus(prev => ({
           ...prev,
-          applications: { connected: false, error: 'Null data returned', count: 0 }
+          applications: { connected: false, error: 'Invalid data format', count: 0 }
         }))
-        throw new Error('No data returned from Supabase')
+        throw new Error('Invalid data format from Supabase')
       }
 
-      // Handle empty array as valid response (not an error)
-      if (Array.isArray(data) && data.length === 0) {
-        console.log('📭 [Finance Applications] Supabase returned empty array - no applications in database')
-        setSupabaseStatus(prev => ({
-          ...prev,
-          applications: { connected: true, error: undefined, count: 0 }
-        }))
-        setApplications([])
-        setUsingFallback(false)
-        setLoading(false)
-        return
-      }
-
-      console.log('✅ [Finance Applications] Supabase fetch successful:', data.length, 'applications')
+      // Empty array is valid - don't use fallback
+      console.log(`✅ [Finance Applications] Supabase connected successfully - ${data.length} applications found`)
       
       setSupabaseStatus(prev => ({
         ...prev,
         applications: { connected: true, error: undefined, count: data.length }
       }))
       
-      // Transform Supabase data to application format
-      const transformedApplications: FinanceApplication[] = data.map((row, index) => {
-        console.log(`🔄 [Finance Applications] Transforming application ${index + 1}:`, {
-          id: row.id,
-          customer_id: row.customer_id,
-          customer_name: row.customer_name || 'Unnamed Customer',
-          customer_email: row.customer_email,
-          status: row.status,
-          template_id: row.template_id
-        })
-        
-        return {
-        id: row.id,
+      if (data.length === 0) {
+        console.log('📭 [Finance Applications] Database is empty - showing empty state')
+        setApplications([])
+        setUsingFallback(false)
+        return
+      }
+
+      // Log sample data structure
+      console.log('📋 [Finance Applications] Sample application:', {
+        id: data[0]?.id,
+        customer_name: data[0]?.customer_name,
+        status: data[0]?.status,
+        template_id: data[0]?.template_id,
+        created_at: data[0]?.created_at
+      })
+
+      // Transform data safely
+      const transformedApplications: FinanceApplication[] = data.map((row) => ({
+        id: row.id || `app-${Date.now()}-${Math.random()}`,
         customerId: row.customer_id || '',
         customerName: row.customer_name || 'Unnamed Customer',
         customerEmail: row.customer_email || '',
@@ -136,75 +131,82 @@ export function useFinanceApplications() {
         templateId: row.template_id || '',
         status: row.status || 'draft',
         data: row.data || {},
-        uploadedFiles: row.uploaded_files || [],
-        history: row.history || [],
+        uploadedFiles: Array.isArray(row.uploaded_files) ? row.uploaded_files : [],
+        history: Array.isArray(row.history) ? row.history : [],
         fraudCheckStatus: row.fraud_check_status || 'pending',
         createdAt: row.created_at || new Date().toISOString(),
         updatedAt: row.updated_at || new Date().toISOString(),
-        submittedAt: row.submitted_at,
-        reviewedAt: row.reviewed_at,
-        reviewedBy: row.reviewed_by,
+        submittedAt: row.submitted_at || undefined,
+        reviewedAt: row.reviewed_at || undefined,
+        reviewedBy: row.reviewed_by || undefined,
         notes: row.notes || '',
         adminNotes: row.admin_notes || ''
-        }
-      })
+      }))
 
-      console.log('🔄 [Finance Applications] Transformed applications:', transformedApplications.length)
-      console.log('📋 [Finance Applications] First transformed application:', transformedApplications[0])
+      console.log(`🔄 [Finance Applications] Transformed ${transformedApplications.length} applications`)
       setApplications(transformedApplications)
       setUsingFallback(false)
+      
     } catch (error) {
-      console.error('💥 [Finance Applications] Supabase fetch failed, activating fallback:', error)
-      console.log('🔄 [Finance Applications] Using mock data fallback')
-      console.log('📊 [Finance Applications] Mock applications count:', mockFinanceApplications.sampleApplications.length)
+      console.error('💥 [Finance Applications] Supabase fetch failed:', error)
       
-      // Use mock data as fallback
-      setApplications(mockFinanceApplications.sampleApplications)
-      setUsingFallback(true)
-      
-      setSupabaseStatus(prev => ({
-        ...prev,
-        applications: { 
-          connected: false, 
-          error: error instanceof Error ? error.message : 'Unknown error', 
-          count: mockFinanceApplications.sampleApplications.length 
-        }
-      }))
-      
-      toast({
-        title: 'Using Demo Data',
-        description: 'Connected to demo data. Live data will be available when Supabase is configured.',
-      })
-    } finally {
-      setLoading(false)
+      // Only use fallback if Supabase is not configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.log('🔄 [Finance Applications] Using mock data fallback - Supabase not configured')
+        setApplications(mockFinanceApplications.sampleApplications)
+        setUsingFallback(true)
+        setSupabaseStatus(prev => ({
+          ...prev,
+          applications: { 
+            connected: false, 
+            error: 'Supabase not configured', 
+            count: mockFinanceApplications.sampleApplications.length 
+          }
+        }))
+      } else {
+        console.log('🔄 [Finance Applications] Supabase configured but failed - keeping empty state')
+        setApplications([])
+        setUsingFallback(false)
+        setSupabaseStatus(prev => ({
+          ...prev,
+          applications: { 
+            connected: false, 
+            error: error instanceof Error ? error.message : 'Connection failed', 
+            count: 0 
+          }
+        }))
+      }
     }
   }
 
   const loadTemplates = async () => {
     console.log('📋 [Finance Applications] Fetching templates from Supabase...')
-    console.log('🔍 [Finance Applications] Querying table: application_templates')
-    console.log('📝 [Finance Applications] Expected columns: id, name, description, sections, is_active, created_at, updated_at')
+    
+    // Check if Supabase is configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.log('⚠️ [Finance Applications] Supabase not configured for templates, using fallback')
+      setSupabaseStatus(prev => ({
+        ...prev,
+        templates: { connected: false, error: 'Supabase not configured', count: 0 }
+      }))
+      throw new Error('Supabase not configured')
+    }
     
     try {
-      console.log('⏳ [Finance Applications] Executing templates Supabase query...')
+      console.log('⏳ [Finance Applications] Executing Supabase query for application_templates...')
       const { data, error } = await supabase
         .from('application_templates')
         .select('*')
         .order('created_at', { ascending: false })
 
-      console.log('📊 [Finance Applications] Templates Supabase response received')
-      console.log('❌ [Finance Applications] Templates Error:', error)
-      console.log('📄 [Finance Applications] Templates Data:', data)
-      console.log('📊 [Finance Applications] Templates Data type:', typeof data)
-      console.log('📊 [Finance Applications] Templates Data length:', data?.length)
+      console.log('📊 [Finance Applications] Templates response:', { 
+        error: error?.message || null, 
+        dataType: typeof data, 
+        dataLength: Array.isArray(data) ? data.length : 'not array'
+      })
 
       if (error) {
-        console.error('❌ [Finance Applications] Templates Supabase error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
+        console.error('❌ [Finance Applications] Templates Supabase error:', error.message)
         setSupabaseStatus(prev => ({
           ...prev,
           templates: { connected: false, error: error.message, count: 0 }
@@ -212,57 +214,66 @@ export function useFinanceApplications() {
         throw error
       }
 
-      if (!data) {
-        console.warn('⚠️ [Finance Applications] Templates Supabase returned null data')
+      if (!Array.isArray(data)) {
+        console.warn('⚠️ [Finance Applications] Templates returned non-array data:', typeof data)
         setSupabaseStatus(prev => ({
           ...prev,
-          templates: { connected: false, error: 'Null data returned', count: 0 }
+          templates: { connected: false, error: 'Invalid data format', count: 0 }
         }))
-        throw new Error('No template data returned from Supabase')
+        throw new Error('Invalid template data format')
       }
 
-      console.log('✅ [Finance Applications] Templates Supabase fetch successful:', data.length, 'templates')
-      console.log('📋 [Finance Applications] Sample template data:', data[0])
+      console.log(`✅ [Finance Applications] Templates connected successfully - ${data.length} templates found`)
       
       setSupabaseStatus(prev => ({
         ...prev,
         templates: { connected: true, error: undefined, count: data.length }
       }))
 
-      // Transform Supabase data to template format
-      const transformedTemplates: ApplicationTemplate[] = (data || []).map(row => ({
-        id: row.id,
+      // Transform data safely
+      const transformedTemplates: ApplicationTemplate[] = data.map(row => ({
+        id: row.id || `template-${Date.now()}-${Math.random()}`,
         name: row.name || 'Unnamed Template',
         description: row.description || '',
-        sections: row.sections || [],
+        sections: Array.isArray(row.sections) ? row.sections : [],
         isActive: row.is_active !== undefined ? row.is_active : true,
         createdAt: row.created_at || new Date().toISOString(),
         updatedAt: row.updated_at || new Date().toISOString()
       }))
 
-      console.log('🔄 [Finance Applications] Transformed templates:', transformedTemplates.length)
+      console.log(`🔄 [Finance Applications] Transformed ${transformedTemplates.length} templates`)
       setTemplates(transformedTemplates)
+      setUsingFallback(false)
+      
     } catch (error) {
-      console.error('💥 [Finance Applications] Templates Supabase fetch failed, activating fallback:', error)
-      console.log('🔄 [Finance Applications] Using mock templates fallback')
-      console.log('📊 [Finance Applications] Mock templates count:', mockFinanceApplications.defaultTemplates.length)
+      console.error('💥 [Finance Applications] Templates fetch failed:', error)
       
-      // Use mock data as fallback
-      setTemplates(mockFinanceApplications.defaultTemplates)
-      
-      setSupabaseStatus(prev => ({
-        ...prev,
-        templates: { 
-          connected: false, 
-          error: error instanceof Error ? error.message : 'Unknown error', 
-          count: mockFinanceApplications.defaultTemplates.length 
-        }
-      }))
-      
-      toast({
-        title: 'Using Demo Templates',
-        description: 'Connected to demo templates. Live data will be available when Supabase is configured.',
-      })
+      // Only use fallback if Supabase is not configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.log('🔄 [Finance Applications] Using mock templates fallback - Supabase not configured')
+        setTemplates(mockFinanceApplications.defaultTemplates)
+        setUsingFallback(true)
+        setSupabaseStatus(prev => ({
+          ...prev,
+          templates: { 
+            connected: false, 
+            error: 'Supabase not configured', 
+            count: mockFinanceApplications.defaultTemplates.length 
+          }
+        }))
+      } else {
+        console.log('🔄 [Finance Applications] Supabase configured but failed - keeping empty templates')
+        setTemplates([])
+        setUsingFallback(false)
+        setSupabaseStatus(prev => ({
+          ...prev,
+          templates: { 
+            connected: false, 
+            error: error instanceof Error ? error.message : 'Connection failed', 
+            count: 0 
+          }
+        }))
+      }
     }
   }
 
