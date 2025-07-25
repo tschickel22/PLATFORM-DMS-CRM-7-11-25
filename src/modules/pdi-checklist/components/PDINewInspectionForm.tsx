@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { X, Save } from 'lucide-react'
 import { PdiChecklist, ChecklistItem } from '@/types'
-
+import PDIInspectionForm from './PDIInspectionForm'
 interface PDINewInspectionFormProps {
   onSave: (data: Partial<PdiChecklist>) => void
   onCancel: () => void

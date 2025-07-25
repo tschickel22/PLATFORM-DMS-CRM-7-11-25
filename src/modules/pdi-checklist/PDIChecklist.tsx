@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { usePdiChecklists } from '@/hooks/usePdiSupabase'
 import { PDIInspectionList } from './components/PDIInspectionList'
-import { PDIInspectionForm } from './components/PDIInspectionForm'
+import PDIInspectionForm from './components/PDIInspectionForm'
 import { PDINewInspectionForm } from './components/PDINewInspectionForm'
 import { PdiChecklist } from '@/types'
 
