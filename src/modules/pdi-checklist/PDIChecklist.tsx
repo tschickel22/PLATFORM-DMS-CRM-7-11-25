@@ -21,7 +21,7 @@ import { PdiChecklist } from '@/types'
 function PDIChecklistDashboard() {
   const {
     checklists,
-  const { pdiChecklists, pdiSettings, loading, usingFallback, supabaseStatus, createChecklist, updateChecklist, deleteChecklist } = usePdiSupabase()
+    loading,
     usingFallback,
     supabaseStatus,
     createChecklist,
@@ -144,14 +144,14 @@ function PDIChecklistDashboard() {
             <span>
               📊 <strong>Demo Mode:</strong> Supabase configured but using fallback data. 
               <code className="ml-2 text-xs">
-                PDI Checklists: {supabaseStatus.error || 'Connection issue'}
+                PDI Checklists: {supabaseStatus.checklists.error || 'Connection issue'}
               </code>
             </span>
           ) : (
             <span>
               ✅ <strong>Live Data:</strong> Connected to Supabase successfully. 
               <code className="ml-2 text-xs">
-                pdi_checklists ({supabaseStatus.count})
+                pdi_checklists ({supabaseStatus.checklists.count})
               </code>
             </span>
           )}
@@ -292,25 +292,6 @@ function PDIChecklistDashboard() {
                 onDeleteInspection={handleDeleteInspection}
                 loading={loading}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>PDI Settings</CardTitle>
-              <CardDescription>
-                Configure PDI checklist settings and templates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Settings configuration coming soon
-                </p>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
