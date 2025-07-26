@@ -579,33 +579,6 @@ export function usePdiSupabase() {
   }
 
   const updatePdiSetting = async (id: string, updates: Partial<PdiSetting>) => {
-    // This function is not currently used in the PDI Checklist UI, but adding company_id for consistency
-    try {
-      const updateData = {
-        ...updates,
-        updated_at: new Date().toISOString()
-      }
-      const { data, error } = await supabase
-        .from('pdi_settings')
-        .update(updateData)
-        .eq('company_id', companyId) // Ensure company_id is used in the filter
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setPdiSettings(prev => prev.map(setting => 
-        setting.id === id ? data : setting
-      ))
-    } catch (error) {
-      console.error('Error updating PDI setting:', error)
-      throw error
-    }
-  }
-
-  const deletePdiSetting = async (id: string) => {
-    // This function is not currently used in the PDI Checklist UI, but adding company_id for consistency
     try {
       const { error } = await supabase
         .from('pdi_settings')
