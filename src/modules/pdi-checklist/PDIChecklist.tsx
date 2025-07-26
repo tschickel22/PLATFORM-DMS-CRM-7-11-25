@@ -23,7 +23,9 @@ function PDIChecklistDashboard() {
     supabaseStatus,
     createChecklist,
     updateChecklist,
-    deleteChecklist
+    deleteChecklist,
+    loading,
+    usingFallback
   } = usePdiSupabase()
   
   const [activeTab, setActiveTab] = useState('inspections')
