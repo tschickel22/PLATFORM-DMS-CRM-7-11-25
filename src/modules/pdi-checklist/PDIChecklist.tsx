@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { PDIInspectionList } from './components/PDIInspectionList'
-import PDIInspectionForm from './components/PDIInspectionForm'
 import PDISettings from './PDISettings'
 import { PDINewInspectionForm } from './components/PDINewInspectionForm'
 import { PdiChecklist } from '@/types'
@@ -24,10 +23,7 @@ function PDIChecklistDashboard() {
     pdiSettings,
     loading,
     usingFallback,
-    supabaseStatus,
-    createChecklist,
-    updateChecklist,
-    deleteChecklist
+    supabaseStatus
   } = usePdiSupabase()
   
   const [activeTab, setActiveTab] = useState('inspections')
@@ -298,7 +294,7 @@ function PDIChecklistDashboard() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
-          <PDISettings />
+        <Route path="/settings" element={<div>PDI Settings - Coming Soon</div>} />
         </TabsContent>
       </Tabs>
     </div>
