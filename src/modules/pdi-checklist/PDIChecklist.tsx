@@ -15,6 +15,7 @@ import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { PDIInspectionList } from './components/PDIInspectionList'
 import PDISettings from './PDISettings'
 import { PDINewInspectionForm } from './components/PDINewInspectionForm'
+import { PDIInspectionForm } from './components/PDIInspectionForm'
 import { PdiChecklist } from '@/types'
 
 function PDIChecklistDashboard() {
@@ -23,7 +24,10 @@ function PDIChecklistDashboard() {
     pdiSettings,
     loading,
     usingFallback,
-    supabaseStatus
+    supabaseStatus,
+    createChecklist,
+    updateChecklist,
+    deleteChecklist
   } = usePdiSupabase()
   
   const [activeTab, setActiveTab] = useState('inspections')
@@ -297,7 +301,6 @@ function PDIChecklistDashboard() {
           <div>PDI Settings - Coming Soon</div>
         </TabsContent>
       </Tabs>
-    </Routes>
     </div>
   )
 }
