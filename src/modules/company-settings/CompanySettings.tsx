@@ -446,9 +446,11 @@ function CompanySettingsPage() {
 
 export default function CompanySettings() {
   return (
-    <Routes>
-      <Route path="/" element={<CompanySettingsPage />} />
-      <Route path="/*" element={<CompanySettingsPage />} />
-    </Routes>
+    <div className="space-y-8">
+      <Routes>
+        <Route path="/" element={<CompanySettingsPage />} />
+        <Route path="/*" element={<CompanySettingsPage />} />
+      </Routes>
+    </div>
   )
 }
