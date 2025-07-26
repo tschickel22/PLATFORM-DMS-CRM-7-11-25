@@ -120,7 +120,6 @@ function PDIChecklistDashboard() {
 
   return (
     <div className="space-y-6">
-      <Routes>
       {/* Supabase Status Banner */}
       <Alert>
         <AlertDescription>
@@ -295,7 +294,7 @@ function PDIChecklistDashboard() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
-        <Route path="/settings" element={<div>PDI Settings - Coming Soon</div>} />
+          <div>PDI Settings - Coming Soon</div>
         </TabsContent>
       </Tabs>
     </div>
