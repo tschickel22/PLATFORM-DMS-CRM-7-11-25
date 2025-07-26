@@ -15,7 +15,6 @@ import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { PDIInspectionList } from './components/PDIInspectionList'
 import { PDINewInspectionForm } from './components/PDINewInspectionForm'
 import { PDIInspectionForm } from './components/PDIInspectionForm'
-import { PDIInspectionForm } from './components/PDIInspectionForm'
 import { PdiChecklist } from '@/types'
 
 function PDIChecklistDashboard() {
