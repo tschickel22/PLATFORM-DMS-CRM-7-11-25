@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
-import { usePdiChecklists } from '@/hooks/usePdiSupabase'
+import { usePdiSupabase } from '@/hooks/usePdiSupabase'
 import { PDIInspectionList } from './components/PDIInspectionList'
 import PDIInspectionForm from './components/PDIInspectionForm'
 import PDISettings from './PDISettings'
@@ -20,14 +20,15 @@ import { PdiChecklist } from '@/types'
 
 function PDIChecklistDashboard() {
   const {
-    checklists,
+    pdiChecklists,
+    pdiSettings,
     loading,
     usingFallback,
     supabaseStatus,
     createChecklist,
     updateChecklist,
     deleteChecklist
-  } = usePdiChecklists()
+  } = usePdiSupabase()
   
   const [activeTab, setActiveTab] = useState('inspections')
   const [searchQuery, setSearchQuery] = useState('')
@@ -43,7 +44,7 @@ function PDIChecklistDashboard() {
 
   // Filter inspections based on search and filters
   const filteredInspections = React.useMemo(() => {
-    let currentInspections = checklists
+    let currentInspections = pdiChecklists
 
     // Search filter
     if (searchQuery) {
@@ -69,17 +70,17 @@ function PDIChecklistDashboard() {
     }
 
     return currentInspections
-  }, [checklists, searchQuery, statusFilter, technicianFilter])
+  }, [pdiChecklists, searchQuery, statusFilter, technicianFilter])
 
   // Calculate stats
   const stats = React.useMemo(() => {
     return {
-      total: checklists.length,
-      inProgress: checklists.filter(i => i.status === 'in_progress').length,
-      completed: checklists.filter(i => i.status === 'complete').length,
-      failed: checklists.filter(i => i.status === 'failed').length
+      total: pdiChecklists.length,
+      inProgress: pdiChecklists.filter(i => i.status === 'in_progress').length,
+      completed: pdiChecklists.filter(i => i.status === 'complete').length,
+      failed: pdiChecklists.filter(i => i.status === 'failed').length
     }
-  }, [checklists])
+  }, [pdiChecklists])
 
   const handleNewInspection = () => {
     setShowNewInspectionForm(true)
