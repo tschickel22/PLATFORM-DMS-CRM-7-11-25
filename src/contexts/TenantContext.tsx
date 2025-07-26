@@ -38,7 +38,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } else {
       // Fall back to mock tenant data
       const mockTenant: Tenant = {
-        id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        id: '11111111-1111-1111-1111-111111111111', // Use a valid UUID for mock tenant ID
         name: 'Demo RV Dealership',
         domain: 'demo.renterinsight.com',
         settings: {

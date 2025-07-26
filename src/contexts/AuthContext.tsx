@@ -62,8 +62,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: '1',
           email,
           name: 'Admin User',
-          role: UserRole.ADMIN,
-          tenantId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+          role: UserRole.ADMIN, // Default role for mock user
+          tenantId: '11111111-1111-1111-1111-111111111111', // Use a valid UUID for mock tenantId
           permissions: [
             { id: '1', name: 'All Access', resource: '*', action: '*' }
           ],

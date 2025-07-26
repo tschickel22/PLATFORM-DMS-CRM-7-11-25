@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useAuth } from '@/contexts/AuthContext'
-import { useToast } from '@/hooks/use-toast'
-import { mockPDI } from '@/mocks/pdiMock'
 import { PdiChecklist, PdiSetting } from '@/types'
+import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
+import { useValidatedCompanyId } from '@/utils/useValidatedCompanyId'
+import { mockPDI } from '@/mocks/pdiMock'
 
 // UUID validation regex
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -12,13 +13,16 @@ const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 export const usePdiChecklists = usePdiSupabase
 
 export function usePdiSupabase() {
-  const { session } = useAuth()
   const [checklists, setChecklists] = useState<PdiChecklist[]>([])
   const [pdiSettings, setPdiSettings] = useState<PdiSetting[]>([])
   const [connectionAttempted, setConnectionAttempted] = useState(false)
   const [usingFallback, setUsingFallback] = useState(false)
   const [loading, setLoading] = useState(true)
   const [settingsLoading, setSettingsLoading] = useState(false)
+
+  const { session } = useAuth()
+  const { companyId, isValid: isValidCompanyId } = useValidatedCompanyId(session)
+
   const [supabaseStatus, setSupabaseStatus] = useState<{
     checklists: { connected: boolean; error?: string; count: number }
     settings: { connected: boolean; error?: string; count: number }
@@ -47,34 +51,11 @@ export function usePdiSupabase() {
     setConnectionAttempted(true)
     
     const loadData = async () => {
-      // Get company ID from session with proper validation
-      const rawCompanyId = session?.user?.app_metadata?.company_id || '00000000-0000-0000-0000-000000000000';
-      const isValidCompanyId = uuidRegex.test(rawCompanyId);
-      const companyId = isValidCompanyId ? rawCompanyId : null;
-
-      if (!companyId) {
-        console.warn("[PDI Settings] Invalid companyId UUID. Skipping PDI settings load.");
-        setPdiSettings(mockPDI.sampleSettings);
-        setSupabaseStatus(prev => ({
-          ...prev,
-          settings: {
-            connected: false,
-            error: 'Invalid company ID format',
-            count: 0
-          }
-        }));
-        setLoading(false);
-        return;
-      }
-
       try {
-        await Promise.all([
-          loadChecklists(),
-          loadPdiSettings(companyId)
-        ])
+        await Promise.all([loadPdiChecklists(), loadPdiSettings()])
       } catch (error) {
-        console.error('🚨 [PDI Checklists] Critical error during data load:', error)
-        // Only use fallback if Supabase is not configured
+        console.error('🚨 [PDI Checklists] Critical error during initial data load:', error)
+        // Only use fallback if Supabase is not configured or if there's a critical error
         if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
           console.log('🔄 [PDI Checklists] Using fallback due to missing Supabase config')
           setChecklists(mockPDI.sampleInspections)
@@ -91,9 +72,20 @@ export function usePdiSupabase() {
     loadData()
   }, [session?.user?.app_metadata?.company_id])
 
-  const loadChecklists = async () => {
+  const loadPdiChecklists = async () => {
     console.log('📋 [PDI Checklists] Fetching checklists from Supabase...')
-    
+
+    if (!isValidCompanyId) {
+      console.warn('⚠️ [PDI Checklists] Invalid companyId. Using fallback data.')
+      setChecklists(mockPDI.sampleInspections as PdiChecklist[])
+      setUsingFallback(true)
+      setSupabaseStatus(prev => ({
+        ...prev,
+        checklists: { connected: false, error: 'Invalid company ID', count: mockPDI.sampleInspections.length }
+      }))
+      return
+    }
+
     // Check if Supabase is configured
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
       console.log('⚠️ [PDI Checklists] Supabase not configured, using fallback')
@@ -107,8 +99,9 @@ export function usePdiSupabase() {
     try {
       console.log('⏳ [PDI Checklists] Executing Supabase query for pdi_checklists...')
       const { data, error } = await supabase
-        .from('pdi_checklists')
+        .from('pdi_checklists') // Ensure this matches your table name
         .select('*')
+        .eq('company_id', companyId) // Filter by company_id
         .order('created_at', { ascending: false })
 
       console.log('📊 [PDI Checklists] Supabase response:', { 
@@ -212,11 +205,20 @@ export function usePdiSupabase() {
     }
   }
 
-  const loadPdiSettings = async (companyId: string) => {
-    console.log('📋 [PDI Settings] Loading settings for company:', companyId)
-    
-    setSettingsLoading(true)
-    
+  const loadPdiSettings = async () => {
+    console.log('📋 [PDI Settings] Fetching settings from Supabase...')
+
+    if (!isValidCompanyId) {
+      console.warn('⚠️ [PDI Settings] Invalid companyId. Using fallback settings.')
+      setPdiSettings(mockPDI.sampleSettings as PdiSetting[])
+      setUsingFallback(true)
+      setSupabaseStatus(prev => ({
+        ...prev,
+        settings: { connected: false, error: 'Invalid company ID', count: mockPDI.sampleSettings.length }
+      }))
+      return
+    }
+
     // Check if Supabase is configured
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
       console.log('⚠️ [PDI Settings] Supabase not configured, using fallback')
@@ -233,16 +235,11 @@ export function usePdiSupabase() {
     
     try {
       console.log('⏳ [PDI Settings] Executing Supabase query for pdi_settings...')
-      let query = supabase
-        .from('pdi_settings')
+      const { data, error } = await supabase
+        .from('pdi_settings') // Ensure this matches your table name
         .select('*')
+        .eq('company_id', companyId) // Filter by company_id
         .order('created_at', { ascending: false })
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId)
-      }
-      
-      const { data, error } = await query
 
       console.log('📊 [PDI Settings] Supabase response:', { 
         error: error?.message || null, 
@@ -409,32 +406,25 @@ export function usePdiSupabase() {
   }
 
   const createChecklist = async (data: Partial<PdiChecklist>): Promise<PdiChecklist> => {
-    const rawCompanyId = session?.user?.app_metadata?.company_id
-    const isValidCompanyId = uuidRegex.test(rawCompanyId)
-    const companyId = isValidCompanyId ? rawCompanyId : null
-    
-    if (!companyId) {
-      console.warn('⚠️ Invalid companyId. Cannot create PDI checklist.')
+    if (!isValidCompanyId) {
+      console.error('❌ [PDI Checklists] Cannot create checklist: Invalid company ID.')
       toast({
         title: 'Error',
-        description: 'Invalid company configuration. Please contact support.',
+        description: 'Cannot create checklist: Invalid company ID.',
         variant: 'destructive'
       })
       throw new Error('Invalid company ID')
     }
-
     try {
       const checklistData = {
-        vehicle_id: data.vehicle_id || '',
-        technician: data.technician || '',
-        status: data.status || 'Not Started',
-        checklist_data: data.checklist_data || []
+        ...data,
+        created_at: new Date().toISOString(),
+        company_id: companyId, // Ensure company_id is added
       }
 
-      // Insert into Supabase
       const { data: insertedData, error } = await supabase
         .from('pdi_checklists')
-        .insert([{ ...checklistData, ...(companyId && { company_id: companyId }) }])
+        .insert([checklistData])
         .select()
         .single()
 
@@ -469,39 +459,25 @@ export function usePdiSupabase() {
   }
 
   const updateChecklist = async (id: string, updates: Partial<PdiChecklist>) => {
-    const rawCompanyId = session?.user?.app_metadata?.company_id
-    const isValidCompanyId = uuidRegex.test(rawCompanyId)
-    const companyId = isValidCompanyId ? rawCompanyId : null
-    
-    if (!companyId) {
-      console.warn('⚠️ Invalid companyId. Cannot update PDI setting.')
+    if (!isValidCompanyId) {
+      console.error('❌ [PDI Checklists] Cannot update checklist: Invalid company ID.')
       toast({
         title: 'Error',
-        description: 'Invalid company configuration. Please contact support.',
+        description: 'Cannot update checklist: Invalid company ID.',
         variant: 'destructive'
       })
-      return
+      throw new Error('Invalid company ID')
     }
-
     try {
       const updateData = {
-        vehicle_id: updates.vehicle_id,
-        technician: updates.technician,
-        status: updates.status,
-        checklist_data: updates.checklist_data
+        ...updates,
+        updated_at: new Date().toISOString()
       }
 
-      // Remove undefined values
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key as keyof typeof updateData] === undefined) {
-          delete updateData[key as keyof typeof updateData]
-        }
-      })
-
-      // Update in Supabase
       const { data, error } = await supabase
         .from('pdi_checklists')
         .update(updateData)
+        .eq('company_id', companyId) // Ensure company_id is used in the filter
         .eq('id', id)
         .select()
         .single()
@@ -539,6 +515,15 @@ export function usePdiSupabase() {
   }
 
   const deleteChecklist = async (id: string) => {
+    if (!isValidCompanyId) {
+      console.error('❌ [PDI Checklists] Cannot delete checklist: Invalid company ID.')
+      toast({
+        title: 'Error',
+        description: 'Cannot delete checklist: Invalid company ID.',
+        variant: 'destructive'
+      })
+      throw new Error('Invalid company ID')
+    }
     try {
       // Delete from Supabase
       const { error } = await supabase
@@ -569,22 +554,76 @@ export function usePdiSupabase() {
     return checklists.find(checklist => checklist.id === id)
   }
 
-  const hookReturn = {
-    checklists,
-    loading,
-    settingsLoading,
-    usingFallback,
-    supabaseStatus,
-    pdiSettings,
-    createChecklist,
-    updateChecklist,
-    deleteChecklist,
-    getChecklistById,
-    loadChecklists,
-    loadPdiSettings,
-    updatePdiSetting,
-    getPdiSetting
+  const createPdiSetting = async (data: Partial<PdiSetting>): Promise<PdiSetting> => {
+    // This function is not currently used in the PDI Checklist UI, but adding company_id for consistency
+    try {
+      const settingData = {
+        ...data,
+        created_at: new Date().toISOString(),
+      }
+
+      const { data: insertedData, error } = await supabase
+        .from('pdi_settings')
+        .insert([settingData])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setPdiSettings(prev => [insertedData, ...prev])
+      return insertedData
+    } catch (error) {
+      console.error('Error creating PDI setting:', error)
+      throw error
+    }
   }
 
-  return hookReturn
+  const updatePdiSetting = async (id: string, updates: Partial<PdiSetting>) => {
+    // This function is not currently used in the PDI Checklist UI, but adding company_id for consistency
+    try {
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      const { data, error } = await supabase
+        .from('pdi_settings')
+        .update(updateData)
+        .eq('company_id', companyId) // Ensure company_id is used in the filter
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setPdiSettings(prev => prev.map(setting => 
+        setting.id === id ? data : setting
+      ))
+    } catch (error) {
+      console.error('Error updating PDI setting:', error)
+      throw error
+    }
+  }
+
+  const deletePdiSetting = async (id: string) => {
+    // This function is not currently used in the PDI Checklist UI, but adding company_id for consistency
+    try {
+      const { error } = await supabase
+        .from('pdi_settings')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setPdiSettings(prev => prev.filter(setting => setting.id !== id))
+    } catch (error) {
+      console.error('Error deleting PDI setting:', error)
+      throw error
+    }
+  }
+
+  return {
+    pdiChecklists: checklists, pdiSettings, loading, usingFallback, supabaseStatus, isValidCompanyId,
+    createChecklist, updateChecklist, deleteChecklist,
+    createPdiSetting, updatePdiSetting, deletePdiSetting
+  }
 }
