@@ -129,6 +129,7 @@ export function usePdiSupabase() {
         // If Supabase is connected but returns no data, show empty state
         setPdiChecklists([])
         setUsingFallback(false)
+        setLoading(false)
         return
       }
 
@@ -155,6 +156,7 @@ export function usePdiSupabase() {
       console.log(`🔄 [PDI Checklist] Transformed ${transformedChecklists.length} checklists`)
       setPdiChecklists(transformedChecklists)
       setUsingFallback(false)
+      setLoading(false)
       
     } catch (error) {
       console.error('💥 [PDI Checklist] Supabase fetch failed:', error)
@@ -185,6 +187,7 @@ export function usePdiSupabase() {
           }
         }))
       }
+      setLoading(false)
     }
   }
 
@@ -264,6 +267,7 @@ export function usePdiSupabase() {
         // If Supabase is connected but returns no settings, show empty state
         setPdiSettings([])
         setUsingFallback(false)
+        setLoading(false)
         return
       }
 
@@ -271,8 +275,8 @@ export function usePdiSupabase() {
       const transformedSettings: PdiSetting[] = data.map(row => ({
         id: row.id || `setting-${Date.now()}-${Math.random()}`,
         company_id: row.company_id || companyId,
-        setting_key: row.setting_key || '',
-        setting_value: row.setting_value || '',
+        key: row.setting_key || '',
+        value: row.setting_value || '',
         created_at: row.created_at || new Date().toISOString(),
         updated_at: row.updated_at || new Date().toISOString()
       }))
@@ -280,6 +284,7 @@ export function usePdiSupabase() {
       console.log(`🔄 [PDI Settings] Transformed ${transformedSettings.length} settings`)
       setPdiSettings(transformedSettings)
       setUsingFallback(false)
+      setLoading(false)
       
     } catch (error) {
       console.error('💥 [PDI Settings] Settings fetch failed:', error)
@@ -310,6 +315,7 @@ export function usePdiSupabase() {
           }
         }))
       }
+      setLoading(false)
     }
   }
 
@@ -453,8 +459,8 @@ export function usePdiSupabase() {
     try {
       const settingData = {
         company_id: companyId,
-        setting_key: data.setting_key || '',
-        setting_value: data.setting_value || ''
+        setting_key: data.key || '',
+        setting_value: data.value || ''
       }
 
       // Insert into Supabase
@@ -474,8 +480,8 @@ export function usePdiSupabase() {
       const newSetting: PdiSetting = {
         id: insertedData.id,
         company_id: insertedData.company_id,
-        setting_key: insertedData.setting_key,
-        setting_value: insertedData.setting_value,
+        key: insertedData.setting_key,
+        value: insertedData.setting_value,
         created_at: insertedData.created_at,
         updated_at: insertedData.updated_at
       }
@@ -496,8 +502,8 @@ export function usePdiSupabase() {
   const updatePdiSetting = async (id: string, updates: Partial<PdiSetting>) => {
     try {
       const updateData = {
-        setting_key: updates.setting_key,
-        setting_value: updates.setting_value
+        setting_key: updates.key,
+        setting_value: updates.value
       }
 
       // Remove undefined values
@@ -525,8 +531,8 @@ export function usePdiSupabase() {
       const updatedSetting: PdiSetting = {
         id: data.id,
         company_id: data.company_id,
-        setting_key: data.setting_key,
-        setting_value: data.setting_value,
+        key: data.setting_key,
+        value: data.setting_value,
         created_at: data.created_at,
         updated_at: data.updated_at
       }
@@ -577,7 +583,7 @@ export function usePdiSupabase() {
   }
 
   const getSettingByKey = (key: string): PdiSetting | undefined => {
-    return pdiSettings.find(setting => setting.setting_key === key)
+    return pdiSettings.find(setting => setting.key === key)
   }
 
   return {
