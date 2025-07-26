@@ -297,6 +297,7 @@ function PDIChecklistDashboard() {
           <div>PDI Settings - Coming Soon</div>
         </TabsContent>
       </Tabs>
+    </Routes>
     </div>
   )
 }
