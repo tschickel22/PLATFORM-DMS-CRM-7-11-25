@@ -24,7 +24,8 @@ async function startApp() {
         environment: import.meta.env.MODE,
         beforeSend(event) {
           // Skip noisy Sentry replays error
-          if (event.exception?.values?.[0]?.value?.includes('getReplayId')) {
+          const errorValue = event.exception?.values?.[0]?.value
+          if (typeof errorValue === 'string' && errorValue.includes('getReplayId')) {
             return null
           }
           return event
