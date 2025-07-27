@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useValidatedCompanyId } from '@/utils/useValidatedCompanyId'
+import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId'
 import { useToast } from '@/hooks/use-toast'
 import { mockCommissionEngine } from '@/mocks/commissionEngineMock'
 
@@ -44,7 +44,7 @@ interface CommissionManagementState {
 }
 
 export function useCommissionManagement() {
-  const { companyId, isValid } = useValidatedCompanyId()
+  const { companyId, usingFallback: companyIdFallback } = useEffectiveCompanyId()
   const { toast } = useToast()
   
   const [state, setState] = useState<CommissionManagementState>({
@@ -62,7 +62,7 @@ export function useCommissionManagement() {
   const fetchRules = async () => {
     console.log('📋 [Commission Management] Fetching rules from Supabase...')
     
-    if (!isValid || !companyId) {
+    if (companyIdFallback || !companyId) {
       console.warn('⚠️ [Commission Management] Invalid company ID, using fallback data')
       setState(prev => ({
         ...prev,
@@ -179,7 +179,7 @@ export function useCommissionManagement() {
   const fetchCommissions = async () => {
     console.log('💰 [Commission Management] Fetching commissions from Supabase...')
     
-    if (!isValid || !companyId) {
+    if (companyIdFallback || !companyId) {
       console.warn('⚠️ [Commission Management] Invalid company ID for commissions, using fallback')
       setState(prev => ({
         ...prev,
@@ -300,7 +300,7 @@ export function useCommissionManagement() {
   }
 
   const createRule = async (ruleData: Omit<CommissionRule, 'id' | 'company_id' | 'created_at' | 'updated_at'>) => {
-    if (!isValid || !companyId) {
+    if (companyIdFallback || !companyId) {
       toast({
         title: 'Error',
         description: 'Invalid company ID. Cannot create rule.',
@@ -437,7 +437,7 @@ export function useCommissionManagement() {
   }
 
   const createCommission = async (commissionData: Omit<Commission, 'id' | 'company_id' | 'created_at' | 'updated_at'>) => {
-    if (!isValid || !companyId) {
+    if (companyIdFallback || !companyId) {
       toast({
         title: 'Error',
         description: 'Invalid company ID. Cannot create commission.',
