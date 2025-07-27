@@ -1,13 +1,23 @@
-```typescript
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Search, DollarSign, TrendingUp } from 'lucide-react';
-import { useCommissionsSupabase } from './hooks/useCommissionsSupabase'; // New hook
+import React, { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Plus, DollarSign, Users, Settings, TrendingUp, RefreshCw } from 'lucide-react'
+import { mockCommissionEngine } from '@/mocks/commissionEngineMock'
+import { useCommissionsSupabase } from './hooks/useCommissionsSupabase'
+import { useTenant } from '@/contexts/TenantContext'
+import { useToast } from '@/hooks/use-toast'
 
 function CommissionEngineDashboard() {
+  const { tenant } = useTenant()
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState('commissions')
   const {
     commissions,
     loading,
@@ -17,36 +27,57 @@ function CommissionEngineDashboard() {
     createCommission,
     updateCommission,
     deleteCommission,
-  } = useCommissionsSupabase();
+    refetchCommissions
+  } = useCommissionsSupabase()
 
-  // Example state for filters/search
-  const [searchQuery, setSearchQuery] = React.useState('');
+  // Example of how to use the CRUD functions (you'll integrate these into your forms/tables)
+  const handleCreateExample = async () => {
+    try {
+      const newComm = await createCommission({
+        repId: 'rep-new',
+        amount: 1500,
+        period: 'July 2025',
+        ruleId: 'rule-001',
+        saleAmount: 30000,
+      })
+      console.log('Created new commission:', newComm)
+    } catch (e) {
+      console.error('Error creating commission:', e)
+    }
+  }
 
-  // Filtered commissions (example)
-  const filteredCommissions = React.useMemo(() => {
-    if (!commissions) return [];
-    return commissions.filter(commission =>
-      commission.rep_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      commission.period?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [commissions, searchQuery]);
+  // Get platform-specific labels
+  const getModuleLabel = () => {
+    const platformType = tenant?.settings?.platformType || 'mh'
+    const labelOverrides = tenant?.settings?.labelOverrides || {}
+    
+    if (labelOverrides['commission.module']) {
+      return labelOverrides['commission.module']
+    }
+    
+    return 'Commission Engine'
+  }
 
-  // Example stats calculation
-  const totalCommissions = commissions.length;
-  const totalAmount = commissions.reduce((sum, c) => sum + (c.amount || 0), 0);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="ml-3 text-muted-foreground">Loading commissions...</p>
+      </div>
+    )
+  }
 
-  const handleCreateNewCommission = () => {
-    // This would typically open a form or modal to create a new commission
-    // For now, it will just log a message and attempt a dummy creation
-    console.log('Create new commission clicked');
-    createCommission({
-      rep_id: 'New Sales Rep',
-      amount: 1500,
-      period: 'July 2025',
-      rule_id: 'rule-auto-gen',
-      sale_amount: 30000,
-    });
-  };
+  if (error) {
+    return (
+      <div className="p-4 bg-red-100 text-red-700 rounded-md">
+        <p>Failed to load commissions data.</p>
+        <p>{error.message}</p>
+        <Button onClick={refetchCommissions} className="mt-2">
+          <RefreshCw className="h-4 w-4 mr-2" /> Try Again
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -60,52 +91,46 @@ function CommissionEngineDashboard() {
             </span>
           ) : !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
             <span>
-              ⚙️ <strong>Configuration Required:</strong> Supabase environment variables not set.
-              {usingFallback ? ' Displaying demo data.' : ' No data available.'}
+              ⚙️ <strong>Configuration Required:</strong> Supabase environment variables not set. 
+              {usingFallback ? 'Displaying demo data.' : 'No data available.'}
               <code className="ml-2 text-xs">
-                VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING'},
+                VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING'}, 
                 VITE_SUPABASE_ANON_KEY: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'}
               </code>
             </span>
           ) : usingFallback ? (
             <span>
-              📊 <strong>Demo Mode:</strong> Supabase configured but using fallback data.
+              📊 <strong>Demo Mode:</strong> Supabase configured but using fallback data. 
               <code className="ml-2 text-xs">
-                Commissions: {supabaseStatus.commissions.error || 'Connection issue'}
+                Error: {supabaseStatus.error || 'Connection issue'}
               </code>
             </span>
           ) : (
             <span>
-              ✅ <strong>Live Data:</strong> Connected to Supabase successfully.
+              ✅ <strong>Live Data:</strong> Connected to Supabase successfully. 
               <code className="ml-2 text-xs">
-                commissions ({supabaseStatus.commissions.count})
+                Commissions: {supabaseStatus.count}
               </code>
             </span>
           )}
         </AlertDescription>
       </Alert>
 
-      {/* Error UI */}
-      {error && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-md">
-          <p>Failed to load commissions data.</p>
-          <p>{error.message}</p>
-        </div>
-      )}
-
       {/* Page Header */}
       <div className="ri-page-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="ri-page-title">Commission Engine</h1>
+            <h1 className="ri-page-title">{getModuleLabel()}</h1>
             <p className="ri-page-description">
-              Manage sales commissions and payouts
+              Manage sales commissions and payout rules
             </p>
           </div>
-          <Button onClick={handleCreateNewCommission} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Commission
-          </Button>
+          <div>
+            <Button onClick={handleCreateExample}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Commission
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -117,84 +142,187 @@ function CommissionEngineDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCommissions}</div>
+            <div className="text-2xl font-bold">${commissions.reduce((sum, c) => sum + c.amount, 0).toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {loading ? 'Loading...' : 'from all periods'}
+              {loading ? 'Loading...' : '+15% from last month'}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Reps</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalAmount.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{new Set(commissions.map(c => c.repId)).size}</div>
             <p className="text-xs text-muted-foreground">
-              {loading ? 'Loading...' : 'across all commissions'}
+              {loading ? 'Loading...' : 'Across all periods'}
             </p>
           </CardContent>
         </Card>
-        {/* Add more stats cards as needed */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Commission</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${(commissions.reduce((sum, c) => sum + c.amount, 0) / (commissions.length || 1)).toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? 'Loading...' : 'Per transaction'}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Commission Rules</CardTitle>
+            <Settings className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockCommissionEngine.sampleRules.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? 'Loading...' : 'Active rules'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Main Content Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Commission List</CardTitle>
-          <CardDescription>
-            Overview of all recorded commissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Search and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search commissions by rep or period..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            {/* Add more filters here if needed */}
-          </div>
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="commissions">Commissions</TabsTrigger>
+          <TabsTrigger value="rules">Rules</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
 
-          {/* Loading state */}
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading commissions...</p>
-            </div>
-          )}
-
-          {/* Display commissions or empty state */}
-          {!loading && filteredCommissions.length > 0 ? (
-            <div className="space-y-4">
-              {filteredCommissions.map(commission => (
-                <div key={commission.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{commission.rep_id} - {commission.period}</p>
-                    <p className="text-sm text-muted-foreground">Amount: ${commission.amount?.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">Source: {commission.source}</p>
+        <TabsContent value="commissions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Commissions</CardTitle>
+              <CardDescription>Latest commission calculations and payouts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {commissions.length > 0 ? (
+                  commissions.map((commission) => (
+                    <div key={commission.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-semibold">Rep: {commission.repId}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Amount: ${commission.amount.toFixed(2)} • Period: {commission.period}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Source: {commission.source} • Sale: ${commission.saleAmount.toFixed(2)}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">Rule: {commission.ruleId}</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    {!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
+                      <>
+                        <p>Supabase Configuration Required</p>
+                        <p className="text-sm">Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>No commissions found</p>
+                        <p className="text-sm">Add new commissions to get started</p>
+                      </>
+                    )}
                   </div>
-                  {/* Add action buttons like Edit/Delete here */}
-                </div>
-              ))}
-            </div>
-          ) : !loading && (
-            <div className="text-center py-12 text-muted-foreground">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-              <p>No commissions found.</p>
-              {usingFallback && <p className="text-sm">Currently using mock data. Check Supabase connection or company ID.</p>}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-export default CommissionEngineDashboard;
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-export default CommissionEngineDashboard;
-```
+        <TabsContent value="rules">
+          <Card>
+            <CardHeader>
+              <CardTitle>Commission Rules</CardTitle>
+              <CardDescription>Configure commission calculation rules</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {mockCommissionEngine.sampleRules.map((rule) => (
+                  <div key={rule.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-semibold">{rule.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Rate: {rule.rate}% • Type: {rule.type}
+                      </p>
+                    </div>
+                    <Badge variant={rule.active ? "default" : "secondary"}>
+                      {rule.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <Card>
+            <CardHeader>
+              <CardTitle>Commission Reports</CardTitle>
+              <CardDescription>Generate and view commission reports</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="period">Period</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="current">Current Month</SelectItem>
+                        <SelectItem value="last">Last Month</SelectItem>
+                        <SelectItem value="quarter">This Quarter</SelectItem>
+                        <SelectItem value="year">This Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="rep">Sales Rep</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All reps" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Reps</SelectItem>
+                        <SelectItem value="rep1">John Doe</SelectItem>
+                        <SelectItem value="rep2">Jane Smith</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button>Generate Report</Button>
+                  </div>
+                </div>
+                <div className="text-center py-12 text-muted-foreground">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p>Select criteria and generate a report</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+export default function CommissionEngine() {
+  return (
+    <Routes>
+      <Route path="/*" element={<CommissionEngineDashboard />} />
+    </Routes>
+  )
+}
