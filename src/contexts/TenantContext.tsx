@@ -122,11 +122,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       } else {
         console.log('✅ [TenantContext] Fetched tenant data from Supabase:', { tenantData, customFieldsData })
         
-        // Transform Supabase data to safe Tenant interface
+        // Always create completely new plain object to prevent Relay contamination
         const transformedTenant: Tenant = {
-          ...createSafeFallbackTenant(tenantData?.id || 'unknown-id'),
+          ...createSafeFallbackTenant(tenantData?.id || 'unknown-id'), 
           name: tenantData?.name || 'Company Name',
           domain: tenantData?.domain || 'company.com',
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            timezone: tenantData?.timezone || 'UTC',
+            currency: tenantData?.currency || 'USD',
+            dateFormat: tenantData?.dateFormat || 'MM/DD/YYYY',
+            language: tenantData?.language || 'en'
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            primaryColor: tenantData?.primaryColor || '#3b82f6',
+            secondaryColor: tenantData?.secondaryColor || '#64748b'
+          },
           customFields: Array.isArray(customFieldsData) ? customFieldsData.map(f => ({ ...f, source: 'supabase' as const })) : [],
           source: 'supabase'
         }
@@ -139,18 +151,26 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       console.error('💥 [TenantContext] Unexpected error during fetch:', err)
       setError(new Error('Failed to connect to Supabase or process data.'))
       
-      // Fallback to mock data
+      // Always create completely new plain object to prevent Relay contamination
       const fallbackTenant = {
         ...createSafeFallbackTenant(companyId),
         source: 'fallback' as const
       }
-      const updatedTenant = prev ? {
-        ...createSafeFallbackTenant(prev.id || 'fallback-id'),
-        ...prev,
-        ...updates,
-        source: 'fallback' as const
-      } : null
-      setTenant(updatedTenant)
+      setTenant(fallbackTenant)
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {}),
+            ...(updates.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {}),
+            ...(updates.branding || {})
+          },
+          customFields: Array.isArray(prev.customFields) ? prev.customFields : [],
+          source: 'fallback' as const
+        }
+      })
       return
     }
 
@@ -173,7 +193,27 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError
       
       console.log('✅ [TenantContext] Tenant updated successfully')
-      setTenant(prev => prev ? { ...prev, ...updates, source: 'supabase' } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: updates.name || prev.name,
+          domain: updates.domain || prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {}),
+            ...(updates.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {}),
+            ...(updates.branding || {})
+          },
+          customFields: Array.isArray(prev.customFields) ? prev.customFields : [],
+          source: 'supabase' as const
+        }
+      })
     } catch (err: any) {
       console.error('❌ [TenantContext] Error updating tenant:', err)
       throw err
@@ -188,12 +228,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         id: `fallback-field-${Date.now()}`, 
         source: 'fallback' as const 
       }
-      setTenant(prev => prev ? { 
-        ...createSafeFallbackTenant(prev.id),
-        ...prev,
-        customFields: [...prev.customFields, newField],
-        source: 'fallback'
-      } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: prev.name,
+          domain: prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {})
+          },
+          customFields: [...(Array.isArray(prev.customFields) ? prev.customFields : []), newField],
+          source: 'fallback' as const
+        }
+      })
       return
     }
 
@@ -214,11 +267,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       
       console.log('✅ [TenantContext] Custom field added successfully')
       const newField = { ...data, source: 'supabase' as const }
-      setTenant(prev => prev ? { 
-        ...prev, 
-        customFields: [...prev.customFields, newField],
-        source: 'supabase'
-      } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: prev.name,
+          domain: prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {})
+          },
+          customFields: [...(Array.isArray(prev.customFields) ? prev.customFields : []), newField],
+          source: 'supabase' as const
+        }
+      })
     } catch (err: any) {
       console.error('❌ [TenantContext] Error adding custom field:', err)
       throw err
@@ -228,14 +295,27 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const updateCustomField = async (id: string, updates: Partial<CustomField>) => {
     if (usingFallback) {
       console.log('📝 [TenantContext] Updating custom field (fallback mode):', { id, updates })
-      setTenant(prev => prev ? {
-        ...createSafeFallbackTenant(prev.id),
-        ...prev,
-        customFields: Array.isArray(prev.customFields) ? prev.customFields.map(f => 
-          f.id === id ? { ...f, ...updates, source: 'fallback' } : f
-        ) : [],
-        source: 'fallback'
-      } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: prev.name,
+          domain: prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {})
+          },
+          customFields: Array.isArray(prev.customFields) ? prev.customFields.map(f => 
+            f.id === id ? { ...f, ...updates, source: 'fallback' as const } : f
+          ) : [],
+          source: 'fallback' as const
+        }
+      })
       return
     }
 
@@ -252,13 +332,27 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError
       
       console.log('✅ [TenantContext] Custom field updated successfully')
-      setTenant(prev => prev ? {
-        ...prev,
-        customFields: prev.customFields.map(f => 
-          f.id === id ? { ...data, source: 'supabase' as const } : f
-        ),
-        source: 'supabase'
-      } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: prev.name,
+          domain: prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {})
+          },
+          customFields: Array.isArray(prev.customFields) ? prev.customFields.map(f => 
+            f.id === id ? { ...data, source: 'supabase' as const } : f
+          ) : [],
+          source: 'supabase' as const
+        }
+      })
     } catch (err: any) {
       console.error('❌ [TenantContext] Error updating custom field:', err)
       throw err
@@ -268,12 +362,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const deleteCustomField = async (id: string) => {
     if (usingFallback) {
       console.log('🗑️ [TenantContext] Deleting custom field (fallback mode):', id)
-      setTenant(prev => prev ? {
-        ...createSafeFallbackTenant(prev.id),
-        ...prev,
-        customFields: Array.isArray(prev.customFields) ? prev.customFields.filter(f => f.id !== id) : [],
-        source: 'fallback'
-      } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: prev.name,
+          domain: prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {})
+          },
+          customFields: Array.isArray(prev.customFields) ? prev.customFields.filter(f => f.id !== id) : [],
+          source: 'fallback' as const
+        }
+      })
       return
     }
 
@@ -288,11 +395,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError
       
       console.log('✅ [TenantContext] Custom field deleted successfully')
-      setTenant(prev => prev ? {
-        ...prev,
-        customFields: prev.customFields.filter(f => f.id !== id),
-        source: 'supabase'
-      } : null)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: prev.name,
+          domain: prev.domain,
+          settings: {
+            ...createSafeFallbackTenant().settings,
+            ...(prev.settings || {})
+          },
+          branding: {
+            ...createSafeFallbackTenant().branding,
+            ...(prev.branding || {})
+          },
+          customFields: Array.isArray(prev.customFields) ? prev.customFields.filter(f => f.id !== id) : [],
+          source: 'supabase' as const
+        }
+      })
     } catch (err: any) {
       console.error('❌ [TenantContext] Error deleting custom field:', err)
       throw err
