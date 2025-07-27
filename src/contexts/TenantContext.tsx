@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/contexts/AuthContext'
-import { mockCompanySettings } from '@/mocks/companySettingsMock'
+import { safeFallbackTenant, createSafeFallbackTenant } from '@/lib/fallbacks'
 
 // UUID validation regex
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -82,20 +82,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (!companyId) {
       console.warn('⚠️ [TenantContext] Invalid or missing company_id. Using fallback data.')
       const fallbackTenant = {
-        id: 'fallback-id',
-        name: 'Demo Company',
-        domain: 'demo.renterinsight.com',
-        settings: {
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'MM/DD/YYYY',
-          timeFormat: '12h'
-        },
-        branding: {
-          primaryColor: '#3b82f6',
-          secondaryColor: '#64748b'
-        },
-        customFields: [],
+        ...createSafeFallbackTenant('fallback-id'),
         source: 'fallback' as const
       }
       setTenant(fallbackTenant)
@@ -126,20 +113,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         
         // Fallback to mock data
         const fallbackTenant = {
-          id: companyId,
-          name: 'Demo Company',
-          domain: 'demo.renterinsight.com',
-          settings: {
-            timezone: 'UTC',
-            currency: 'USD',
-            dateFormat: 'MM/DD/YYYY',
-            timeFormat: '12h'
-          },
-          branding: {
-            primaryColor: '#3b82f6',
-            secondaryColor: '#64748b'
-          },
-          customFields: [],
+          ...createSafeFallbackTenant(companyId),
           source: 'fallback' as const
         }
         setTenant(fallbackTenant)
@@ -150,19 +124,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         
         // Transform Supabase data to safe Tenant interface
         const transformedTenant: Tenant = {
-          id: tenantData?.id || 'unknown-id',
+          ...createSafeFallbackTenant(tenantData?.id || 'unknown-id'),
           name: tenantData?.name || 'Company Name',
           domain: tenantData?.domain || 'company.com',
-          settings: {
-            timezone: 'UTC',
-            currency: 'USD',
-            dateFormat: 'MM/DD/YYYY',
-            timeFormat: '12h'
-          },
-          branding: {
-            primaryColor: '#3b82f6',
-            secondaryColor: '#64748b'
-          },
           customFields: Array.isArray(customFieldsData) ? customFieldsData.map(f => ({ ...f, source: 'supabase' as const })) : [],
           source: 'supabase'
         }
@@ -177,42 +141,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       
       // Fallback to mock data
       const fallbackTenant = {
-        id: companyId,
-        name: 'Demo Company',
-        domain: 'demo.renterinsight.com',
-        settings: {
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'MM/DD/YYYY',
-          timeFormat: '12h'
-        },
-        branding: {
-          primaryColor: '#3b82f6',
-          secondaryColor: '#64748b'
-        },
-        customFields: [],
+        ...createSafeFallbackTenant(companyId),
         source: 'fallback' as const
       }
-      setTenant(fallbackTenant)
-      setUsingFallback(true)
-      setSupabaseStatus({ connected: false, error: err.message, count: 0 })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const updateTenant = async (updates: Partial<Tenant>) => {
-    if (!tenant) return
-
-    if (usingFallback) {
-      console.log('📝 [TenantContext] Updating tenant (fallback mode):', updates)
-      const updatedTenant = prev ? { 
-        ...prev, 
-        ...updates, 
-        source: 'fallback' as const,
-        id: prev.id || 'fallback-id',
-        name: updates.name || prev.name || 'Demo Company',
-        domain: updates.domain || prev.domain || 'demo.renterinsight.com'
+      const updatedTenant = prev ? {
+        ...createSafeFallbackTenant(prev.id || 'fallback-id'),
+        ...prev,
+        ...updates,
+        source: 'fallback' as const
       } : null
       setTenant(updatedTenant)
       return
@@ -253,7 +189,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         source: 'fallback' as const 
       }
       setTenant(prev => prev ? { 
-        ...prev, 
+        ...createSafeFallbackTenant(prev.id),
+        ...prev,
         customFields: [...prev.customFields, newField],
         source: 'fallback'
       } : null)
@@ -292,6 +229,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (usingFallback) {
       console.log('📝 [TenantContext] Updating custom field (fallback mode):', { id, updates })
       setTenant(prev => prev ? {
+        ...createSafeFallbackTenant(prev.id),
         ...prev,
         customFields: Array.isArray(prev.customFields) ? prev.customFields.map(f => 
           f.id === id ? { ...f, ...updates, source: 'fallback' } : f
@@ -331,6 +269,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (usingFallback) {
       console.log('🗑️ [TenantContext] Deleting custom field (fallback mode):', id)
       setTenant(prev => prev ? {
+        ...createSafeFallbackTenant(prev.id),
         ...prev,
         customFields: Array.isArray(prev.customFields) ? prev.customFields.filter(f => f.id !== id) : [],
         source: 'fallback'
