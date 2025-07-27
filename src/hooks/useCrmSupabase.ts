@@ -3,14 +3,14 @@ import { supabase } from '@/lib/supabaseClient';
 import { Deal, CRMContact } from '@/types';
 import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId';
 import { is } from '@supabase/supabase-js';
-import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId'
+import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId';
 
 export function useDeals() {
   const { companyId } = useEffectiveCompanyId();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const companyId = useEffectiveCompanyId()
+  const companyId = useEffectiveCompanyId();
 
   useEffect(() => {
     async function fetchDeals() {
@@ -25,7 +25,7 @@ export function useDeals() {
           // Fallback to deals with no company_id if companyId is null (for test mode/preview)
           query = query.is('company_id', null);
         }
-          .eq('company_id', companyId)
+          .eq('company_id', companyId);
 
         const { data, error } = await query;
 
@@ -40,7 +40,7 @@ export function useDeals() {
       }
     }
     fetchDeals();
-  }, [companyId])
+  }, [companyId]);
 
   return { deals, loading, error };
 }
@@ -49,7 +49,7 @@ export function useContacts() {
   const { companyId } = useEffectiveCompanyId();
   const [contacts, setContacts] = useState<CRMContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const companyId = useEffectiveCompanyId()
+  const companyId = useEffectiveCompanyId();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function useContacts() {
       setError(null);
       try {
         let query = supabase.from('crm_contacts').select('*');
-          .eq('company_id', companyId)
+          .eq('company_id', companyId);
 
         if (companyId) {
           query = query.eq('company_id', companyId);
@@ -81,6 +81,6 @@ export function useContacts() {
     }
     fetchContacts();
   }, [companyId]);
-  }, [companyId])
+
   return { contacts, loading, error };
 }
