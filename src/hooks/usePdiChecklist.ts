@@ -1,24 +1,22 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffectiveCompanyId } from "./useEffectiveCompanyId";
-import { PdiChecklist } from "@/types";
+import useEffectiveCompanyId from '@/hooks/useEffectiveCompanyId'
 
 export function usePdiChecklist() {
   const [checklists, setChecklists] = useState<PdiChecklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const companyId = useEffectiveCompanyId();
+  
+  // Get resolved company ID (handles fallback internally)
+  const companyId = useEffectiveCompanyId()
 
   useEffect(() => {
     async function loadData() {
       try {
         console.log('🔄 [usePdiChecklist] Fetching PDI checklists for company_id:', companyId);
+          .eq('company_id', companyId)
         
-        const { data, error: supabaseError } = await supabase
-          .from("pdi_checklists")
-          .select("*")
-          .eq("company_id", companyId)
-          .order('created_at', { ascending: false });
 
         if (supabaseError) {
           console.error('❌ [usePdiChecklist] Supabase error:', supabaseError.message);

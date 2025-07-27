@@ -1,5 +1,5 @@
 export const safeFallbackTenant = {
-  id: 'fallback-id',
+  id: '11111111-1111-1111-1111-111111111111', // Use valid UUID
   name: 'Demo Company',
   domain: 'demo.renterinsight.com',
   timezone: 'America/Chicago',
@@ -19,7 +19,7 @@ export const safeFallbackTenant = {
   customFields: []
 }
 
-export const createSafeFallbackTenant = (id?: string) => ({
+export const createSafeFallbackTenant = (id?: string | null) => ({
   ...safeFallbackTenant,
-  id: id || 'fallback-id'
+  id: id || '11111111-1111-1111-1111-111111111111' // Always use valid UUID
 })

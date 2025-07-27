@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Deal, CRMContact } from '@/types'
-import { useEffectiveCompanyId } from './useEffectiveCompanyId'
+import useEffectiveCompanyId from '@/hooks/useEffectiveCompanyId'
 
 export function useDeals() {
   const [deals, setDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Get resolved company ID (handles fallback internally)
   const companyId = useEffectiveCompanyId()
 
   useEffect(() => {
@@ -18,12 +20,8 @@ export function useDeals() {
           .from('deals')
           .select('*')
           .eq('company_id', companyId)
+          .eq('company_id', companyId)
           .order('created_at', { ascending: false })
-
-        if (supabaseError) {
-          console.error('❌ [useDeals] Supabase error:', supabaseError.message)
-          setError(supabaseError.message)
-          setDeals([])
         } else {
           console.log(`✅ [useDeals] Loaded ${data?.length || 0} deals`)
           setDeals(data || [])
@@ -48,6 +46,8 @@ export function useContacts() {
   const [contacts, setContacts] = useState<CRMContact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Get resolved company ID (handles fallback internally)
   const companyId = useEffectiveCompanyId()
 
   useEffect(() => {
@@ -56,10 +56,6 @@ export function useContacts() {
         console.log('🔄 [useContacts] Fetching contacts for company_id:', companyId)
         
         const { data, error: supabaseError } = await supabase
-          .from('crm_contacts')
-          .select('*')
-          .eq('company_id', companyId)
-          .order('created_at', { ascending: false })
 
         if (supabaseError) {
           console.error('❌ [useContacts] Supabase error:', supabaseError.message)

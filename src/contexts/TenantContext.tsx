@@ -75,17 +75,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
     const rawCompanyId = user?.tenantId
     const isValidCompanyId = typeof rawCompanyId === 'string' && uuidRegex.test(rawCompanyId)
-    const companyId = isValidCompanyId ? rawCompanyId : null
+    const companyId = isValidCompanyId ? rawCompanyId : null // Never use fallback-id
 
     console.log("Resolved company_id:", companyId);
     console.log('🏢 [TenantContext] Fetching tenant data...', { rawCompanyId, isValidCompanyId, companyId })
 
     if (!companyId) {
       console.warn('⚠️ [TenantContext] Invalid or missing company_id. Using fallback data.')
-      const fallbackTenant = {
-        ...createSafeFallbackTenant('fallback-id'),
-        source: 'fallback' as const
-      }
+      // Return null tenant - let useEffectiveCompanyId handle the fallback
+      const fallbackTenant = null
       setTenant(fallbackTenant)
       setUsingFallback(true)
       setSupabaseStatus({ connected: false, error: 'Invalid company ID', count: 0 })
