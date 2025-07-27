@@ -77,6 +77,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     const isValidCompanyId = typeof rawCompanyId === 'string' && uuidRegex.test(rawCompanyId)
     const companyId = isValidCompanyId ? rawCompanyId : null
 
+    console.log("Resolved company_id:", companyId);
     console.log('🏢 [TenantContext] Fetching tenant data...', { rawCompanyId, isValidCompanyId, companyId })
 
     if (!companyId) {
