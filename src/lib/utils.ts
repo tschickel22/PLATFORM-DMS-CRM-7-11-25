@@ -34,18 +34,16 @@ export function generateId(): string {
   return Math.random().toString(36).substr(2, 9)
 }
 
-// Use global timer functions directly
-const setTimeoutFn = setTimeout
-const clearTimeoutFn = clearTimeout
-
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: any
+  let timeout: number | undefined
   return (...args: Parameters<T>) => {
-    clearTimeoutFn(timeout)
-    timeout = setTimeoutFn(() => func(...args), wait)
+    if (timeout !== undefined) {
+      clearTimeout(timeout)
+    }
+    timeout = setTimeout(() => func(...args), wait)
   }
 }
 
