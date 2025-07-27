@@ -1,125 +1,262 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { X, Save, Plus, Trash2, DollarSign, Percent } from 'lucide-react'
-import { CommissionRule, FlatCommissionRule, PercentageCommissionRule, TieredCommissionRule, CommissionTier } from '../types'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Save, X, Plus, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { mockCommissionEngine } from '@/mocks/commissionEngineMock'
 
-interface CommissionRuleFormProps {
-  onSubmit: (data: any) => void
-  onCancel: () => void
+interface CommissionRule {
+  id: string
+  name: string
+  type: string
+  rate: number
+  criteria?: string
+  isActive: boolean
+  description?: string
+  createdAt: string
+  updatedAt: string
 }
 
-export function CommissionRuleForm({ onSubmit, onCancel }: CommissionRuleFormProps) {
+interface CommissionRuleFormProps {
+  rules: CommissionRule[]
+  onSave: (rule: Partial<CommissionRule>) => void
+  onCancel: () => void
+  editingRule?: CommissionRule | null
+  loading?: boolean
+}
+
+export function CommissionRuleForm({
+  rules,
+  onSave,
+  onCancel,
+  editingRule = null,
+  loading = false
+}: CommissionRuleFormProps) {
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
-    name: '',
-    type: mockCommissionEngine.defaultSettings.commissionType,
-    rate: mockCommissionEngine.defaultSettings.rate,
-    criteria: '',
-    description: ''
+    name: editingRule?.name || '',
+    type: editingRule?.type || 'Percentage',
+    rate: editingRule?.rate || 0,
+    criteria: editingRule?.criteria || '',
+    description: editingRule?.description || '',
+    isActive: editingRule?.isActive !== undefined ? editingRule.isActive : true
   })
+
+  const ruleTypes = [
+    { value: 'Percentage', label: 'Percentage' },
+    { value: 'Flat', label: 'Flat Amount' },
+    { value: 'Tiered', label: 'Tiered' }
+  ]
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    if (!formData.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Rule name is required',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    if (formData.rate <= 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'Rate must be greater than 0',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    // Check for duplicate rule names (excluding current rule if editing)
+    const duplicateRule = rules.find(rule => 
+      rule.name.toLowerCase() === formData.name.toLowerCase() && 
+      rule.id !== editingRule?.id
+    )
+    
+    if (duplicateRule) {
+      toast({
+        title: 'Validation Error',
+        description: 'A rule with this name already exists',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    onSave({
+      id: editingRule?.id,
+      name: formData.name.trim(),
+      type: formData.type,
+      rate: formData.rate,
+      criteria: formData.criteria.trim(),
+      description: formData.description.trim(),
+      isActive: formData.isActive
+    })
+  }
+
+  const handleRateChange = (value: string) => {
+    const numericValue = parseFloat(value)
+    if (!isNaN(numericValue)) {
+      setFormData(prev => ({ ...prev, rate: numericValue }))
+    }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Create Commission Rule</CardTitle>
-              <CardDescription>
-                Define a new commission calculation rule
-              </CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
-              <X className="h-4 w-4" />
-            </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>
+              {editingRule ? 'Edit Commission Rule' : 'Create Commission Rule'}
+            </CardTitle>
+            <CardDescription>
+              {editingRule 
+                ? 'Update the commission rule configuration'
+                : 'Create a new commission calculation rule'
+              }
+            </CardDescription>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="name">Rule Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter rule name"
-              />
-            </div>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Rule Name */}
+          <div>
+            <Label htmlFor="ruleName">Rule Name *</Label>
+            <Input
+              id="ruleName"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter rule name (e.g., '5% on RV Sales')"
+              required
+            />
+          </div>
 
+          {/* Rule Type and Rate */}
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="type">Rule Type</Label>
+              <Label htmlFor="ruleType">Commission Type *</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select rule type" />
+                  <SelectValue placeholder="Select commission type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockCommissionEngine.ruleTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  {ruleTypes.map(type => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
+            
             <div>
-              <Label htmlFor="rate">Commission Rate (%)</Label>
+              <Label htmlFor="rate">
+                Rate * {formData.type === 'Percentage' ? '(%)' : '($)'}
+              </Label>
               <Input
                 id="rate"
                 type="number"
-                value={formData.rate * 100}
-                onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) / 100 })}
+                step={formData.type === 'Percentage' ? '0.01' : '1'}
                 min="0"
-                max="100"
-                step="0.01"
+                value={formData.rate}
+                onChange={(e) => handleRateChange(e.target.value)}
+                placeholder={formData.type === 'Percentage' ? '5.00' : '1000'}
+                required
               />
             </div>
+          </div>
 
-            <div>
-              <Label htmlFor="criteria">Criteria</Label>
-              <Input
-                id="criteria"
-                value={formData.criteria}
-                onChange={(e) => setFormData({ ...formData, criteria: e.target.value })}
-                placeholder="Enter criteria"
-              />
-            </div>
+          {/* Criteria */}
+          <div>
+            <Label htmlFor="criteria">Criteria (Optional)</Label>
+            <Input
+              id="criteria"
+              value={formData.criteria}
+              onChange={(e) => setFormData(prev => ({ ...prev, criteria: e.target.value }))}
+              placeholder="e.g., vehicle.type === 'RV' && sale.amount > 50000"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Define conditions when this rule applies (leave empty for all sales)
+            </p>
+          </div>
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Enter description"
-              />
-            </div>
+          {/* Description */}
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Describe when and how this commission rule is applied"
+              rows={3}
+            />
+          </div>
 
-            <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                <Save className="h-4 w-4 mr-2" />
-                Create Rule
-              </Button>
+          {/* Active Status */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isActive"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: !!checked }))}
+            />
+            <Label htmlFor="isActive">Active Rule</Label>
+            <p className="text-sm text-muted-foreground">
+              Only active rules will be used for commission calculations
+            </p>
+          </div>
+
+          {/* Preview */}
+          {formData.name && formData.rate > 0 && (
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Rule Preview</h4>
+              <p className="text-sm">
+                <strong>{formData.name}</strong> - 
+                {formData.type === 'Percentage' 
+                  ? ` ${formData.rate}% commission`
+                  : ` $${formData.rate} flat commission`
+                }
+                {formData.criteria && (
+                  <span className="block mt-1 text-muted-foreground">
+                    Applies when: {formData.criteria}
+                  </span>
+                )}
+              </p>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          )}
+
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-3">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingRule ? 'Update Rule' : 'Create Rule'}
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
