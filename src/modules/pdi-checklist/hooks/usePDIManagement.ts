@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useValidatedCompanyId } from '@/utils/useValidatedCompanyId'
+import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId'
 import { useToast } from '@/hooks/use-toast'
 import { PdiChecklist, PdiSetting } from '@/types'
 import { mockPDI } from '@/mocks/pdiMock'
@@ -18,7 +18,7 @@ interface PDIManagementState {
 }
 
 export function usePDIManagement() {
-  const { companyId, isValid } = useValidatedCompanyId()
+  const { companyId, usingFallback: companyIdFallback } = useEffectiveCompanyId()
   const { toast } = useToast()
   
   const [state, setState] = useState<PDIManagementState>({
@@ -36,7 +36,7 @@ export function usePDIManagement() {
   const fetchInspections = async () => {
     console.log('🔍 [PDI Management] Fetching inspections from Supabase...')
     
-    if (!isValid || !companyId) {
+    if (companyIdFallback) {
       console.warn('⚠️ [PDI Management] Invalid company ID, using fallback data')
       setState(prev => ({
         ...prev,
@@ -127,7 +127,7 @@ export function usePDIManagement() {
   const fetchSettings = async () => {
     console.log('⚙️ [PDI Management] Fetching settings from Supabase...')
     
-    if (!isValid || !companyId) {
+    if (companyIdFallback) {
       console.warn('⚠️ [PDI Management] Invalid company ID for settings, using fallback')
       setState(prev => ({
         ...prev,
@@ -209,7 +209,7 @@ export function usePDIManagement() {
   }
 
   const createInspection = async (inspectionData: Omit<PdiChecklist, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!isValid || !companyId) {
+    if (companyIdFallback || !companyId) {
       toast({
         title: 'Error',
         description: 'Invalid company ID. Cannot create inspection.',
@@ -350,7 +350,7 @@ export function usePDIManagement() {
   }
 
   const updateSetting = async (key: string, value: string) => {
-    if (!isValid || !companyId) {
+    if (companyIdFallback || !companyId) {
       toast({
         title: 'Error',
         description: 'Invalid company ID. Cannot update setting.',
