@@ -157,6 +157,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         source: 'fallback' as const
       }
       setTenant(fallbackTenant)
+      setUsingFallback(true)
+      setSupabaseStatus({ connected: false, error: err.message, count: 0 })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateTenant = async (updates: Partial<Tenant>) => {
+    if (usingFallback) {
+      console.log('📝 [TenantContext] Updating tenant (fallback mode):', updates)
+      setTenant(prev => {
+        if (!prev) return null
+        // Always recreate as plain object to prevent Relay contamination
+        return {
+          ...createSafeFallbackTenant(prev.id),
+          name: updates.name || prev.name,
+          domain: updates.domain || prev.domain,
           settings: {
             ...createSafeFallbackTenant().settings,
             ...(prev.settings || {}),
