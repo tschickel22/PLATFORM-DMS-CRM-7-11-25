@@ -1,86 +1,86 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { Deal, CRMContact } from '@/types';
-import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId';
-import { is } from '@supabase/supabase-js';
-import { useEffectiveCompanyId } from '@/hooks/useEffectiveCompanyId';
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
+import { Deal, CRMContact } from '@/types'
+import { useEffectiveCompanyId } from './useEffectiveCompanyId'
 
 export function useDeals() {
-  const { companyId } = useEffectiveCompanyId();
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const companyId = useEffectiveCompanyId();
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const companyId = useEffectiveCompanyId()
 
   useEffect(() => {
     async function fetchDeals() {
-      setLoading(true);
-      setError(null);
       try {
-        let query = supabase.from('deals').select('*');
+        console.log('🔄 [useDeals] Fetching deals for company_id:', companyId)
+        
+        const { data, error } = await supabase
+          .from('deals')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
 
-        if (companyId) {
-          query = query.eq('company_id', companyId);
+        if (error) {
+          console.error('❌ [useDeals] Supabase error:', error.message)
+          setError(error.message)
+          setDeals([])
         } else {
-          // Fallback to deals with no company_id if companyId is null (for test mode/preview)
-          query = query.is('company_id', null);
+          console.log('✅ [useDeals] Loaded deals:', data?.length || 0)
+          setDeals(data || [])
+          setError(null)
         }
-          .eq('company_id', companyId);
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        setDeals(data || []);
       } catch (err: any) {
-        console.error('Error fetching deals:', err.message);
-        setError(err.message);
-        setDeals([]); // Clear deals on error
+        console.error('💥 [useDeals] Unexpected error:', err)
+        setError(err.message)
+        setDeals([])
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    fetchDeals();
-  }, [companyId]);
 
-  return { deals, loading, error };
+    fetchDeals()
+  }, [companyId])
+
+  return { deals, loading, error }
 }
 
 export function useContacts() {
-  const { companyId } = useEffectiveCompanyId();
-  const [contacts, setContacts] = useState<CRMContact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const companyId = useEffectiveCompanyId();
-  const [error, setError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<CRMContact[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const companyId = useEffectiveCompanyId()
 
   useEffect(() => {
     async function fetchContacts() {
-      setLoading(true);
-      setError(null);
       try {
-        let query = supabase.from('crm_contacts').select('*');
-          .eq('company_id', companyId);
+        console.log('🔄 [useContacts] Fetching contacts for company_id:', companyId)
+        
+        const { data, error } = await supabase
+          .from('crm_contacts')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
 
-        if (companyId) {
-          query = query.eq('company_id', companyId);
+        if (error) {
+          console.error('❌ [useContacts] Supabase error:', error.message)
+          setError(error.message)
+          setContacts([])
         } else {
-          // Fallback to contacts with no company_id if companyId is null (for test mode/preview)
-          query = query.is('company_id', null);
+          console.log('✅ [useContacts] Loaded contacts:', data?.length || 0)
+          setContacts(data || [])
+          setError(null)
         }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        setContacts(data || []);
       } catch (err: any) {
-        console.error('Error fetching contacts:', err.message);
-        setError(err.message);
-        setContacts([]); // Clear contacts on error
+        console.error('💥 [useContacts] Unexpected error:', err)
+        setError(err.message)
+        setContacts([])
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    fetchContacts();
-  }, [companyId]);
 
-  return { contacts, loading, error };
+    fetchContacts()
+  }, [companyId])
+
+  return { contacts, loading, error }
 }
