@@ -344,7 +344,8 @@ export default function CommissionEngine() {
                   New Rule
                 </Button>
               </div>
-
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 {rules.map((rule) => (
                   <div
