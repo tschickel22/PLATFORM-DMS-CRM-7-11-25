@@ -14,8 +14,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle, Loader2 } from 'lucide-react'
 import { usePDIManagement } from './hooks/usePDIManagement'
+import { usePdiChecklist } from '@/hooks/usePdiChecklist'
 import { useToast } from '@/hooks/use-toast'
 import { PdiChecklist, ChecklistItem } from '@/types'
+import { mockPDI } from '@/mocks/pdiMock'
 
 export default function PDIChecklist() {
   const { toast } = useToast()
@@ -31,6 +33,7 @@ export default function PDIChecklist() {
     deleteInspection,
     updateSetting
   } = usePDIManagement()
+  const { checklists: pdiItems, loading: pdiLoading, error: pdiError } = usePdiChecklist()
   
   const [activeTab, setActiveTab] = useState('inspections')
   const [searchQuery, setSearchQuery] = useState('')
@@ -45,6 +48,11 @@ export default function PDIChecklist() {
     status: 'Not Started',
     notes: ''
   })
+
+  // Use Supabase data if available, otherwise fallback to mock data
+  const effectivePdiItems = Array.isArray(pdiItems) && pdiItems.length > 0 
+    ? pdiItems 
+    : mockPDI.sampleInspections
 
   // Display error toast if there's an error
   React.useEffect(() => {
@@ -75,6 +83,32 @@ export default function PDIChecklist() {
 
     return currentInspections
   }, [inspections, searchQuery, statusFilter])
+
+  // Filter items based on search and status
+  const filteredItems = React.useMemo(() => {
+    let items = effectivePdiItems
+
+    // Search filter
+    if (searchQuery) {
+      const lowerCaseQuery = searchQuery.toLowerCase()
+      items = items.filter(item =>
+        (item.vehicle_id && item.vehicle_id.toLowerCase().includes(lowerCaseQuery)) ||
+        (item.technician && item.technician.toLowerCase().includes(lowerCaseQuery))
+      )
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      items = items.filter(item => {
+        if (statusFilter === 'pending') {
+          return item.status === 'In Progress' || item.status === 'Not Started'
+        }
+        return item.status === statusFilter
+      })
+    }
+
+    return items
+  }, [effectivePdiItems, searchQuery, statusFilter])
 
   const handleCreateInspection = async () => {
     if (!newInspectionForm.vehicle_id || !newInspectionForm.technicianId) {
@@ -143,7 +177,7 @@ export default function PDIChecklist() {
       'Pending Review': 'bg-yellow-100 text-yellow-800',
       'Approved': 'bg-emerald-100 text-emerald-800'
     }
-    return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
+    return statusColors[status as keyof typeof statusColors] || mockPDI.statusColors[status] || 'bg-gray-100 text-gray-800'
   }
 
   if (loading) {
@@ -201,7 +235,9 @@ export default function PDIChecklist() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inspections.length}</div>
+            <div className="text-2xl font-bold">
+              {pdiLoading ? '...' : (Array.isArray(effectivePdiItems) ? effectivePdiItems.length : 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               All time inspections
             </p>
@@ -215,7 +251,7 @@ export default function PDIChecklist() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {inspections.filter(i => i.status === 'In Progress').length}
+              {pdiLoading ? '...' : (Array.isArray(effectivePdiItems) ? effectivePdiItems.filter(item => item.status === 'In Progress').length : 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Currently active
@@ -230,7 +266,7 @@ export default function PDIChecklist() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {inspections.filter(i => i.status === 'Complete').length}
+              {pdiLoading ? '...' : (Array.isArray(effectivePdiItems) ? effectivePdiItems.filter(item => item.status === 'Complete').length : 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Successfully completed
@@ -245,7 +281,7 @@ export default function PDIChecklist() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {inspections.filter(i => i.status === 'Failed').length}
+              {pdiLoading ? '...' : (Array.isArray(effectivePdiItems) ? effectivePdiItems.filter(item => item.status === 'Failed').length : 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Require attention
@@ -301,6 +337,20 @@ export default function PDIChecklist() {
               </div>
 
               <div className="space-y-4">
+                {pdiLoading && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2">Loading PDI checklists...</p>
+                  </div>
+                )}
+                
+                {pdiError && (
+                  <div className="text-center py-8 text-red-600">
+                    <p>Error loading PDI checklists: {pdiError}</p>
+                    <p className="text-sm text-muted-foreground mt-2">Using demo data instead</p>
+                  </div>
+                )}
+                
                 {filteredInspections.map((inspection) => (
                   <div
                     key={inspection.id}
@@ -361,7 +411,12 @@ export default function PDIChecklist() {
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     <p>No inspections found</p>
-                    <p className="text-sm">Create your first PDI inspection to get started</p>
+                    <p className="text-sm">
+                      {!pdiLoading && (searchQuery || statusFilter !== 'all') 
+                        ? 'Try adjusting your search or filters'
+                        : 'Create your first PDI inspection to get started'
+                      }
+                    </p>
                   </div>
                 )}
               </div>
