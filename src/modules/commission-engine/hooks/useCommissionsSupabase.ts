@@ -61,7 +61,7 @@ export function useCommissionsSupabase() {
         };
       } else {
         try {
-          console.log(`🔄 [Commissions] Fetching commissions for companyId: ${companyId} from Supabase...`);
+          console.log(\`🔄 [Commissions] Fetching commissions for companyId: ${companyId} from Supabase...`);
           const { data, error: supabaseError } = await supabase
             .from('commissions')
             .select('*')
@@ -87,7 +87,7 @@ export function useCommissionsSupabase() {
               count: 0,
             };
           } else {
-            console.log(`✅ [Commissions] Fetched ${data.length} commissions from Supabase.`);
+            console.log(\`✅ [Commissions] Fetched ${data.length} commissions from Supabase.`);
             setCommissions(data.map(item => ({ ...item, source: 'supabase' })));
             currentSupabaseStatus.commissions = {
               connected: true,
@@ -143,7 +143,7 @@ export function useCommissionsSupabase() {
       return data;
     } catch (err) {
       console.error('Error creating commission:', err);
-      toast({ title: 'Error', description: `Failed to create commission: ${err.message}` });
+      toast({ title: 'Error', description: \`Failed to create commission: ${err.message}` });
       throw err;
     }
   };
@@ -172,7 +172,7 @@ export function useCommissionsSupabase() {
       return data;
     } catch (err) {
       console.error('Error updating commission:', err);
-      toast({ title: 'Error', description: `Failed to update commission: ${err.message}` });
+      toast({ title: 'Error', description: \`Failed to update commission: ${err.message}` });
       throw err;
     }
   };
@@ -198,7 +198,7 @@ export function useCommissionsSupabase() {
       setCommissions(prev => prev.filter(item => item.id !== id));
     } catch (err) {
       console.error('Error deleting commission:', err);
-      toast({ title: 'Error', description: `Failed to delete commission: ${err.message}` });
+      toast({ title: 'Error', description: \`Failed to delete commission: ${err.message}` });
       throw err;
     }
   };
