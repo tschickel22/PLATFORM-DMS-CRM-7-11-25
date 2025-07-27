@@ -14,24 +14,24 @@ export function useDeals() {
       try {
         console.log('🔄 [useDeals] Fetching deals for company_id:', companyId)
         
-        const { data, error } = await supabase
+        const { data, error: supabaseError } = await supabase
           .from('deals')
           .select('*')
           .eq('company_id', companyId)
           .order('created_at', { ascending: false })
 
-        if (error) {
-          console.error('❌ [useDeals] Supabase error:', error.message)
-          setError(error.message)
+        if (supabaseError) {
+          console.error('❌ [useDeals] Supabase error:', supabaseError.message)
+          setError(supabaseError.message)
           setDeals([])
         } else {
-          console.log('✅ [useDeals] Loaded deals:', data?.length || 0)
+          console.log(`✅ [useDeals] Loaded ${data?.length || 0} deals`)
           setDeals(data || [])
           setError(null)
         }
       } catch (err: any) {
         console.error('💥 [useDeals] Unexpected error:', err)
-        setError(err.message)
+        setError(err.message || 'Failed to fetch deals')
         setDeals([])
       } finally {
         setLoading(false)
@@ -55,24 +55,24 @@ export function useContacts() {
       try {
         console.log('🔄 [useContacts] Fetching contacts for company_id:', companyId)
         
-        const { data, error } = await supabase
+        const { data, error: supabaseError } = await supabase
           .from('crm_contacts')
           .select('*')
           .eq('company_id', companyId)
           .order('created_at', { ascending: false })
 
-        if (error) {
-          console.error('❌ [useContacts] Supabase error:', error.message)
-          setError(error.message)
+        if (supabaseError) {
+          console.error('❌ [useContacts] Supabase error:', supabaseError.message)
+          setError(supabaseError.message)
           setContacts([])
         } else {
-          console.log('✅ [useContacts] Loaded contacts:', data?.length || 0)
+          console.log(`✅ [useContacts] Loaded ${data?.length || 0} contacts`)
           setContacts(data || [])
           setError(null)
         }
       } catch (err: any) {
         console.error('💥 [useContacts] Unexpected error:', err)
-        setError(err.message)
+        setError(err.message || 'Failed to fetch contacts')
         setContacts([])
       } finally {
         setLoading(false)
