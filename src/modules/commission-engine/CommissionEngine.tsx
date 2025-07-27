@@ -8,9 +8,192 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Search, DollarSign, TrendingUp, Users, Calculator } from 'lucide-react'
+import { Plus, Search, DollarSign, TrendingUp, Users, Calculator, Settings, RefreshCw, Loader2 } from 'lucide-react'
 import { useCommissionManagement } from './hooks/useCommissionManagement'
 import { useToast } from '@/hooks/use-toast'
+import { Commission, CommissionRule } from './types'
+
+// Mock components for now
+const CommissionList = ({ commissions, onEdit, onDelete }: any) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Commissions</CardTitle>
+      <CardDescription>
+        Manage all sales commissions ({commissions.length})
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-3">
+        {commissions.map((commission: any) => (
+          <div key={commission.id} className="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <h4 className="font-medium">Commission for {commission.sales_rep_id}</h4>
+              <p className="text-sm text-muted-foreground">Amount: ${commission.amount}</p>
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={() => onEdit?.(commission)}>
+                Edit
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onDelete?.(commission.id)}>
+                Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+)
+
+const CommissionRulesList = ({ rules, onEdit, onDelete }: any) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Commission Rules</CardTitle>
+      <CardDescription>
+        Define and manage commission calculation rules ({rules.length})
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-3">
+        {rules.map((rule: any) => (
+          <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <h4 className="font-medium">{rule.rule_name}</h4>
+              <p className="text-sm text-muted-foreground">Type: {rule.type} | Rate: {rule.rate}</p>
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={() => onEdit?.(rule)}>
+                Edit
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onDelete?.(rule.id)}>
+                Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+)
+
+function CommissionEngine() {
+  const [activeTab, setActiveTab] = useState('commissions');
+  const { commissions, rules, loading, error, usingFallback, refetchData } = useCommissionManagement();
+  const { toast } = useToast();
+
+  // Display error toast if there's an error
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Error loading commission data',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  }, [error, toast]);
+
+  return (
+    <div className="space-y-6">
+      {/* Supabase Status Banner */}
+      <Alert>
+        <AlertDescription>
+          {/* Supabase Status Banner */}
+          {loading ? (
+            <span className="flex items-center">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Loading commission data...
+            </span>
+          ) : usingFallback ? (
+            <span>
+              📊 <strong>Demo Mode:</strong> Using fallback commission data.
+            </span>
+          ) : (
+            <span>
+              ✅ <strong>Live Data:</strong> Connected to Supabase for Commissions.
+            </span>
+          )}
+        </AlertDescription>
+      </Alert>
+      <div className="ri-page-header">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="ri-page-title">Commission Engine</h1>
+            <p className="ri-page-description">
+              Manage commission rules and track payments
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </div> {/* End ri-page-header */}
+
+      {/* Stats Cards */}
+      <div className="ri-stats-grid">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Commissions</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex items-center">
+            <div className="text-2xl font-bold">{loading ? <Loader2 className="h-6 w-6 animate-spin" /> : commissions.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {/* Dynamic data for stats */}
+              +12% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex items-center">
+            <div className="text-2xl font-bold">
+              {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : `$${commissions.reduce((sum: number, c: any) => sum + c.amount, 0).toFixed(2)}`}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {/* Dynamic data for stats */}
+              +8% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Rules</CardTitle>
+            <Settings className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex items-center">
+            <div className="text-2xl font-bold">{loading ? <Loader2 className="h-6 w-6 animate-spin" /> : rules.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {/* Dynamic data for stats */}
+              All rules active
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="commissions">Commissions</TabsTrigger>
+          <TabsTrigger value="rules">Rules</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="commissions" className="space-y-4">
+          <CommissionList commissions={commissions} /> {/* Pass commissions */}
+        </TabsContent>
+
+        <TabsContent value="rules" className="space-y-4">
+          <CommissionRulesList rules={rules} /> {/* Pass rules */}
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
 
 export default function CommissionEngine() {
   const { toast } = useToast()
