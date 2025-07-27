@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
+import { Plus, Search, FileText, Settings, CheckCircle, Clock, AlertTriangle, Loader2 } from 'lucide-react'
 import { usePDIManagement } from './hooks/usePDIManagement'
 import { useToast } from '@/hooks/use-toast'
 import { PdiChecklist, ChecklistItem } from '@/types'
@@ -45,6 +45,17 @@ export default function PDIChecklist() {
     status: 'Not Started',
     notes: ''
   })
+
+  // Display error toast if there's an error
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Error loading PDI data',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  }, [error, toast]);
 
   // Filter inspections based on search and status
   const filteredInspections = React.useMemo(() => {
@@ -149,17 +160,18 @@ export default function PDIChecklist() {
       {/* Supabase Status Banner */}
       <Alert>
         <AlertDescription>
-          {usingFallback ? (
+          {loading ? (
+            <span className="flex items-center">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Loading PDI data...
+            </span>
+          ) : usingFallback ? (
             <span>
-              📊 <strong>Demo Mode:</strong> Using fallback data. 
-              Inspections: {supabaseStatus.inspections.error || 'Connection issue'}, 
-              Settings: {supabaseStatus.settings.error || 'Connection issue'}
+              📊 <strong>Demo Mode:</strong> Using fallback PDI data.
             </span>
           ) : (
             <span>
-              ✅ <strong>Live Data:</strong> Connected to Supabase successfully. 
-              Inspections: {supabaseStatus.inspections.count}, 
-              Settings: {supabaseStatus.settings.count}
+              ✅ <strong>Live Data:</strong> Connected to Supabase for PDI.
             </span>
           )}
         </AlertDescription>
