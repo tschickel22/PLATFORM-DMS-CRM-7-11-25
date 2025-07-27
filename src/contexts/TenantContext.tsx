@@ -472,3 +472,5 @@ export function useTenant() {
   }
   return context
 }
+
+export { TenantContext }
