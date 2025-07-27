@@ -22,6 +22,11 @@ export function useDeals() {
           .eq('company_id', companyId)
           .eq('company_id', companyId)
           .order('created_at', { ascending: false })
+
+        if (supabaseError) {
+          console.error('❌ [useDeals] Supabase error:', supabaseError.message)
+          setError(supabaseError.message)
+          setDeals([])
         } else {
           console.log(`✅ [useDeals] Loaded ${data?.length || 0} deals`)
           setDeals(data || [])
@@ -56,6 +61,10 @@ export function useContacts() {
         console.log('🔄 [useContacts] Fetching contacts for company_id:', companyId)
         
         const { data, error: supabaseError } = await supabase
+          .from('contacts')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
 
         if (supabaseError) {
           console.error('❌ [useContacts] Supabase error:', supabaseError.message)
