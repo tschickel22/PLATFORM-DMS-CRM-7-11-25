@@ -149,6 +149,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       }
     } catch (err: any) {
       console.error('💥 [TenantContext] Unexpected error during fetch:', err)
+      console.log('Supabase fetch failed for TenantContext')
       setError(new Error('Failed to connect to Supabase or process data.'))
       
       // Always create completely new plain object to prevent Relay contamination

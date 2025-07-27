@@ -1,485 +1,580 @@
 import { useState, useEffect } from 'react'
-import { Commission, CommissionStatus, CommissionType } from '@/types'
-import { saveToLocalStorage, loadFromLocalStorage } from '@/lib/utils'
-import { CommissionRule, FlatCommissionRule, PercentageCommissionRule, TieredCommissionRule, CommissionAuditEntry, CommissionReportFilters, CommissionReportSummary } from '../types'
+import { supabase } from '@/lib/supabaseClient'
+import { useValidatedCompanyId } from '@/utils/useValidatedCompanyId'
+import { useToast } from '@/hooks/use-toast'
+import { mockCommissionEngine } from '@/mocks/commissionEngineMock'
+
+interface CommissionRule {
+  id: string
+  company_id: string
+  name: string
+  type: string
+  rate: number
+  criteria: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+interface Commission {
+  id: string
+  company_id: string
+  rep_id: string
+  rep_name: string
+  deal_id: string
+  rule_id: string
+  amount: number
+  period: string
+  sale_amount: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+interface CommissionManagementState {
+  rules: CommissionRule[]
+  commissions: Commission[]
+  loading: boolean
+  error: Error | null
+  usingFallback: boolean
+  supabaseStatus: {
+    rules: { connected: boolean; error?: string; count: number }
+    commissions: { connected: boolean; error?: string; count: number }
+  }
+}
 
 export function useCommissionManagement() {
-  const [commissions, setCommissions] = useState<Commission[]>([])
-  const [rules, setRules] = useState<CommissionRule[]>([])
-  const [auditTrail, setAuditTrail] = useState<CommissionAuditEntry[]>([])
-  const [loading, setLoading] = useState(false)
+  const { companyId, isValid } = useValidatedCompanyId()
+  const { toast } = useToast()
+  
+  const [state, setState] = useState<CommissionManagementState>({
+    rules: [],
+    commissions: [],
+    loading: true,
+    error: null,
+    usingFallback: false,
+    supabaseStatus: {
+      rules: { connected: false, error: undefined, count: 0 },
+      commissions: { connected: false, error: undefined, count: 0 }
+    }
+  })
 
-  useEffect(() => {
-    initializeMockData()
-  }, [])
+  const fetchRules = async () => {
+    console.log('📋 [Commission Management] Fetching rules from Supabase...')
+    
+    if (!isValid || !companyId) {
+      console.warn('⚠️ [Commission Management] Invalid company ID, using fallback data')
+      setState(prev => ({
+        ...prev,
+        rules: mockCommissionEngine.sampleRules.map(rule => ({
+          ...rule,
+          company_id: companyId || 'fallback',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })),
+        usingFallback: true,
+        supabaseStatus: {
+          ...prev.supabaseStatus,
+          rules: { connected: false, error: 'Invalid company ID', count: 0 }
+        }
+      }))
+      return
+    }
 
-  const initializeMockData = () => {
-    // Load existing commissions from localStorage or use mock data
-    const savedCommissions = loadFromLocalStorage('renter-insight-commissions', [
-      {
-        id: '1',
-        salesPersonId: 'sales-001',
-        dealId: 'deal-001',
-        type: CommissionType.PERCENTAGE,
-        rate: 0.05,
-        amount: 6875,
-        status: CommissionStatus.APPROVED,
-        paidDate: new Date('2024-01-20'),
-        notes: 'Commission for Georgetown sale',
-        customFields: {},
-        createdAt: new Date('2024-01-18'),
-        updatedAt: new Date('2024-01-20')
-      },
-      {
-        id: '2',
-        salesPersonId: 'sales-002',
-        dealId: 'deal-002',
-        type: CommissionType.FLAT,
-        rate: 0,
-        amount: 2500,
-        status: CommissionStatus.PENDING,
-        notes: 'Flat commission for service contract',
-        customFields: {},
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15')
-      }
-    ])
-
-    // Load existing rules from localStorage or use mock data
-    const savedRules = loadFromLocalStorage('renter-insight-commission-rules', [
-      {
-        id: '1',
-        name: 'Standard Sales Commission',
-        type: 'percentage',
-        rate: 0.05,
-        isActive: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: '2',
-        name: 'Service Contract Bonus',
-        type: 'flat',
-        amount: 500,
-        isActive: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: '3',
-        name: 'Tiered Sales Commission',
-        type: 'tiered',
-        tiers: [
-          { id: '1', ruleId: '3', minAmount: 0, maxAmount: 50000, rate: 0.03 },
-          { id: '2', ruleId: '3', minAmount: 50000, maxAmount: 100000, rate: 0.05 },
-          { id: '3', ruleId: '3', minAmount: 100000, rate: 0.07 }
-        ],
-        isActive: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      }
-    ])
-
-    // Load existing audit trail from localStorage or use mock data
-    const savedAuditTrail = loadFromLocalStorage('renter-insight-commission-audit', [
-      {
-        id: '1',
-        commissionId: '1',
-        userId: 'user-001',
-        userName: 'Admin User',
-        action: 'created',
-        newValue: {
-          salesPersonId: 'sales-001',
-          dealId: 'deal-001',
-          type: CommissionType.PERCENTAGE,
-          rate: 0.05,
-          amount: 6875,
-          status: CommissionStatus.PENDING
-        },
-        timestamp: new Date('2024-01-18')
-      },
-      {
-        id: '2',
-        commissionId: '1',
-        userId: 'user-001',
-        userName: 'Admin User',
-        action: 'approved',
-        previousValue: { status: CommissionStatus.PENDING },
-        newValue: { status: CommissionStatus.APPROVED },
-        notes: 'Approved after deal verification',
-        timestamp: new Date('2024-01-19')
-      }
-    ])
-
-    setCommissions(savedCommissions)
-    setRules(savedRules)
-    setAuditTrail(savedAuditTrail)
-  }
-
-  const saveCommissionsToStorage = (updatedCommissions: Commission[]) => {
-    saveToLocalStorage('renter-insight-commissions', updatedCommissions)
-  }
-
-  const saveRulesToStorage = (updatedRules: CommissionRule[]) => {
-    saveToLocalStorage('renter-insight-commission-rules', updatedRules)
-  }
-
-  const saveAuditTrailToStorage = (updatedAuditTrail: CommissionAuditEntry[]) => {
-    saveToLocalStorage('renter-insight-commission-audit', updatedAuditTrail)
-  }
-
-  const getCommissionsBySalesPerson = (salesPersonId: string) => {
-    return commissions.filter(commission => commission.salesPersonId === salesPersonId)
-  }
-
-  const getCommissionsByDeal = (dealId: string) => {
-    return commissions.filter(commission => commission.dealId === dealId)
-  }
-
-  const getCommissionById = (commissionId: string) => {
-    return commissions.find(commission => commission.id === commissionId)
-  }
-
-  const getRuleById = (ruleId: string) => {
-    return rules.find(rule => rule.id === ruleId)
-  }
-
-  const getAuditTrailByCommission = (commissionId: string) => {
-    return auditTrail.filter(entry => entry.commissionId === commissionId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-  }
-
-  const createCommission = async (commissionData: Partial<Commission>, userId: string, userName: string) => {
-    setLoading(true)
     try {
-      const newCommission: Commission = {
-        id: Math.random().toString(36).substr(2, 9),
-        salesPersonId: commissionData.salesPersonId || '',
-        dealId: commissionData.dealId || '',
-        type: commissionData.type || CommissionType.PERCENTAGE,
-        rate: commissionData.rate || 0,
-        amount: commissionData.amount || 0,
-        status: CommissionStatus.PENDING,
-        notes: commissionData.notes || '',
-        customFields: commissionData.customFields || {},
-        createdAt: new Date(),
-        updatedAt: new Date()
+      const { data, error } = await supabase
+        .from('commission_rules')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('❌ [Commission Management] Supabase error fetching rules:', error.message)
+        console.log('Supabase fetch failed for Commission Engine')
+        setState(prev => ({
+          ...prev,
+          rules: mockCommissionEngine.sampleRules.map(rule => ({
+            ...rule,
+            company_id: companyId,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })),
+          usingFallback: true,
+          supabaseStatus: {
+            ...prev.supabaseStatus,
+            rules: { connected: false, error: error.message, count: 0 }
+          }
+        }))
+        return
       }
 
-      const updatedCommissions = [...commissions, newCommission]
-      setCommissions(updatedCommissions)
-      saveCommissionsToStorage(updatedCommissions)
-
-      // Add audit entry
-      const auditEntry: CommissionAuditEntry = {
-        id: Math.random().toString(36).substr(2, 9),
-        commissionId: newCommission.id,
-        userId,
-        userName,
-        action: 'created',
-        newValue: { ...newCommission },
-        timestamp: new Date()
+      console.log(`✅ [Commission Management] Fetched ${data?.length || 0} rules from Supabase`)
+      
+      if (!data || data.length === 0) {
+        // No data found, use fallback
+        setState(prev => ({
+          ...prev,
+          rules: mockCommissionEngine.sampleRules.map(rule => ({
+            ...rule,
+            company_id: companyId,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })),
+          usingFallback: true,
+          supabaseStatus: {
+            ...prev.supabaseStatus,
+            rules: { connected: true, error: undefined, count: 0 }
+          }
+        }))
+        return
       }
 
-      const updatedAuditTrail = [...auditTrail, auditEntry]
-      setAuditTrail(updatedAuditTrail)
-      saveAuditTrailToStorage(updatedAuditTrail)
+      // Transform Supabase data to match our types
+      const transformedRules: CommissionRule[] = data.map(row => ({
+        id: row.id,
+        company_id: row.company_id,
+        name: row.name,
+        type: row.type,
+        rate: row.rate,
+        criteria: row.criteria,
+        is_active: row.is_active,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }))
 
-      return newCommission
-    } finally {
-      setLoading(false)
+      setState(prev => ({
+        ...prev,
+        rules: transformedRules,
+        usingFallback: false,
+        supabaseStatus: {
+          ...prev.supabaseStatus,
+          rules: { connected: true, error: undefined, count: transformedRules.length }
+        }
+      }))
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error fetching rules:', err)
+      console.log('Supabase fetch failed for Commission Engine')
+      setState(prev => ({
+        ...prev,
+        rules: mockCommissionEngine.sampleRules.map(rule => ({
+          ...rule,
+          company_id: companyId || 'fallback',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })),
+        usingFallback: true,
+        error: new Error('Failed to fetch commission rules'),
+        supabaseStatus: {
+          ...prev.supabaseStatus,
+          rules: { connected: false, error: err.message, count: 0 }
+        }
+      }))
     }
   }
 
-  const updateCommission = async (commissionId: string, updates: Partial<Commission>, userId: string, userName: string, notes?: string) => {
-    const commission = commissions.find(c => c.id === commissionId)
-    if (!commission) return null
-
-    const updatedCommission = {
-      ...commission,
-      ...updates,
-      updatedAt: new Date()
+  const fetchCommissions = async () => {
+    console.log('💰 [Commission Management] Fetching commissions from Supabase...')
+    
+    if (!isValid || !companyId) {
+      console.warn('⚠️ [Commission Management] Invalid company ID for commissions, using fallback')
+      setState(prev => ({
+        ...prev,
+        commissions: mockCommissionEngine.sampleCommissions.map(comm => ({
+          ...comm,
+          company_id: companyId || 'fallback',
+          rep_name: mockCommissionEngine.salesReps.find(rep => rep.id === comm.repId)?.name || 'Unknown Rep',
+          deal_id: 'deal-001',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })),
+        supabaseStatus: {
+          ...prev.supabaseStatus,
+          commissions: { connected: false, error: 'Invalid company ID', count: 0 }
+        }
+      }))
+      return
     }
 
-    const updatedCommissions = commissions.map(c => 
-      c.id === commissionId ? updatedCommission : c
-    )
-
-    setCommissions(updatedCommissions)
-    saveCommissionsToStorage(updatedCommissions)
-
-    // Add audit entry
-    const auditEntry: CommissionAuditEntry = {
-      id: Math.random().toString(36).substr(2, 9),
-      commissionId,
-      userId,
-      userName,
-      action: 'updated',
-      previousValue: { ...commission },
-      newValue: updates,
-      notes,
-      timestamp: new Date()
-    }
-
-    const updatedAuditTrail = [...auditTrail, auditEntry]
-    setAuditTrail(updatedAuditTrail)
-    saveAuditTrailToStorage(updatedAuditTrail)
-
-    return updatedCommission
-  }
-
-  const approveCommission = async (commissionId: string, userId: string, userName: string, notes?: string) => {
-    return updateCommission(
-      commissionId, 
-      { status: CommissionStatus.APPROVED }, 
-      userId, 
-      userName, 
-      notes
-    )
-  }
-
-  const rejectCommission = async (commissionId: string, userId: string, userName: string, notes?: string) => {
-    return updateCommission(
-      commissionId, 
-      { status: CommissionStatus.CANCELLED }, 
-      userId, 
-      userName, 
-      notes
-    )
-  }
-
-  const markCommissionPaid = async (commissionId: string, userId: string, userName: string, notes?: string) => {
-    return updateCommission(
-      commissionId, 
-      { 
-        status: CommissionStatus.PAID,
-        paidDate: new Date()
-      }, 
-      userId, 
-      userName, 
-      notes
-    )
-  }
-
-  const createRule = async (ruleData: Partial<CommissionRule>) => {
-    setLoading(true)
     try {
-      let newRule: CommissionRule
+      const { data, error } = await supabase
+        .from('commissions')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
 
-      switch (ruleData.type) {
-        case 'flat':
-          newRule = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: ruleData.name || '',
-            type: 'flat',
-            amount: (ruleData as Partial<FlatCommissionRule>).amount || 0,
-            isActive: ruleData.isActive ?? true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          } as FlatCommissionRule
-          break
-        
-        case 'percentage':
-          newRule = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: ruleData.name || '',
-            type: 'percentage',
-            rate: (ruleData as Partial<PercentageCommissionRule>).rate || 0,
-            isActive: ruleData.isActive ?? true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          } as PercentageCommissionRule
-          break
-        
-        case 'tiered':
-          newRule = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: ruleData.name || '',
-            type: 'tiered',
-            tiers: (ruleData as Partial<TieredCommissionRule>).tiers || [],
-            isActive: ruleData.isActive ?? true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          } as TieredCommissionRule
-          break
-        
-        default:
-          throw new Error('Invalid commission rule type')
+      if (error) {
+        console.error('❌ [Commission Management] Supabase error fetching commissions:', error.message)
+        console.log('Supabase fetch failed for Commission Engine')
+        setState(prev => ({
+          ...prev,
+          commissions: mockCommissionEngine.sampleCommissions.map(comm => ({
+            ...comm,
+            company_id: companyId,
+            rep_name: mockCommissionEngine.salesReps.find(rep => rep.id === comm.repId)?.name || 'Unknown Rep',
+            deal_id: 'deal-001',
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })),
+          supabaseStatus: {
+            ...prev.supabaseStatus,
+            commissions: { connected: false, error: error.message, count: 0 }
+          }
+        }))
+        return
       }
 
-      const updatedRules = [...rules, newRule]
-      setRules(updatedRules)
-      saveRulesToStorage(updatedRules)
+      console.log(`✅ [Commission Management] Fetched ${data?.length || 0} commissions from Supabase`)
+
+      if (!data || data.length === 0) {
+        // No commissions found, use fallback
+        setState(prev => ({
+          ...prev,
+          commissions: mockCommissionEngine.sampleCommissions.map(comm => ({
+            ...comm,
+            company_id: companyId,
+            rep_name: mockCommissionEngine.salesReps.find(rep => rep.id === comm.repId)?.name || 'Unknown Rep',
+            deal_id: 'deal-001',
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })),
+          supabaseStatus: {
+            ...prev.supabaseStatus,
+            commissions: { connected: true, error: undefined, count: 0 }
+          }
+        }))
+        return
+      }
+
+      // Transform Supabase data to match our types
+      const transformedCommissions: Commission[] = data.map(row => ({
+        id: row.id,
+        company_id: row.company_id,
+        rep_id: row.rep_id,
+        rep_name: row.rep_name,
+        deal_id: row.deal_id,
+        rule_id: row.rule_id,
+        amount: row.amount,
+        period: row.period,
+        sale_amount: row.sale_amount,
+        status: row.status,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }))
+
+      setState(prev => ({
+        ...prev,
+        commissions: transformedCommissions,
+        supabaseStatus: {
+          ...prev.supabaseStatus,
+          commissions: { connected: true, error: undefined, count: transformedCommissions.length }
+        }
+      }))
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error fetching commissions:', err)
+      console.log('Supabase fetch failed for Commission Engine')
+      setState(prev => ({
+        ...prev,
+        commissions: mockCommissionEngine.sampleCommissions.map(comm => ({
+          ...comm,
+          company_id: companyId || 'fallback',
+          rep_name: mockCommissionEngine.salesReps.find(rep => rep.id === comm.repId)?.name || 'Unknown Rep',
+          deal_id: 'deal-001',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })),
+        error: new Error('Failed to fetch commissions'),
+        supabaseStatus: {
+          ...prev.supabaseStatus,
+          commissions: { connected: false, error: err.message, count: 0 }
+        }
+      }))
+    }
+  }
+
+  const createRule = async (ruleData: Omit<CommissionRule, 'id' | 'company_id' | 'created_at' | 'updated_at'>) => {
+    if (!isValid || !companyId) {
+      toast({
+        title: 'Error',
+        description: 'Invalid company ID. Cannot create rule.',
+        variant: 'destructive'
+      })
+      return null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('commission_rules')
+        .insert([{
+          ...ruleData,
+          company_id: companyId
+        }])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Commission Management] Error creating rule:', error.message)
+        toast({
+          title: 'Error',
+          description: 'Failed to create commission rule',
+          variant: 'destructive'
+        })
+        return null
+      }
+
+      const newRule: CommissionRule = {
+        id: data.id,
+        company_id: data.company_id,
+        name: data.name,
+        type: data.type,
+        rate: data.rate,
+        criteria: data.criteria,
+        is_active: data.is_active,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      setState(prev => ({
+        ...prev,
+        rules: [newRule, ...prev.rules]
+      }))
 
       return newRule
-    } finally {
-      setLoading(false)
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error creating rule:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to create commission rule',
+        variant: 'destructive'
+      })
+      return null
     }
   }
 
-  const updateRule = async (ruleId: string, updates: Partial<CommissionRule>) => {
-    const rule = rules.find(r => r.id === ruleId)
-    if (!rule) return null
+  const updateRule = async (id: string, updates: Partial<CommissionRule>) => {
+    try {
+      const { data, error } = await supabase
+        .from('commission_rules')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
 
-    const updatedRule = {
-      ...rule,
-      ...updates,
-      updatedAt: new Date()
-    }
-
-    const updatedRules = rules.map(r => 
-      r.id === ruleId ? updatedRule : r
-    )
-
-    setRules(updatedRules)
-    saveRulesToStorage(updatedRules)
-
-    return updatedRule
-  }
-
-  const deleteRule = async (ruleId: string) => {
-    const updatedRules = rules.filter(r => r.id !== ruleId)
-    setRules(updatedRules)
-    saveRulesToStorage(updatedRules)
-  }
-
-  const calculateCommission = (dealAmount: number, ruleId: string) => {
-    const rule = rules.find(r => r.id === ruleId)
-    if (!rule) return 0
-
-    switch (rule.type) {
-      case 'flat':
-        return (rule as FlatCommissionRule).amount
-      
-      case 'percentage':
-        return dealAmount * (rule as PercentageCommissionRule).rate
-      
-      case 'tiered':
-        const tiers = (rule as TieredCommissionRule).tiers
-        const applicableTier = tiers.find(tier => 
-          dealAmount >= tier.minAmount && 
-          (tier.maxAmount === undefined || dealAmount < tier.maxAmount)
-        )
-        return applicableTier ? dealAmount * applicableTier.rate : 0
-      
-      default:
-        return 0
-    }
-  }
-
-  const generateCommissionReport = (filters: CommissionReportFilters): {
-    commissions: Commission[],
-    summary: CommissionReportSummary
-  } => {
-    let filteredCommissions = [...commissions]
-
-    // Apply filters
-    if (filters.startDate) {
-      filteredCommissions = filteredCommissions.filter(c => 
-        new Date(c.createdAt) >= new Date(filters.startDate!)
-      )
-    }
-
-    if (filters.endDate) {
-      filteredCommissions = filteredCommissions.filter(c => 
-        new Date(c.createdAt) <= new Date(filters.endDate!)
-      )
-    }
-
-    if (filters.salesPersonId) {
-      filteredCommissions = filteredCommissions.filter(c => 
-        c.salesPersonId === filters.salesPersonId
-      )
-    }
-
-    if (filters.status) {
-      filteredCommissions = filteredCommissions.filter(c => 
-        c.status === filters.status
-      )
-    }
-
-    if (filters.type) {
-      filteredCommissions = filteredCommissions.filter(c => 
-        c.type === filters.type
-      )
-    }
-
-    // Calculate summary
-    const summary: CommissionReportSummary = {
-      totalCommissions: filteredCommissions.length,
-      totalAmount: filteredCommissions.reduce((sum, c) => sum + c.amount, 0),
-      pendingAmount: filteredCommissions.filter(c => c.status === CommissionStatus.PENDING)
-        .reduce((sum, c) => sum + c.amount, 0),
-      approvedAmount: filteredCommissions.filter(c => c.status === CommissionStatus.APPROVED)
-        .reduce((sum, c) => sum + c.amount, 0),
-      paidAmount: filteredCommissions.filter(c => c.status === CommissionStatus.PAID)
-        .reduce((sum, c) => sum + c.amount, 0),
-      byType: {
-        flat: filteredCommissions.filter(c => c.type === CommissionType.FLAT)
-          .reduce((sum, c) => sum + c.amount, 0),
-        percentage: filteredCommissions.filter(c => c.type === CommissionType.PERCENTAGE)
-          .reduce((sum, c) => sum + c.amount, 0),
-        tiered: filteredCommissions.filter(c => c.type === CommissionType.TIERED)
-          .reduce((sum, c) => sum + c.amount, 0)
+      if (error) {
+        console.error('❌ [Commission Management] Error updating rule:', error.message)
+        toast({
+          title: 'Error',
+          description: 'Failed to update commission rule',
+          variant: 'destructive'
+        })
+        return
       }
-    }
 
-    return {
-      commissions: filteredCommissions,
-      summary
+      const updatedRule: CommissionRule = {
+        id: data.id,
+        company_id: data.company_id,
+        name: data.name,
+        type: data.type,
+        rate: data.rate,
+        criteria: data.criteria,
+        is_active: data.is_active,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      setState(prev => ({
+        ...prev,
+        rules: prev.rules.map(rule =>
+          rule.id === id ? updatedRule : rule
+        )
+      }))
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error updating rule:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to update commission rule',
+        variant: 'destructive'
+      })
     }
   }
 
-  const exportCommissionsToCSV = (commissions: Commission[]) => {
-    const headers = [
-      'ID', 
-      'Sales Person', 
-      'Deal ID', 
-      'Type', 
-      'Rate', 
-      'Amount', 
-      'Status', 
-      'Paid Date', 
-      'Notes', 
-      'Created At'
-    ]
+  const deleteRule = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('commission_rules')
+        .delete()
+        .eq('id', id)
 
-    const rows = commissions.map(c => [
-      c.id,
-      c.salesPersonId,
-      c.dealId,
-      c.type,
-      c.rate,
-      c.amount,
-      c.status,
-      c.paidDate ? c.paidDate.toISOString() : '',
-      c.notes,
-      c.createdAt.toISOString()
-    ])
+      if (error) {
+        console.error('❌ [Commission Management] Error deleting rule:', error.message)
+        toast({
+          title: 'Error',
+          description: 'Failed to delete commission rule',
+          variant: 'destructive'
+        })
+        return
+      }
 
-    return [headers, ...rows]
+      setState(prev => ({
+        ...prev,
+        rules: prev.rules.filter(rule => rule.id !== id)
+      }))
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error deleting rule:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete commission rule',
+        variant: 'destructive'
+      })
+    }
   }
+
+  const createCommission = async (commissionData: Omit<Commission, 'id' | 'company_id' | 'created_at' | 'updated_at'>) => {
+    if (!isValid || !companyId) {
+      toast({
+        title: 'Error',
+        description: 'Invalid company ID. Cannot create commission.',
+        variant: 'destructive'
+      })
+      return null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('commissions')
+        .insert([{
+          ...commissionData,
+          company_id: companyId
+        }])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Commission Management] Error creating commission:', error.message)
+        toast({
+          title: 'Error',
+          description: 'Failed to create commission',
+          variant: 'destructive'
+        })
+        return null
+      }
+
+      const newCommission: Commission = {
+        id: data.id,
+        company_id: data.company_id,
+        rep_id: data.rep_id,
+        rep_name: data.rep_name,
+        deal_id: data.deal_id,
+        rule_id: data.rule_id,
+        amount: data.amount,
+        period: data.period,
+        sale_amount: data.sale_amount,
+        status: data.status,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      setState(prev => ({
+        ...prev,
+        commissions: [newCommission, ...prev.commissions]
+      }))
+
+      return newCommission
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error creating commission:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to create commission',
+        variant: 'destructive'
+      })
+      return null
+    }
+  }
+
+  const updateCommission = async (id: string, updates: Partial<Commission>) => {
+    try {
+      const { data, error } = await supabase
+        .from('commissions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ [Commission Management] Error updating commission:', error.message)
+        toast({
+          title: 'Error',
+          description: 'Failed to update commission',
+          variant: 'destructive'
+        })
+        return
+      }
+
+      const updatedCommission: Commission = {
+        id: data.id,
+        company_id: data.company_id,
+        rep_id: data.rep_id,
+        rep_name: data.rep_name,
+        deal_id: data.deal_id,
+        rule_id: data.rule_id,
+        amount: data.amount,
+        period: data.period,
+        sale_amount: data.sale_amount,
+        status: data.status,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      setState(prev => ({
+        ...prev,
+        commissions: prev.commissions.map(commission =>
+          commission.id === id ? updatedCommission : commission
+        )
+      }))
+    } catch (err: any) {
+      console.error('💥 [Commission Management] Unexpected error updating commission:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to update commission',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  // Load data when component mounts or company_id changes
+  useEffect(() => {
+    if (companyId) {
+      setState(prev => ({ ...prev, loading: true }))
+      Promise.all([fetchRules(), fetchCommissions()]).finally(() => {
+        setState(prev => ({ ...prev, loading: false }))
+      })
+    }
+  }, [companyId])
 
   return {
-    commissions,
-    rules,
-    auditTrail,
-    loading,
-    getCommissionsBySalesPerson,
-    getCommissionsByDeal,
-    getCommissionById,
-    getRuleById,
-    getAuditTrailByCommission,
-    createCommission,
-    updateCommission,
-    approveCommission,
-    rejectCommission,
-    markCommissionPaid,
+    rules: state.rules,
+    commissions: state.commissions,
+    loading: state.loading,
+    error: state.error,
+    usingFallback: state.usingFallback,
+    supabaseStatus: state.supabaseStatus,
     createRule,
     updateRule,
     deleteRule,
-    calculateCommission,
-    generateCommissionReport,
-    exportCommissionsToCSV
+    createCommission,
+    updateCommission,
+    refetch: () => {
+      setState(prev => ({ ...prev, loading: true }))
+      Promise.all([fetchRules(), fetchCommissions()]).finally(() => {
+        setState(prev => ({ ...prev, loading: false }))
+      })
+    }
   }
 }
